@@ -7,7 +7,7 @@ export default function Page() {
   const [password, setPassword] = useState("")
   const [accessGranted, setAccessGranted] = useState(false)
 
-  const correctPassword = process.env.NEXT_PUBLIC_RECIPE_PASSWORD
+  const correctPassword = process.env.NEXT_PUBLIC_RECIPE
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
