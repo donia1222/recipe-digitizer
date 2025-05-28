@@ -56,7 +56,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Recipe History</DialogTitle>
+          <DialogTitle>Rezeptgeschichte</DialogTitle>
         </DialogHeader>
 
         {history.length > 0 ? (
@@ -97,14 +97,14 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
 
             <div className="flex justify-between pt-4 border-t mt-4">
               <Button variant="destructive" onClick={clearAllHistory}>
-                Clear All
+                Alles löschen
               </Button>
-              <Button onClick={onClose}>Close</Button>
+              <Button onClick={onClose}>Schließen</Button>
             </div>
           </>
         ) : (
           <div className="py-8 text-center">
-            <p className="text-gray-500">No recipe history found</p>
+            <p className="text-gray-500">Kein Rezeptverlauf gefunden</p>
             <Button onClick={onClose} className="mt-4">
               Close
             </Button>

@@ -31,7 +31,7 @@ export default function RecipeDigitizer() {
   const [debouncedServings, setDebouncedServings] = useState<number>(2)
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
 
-  // Debounce servings changes to avoid too many API calls
+  // Verzögerung bei Portionsänderungen um zu viele API-Aufrufe zu vermeiden
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedServings(servings)
@@ -40,14 +40,14 @@ export default function RecipeDigitizer() {
     return () => clearTimeout(timer)
   }, [servings])
 
-  // Effect to recalculate servings when debounced value changes
+  // Effekt zur Neuberechnung der Portionen wenn sich der verzögerte Wert ändert
   useEffect(() => {
     if (analysis && debouncedServings !== originalServings) {
       handleServingsRecalculation(debouncedServings)
     }
   }, [debouncedServings, analysis, originalServings])
 
-  // Cleanup interval on unmount
+  // Interval beim Unmount bereinigen
   useEffect(() => {
     return () => {
       if (progressInterval) {
@@ -57,7 +57,7 @@ export default function RecipeDigitizer() {
   }, [progressInterval])
 
   const resetState = () => {
-    // Reset progress and clear any existing intervals
+    // Fortschritt zurücksetzen und bestehende Intervalle löschen
     if (progressInterval) {
       clearInterval(progressInterval)
     }
@@ -76,7 +76,7 @@ export default function RecipeDigitizer() {
         setLoading(true)
         setProgress(0)
 
-        // Simulate progress
+        // Fortschritt simulieren
         const interval = setInterval(() => {
           setProgress((oldProgress) => {
             if (oldProgress < 0.9) {
@@ -99,7 +99,7 @@ export default function RecipeDigitizer() {
 
       reader.readAsDataURL(file)
 
-      // Reset file input so the same file can be selected again
+      // Datei-Input zurücksetzen damit dieselbe Datei erneut ausgewählt werden kann
       e.target.value = ""
     }
   }
@@ -108,11 +108,11 @@ export default function RecipeDigitizer() {
     try {
       resetState()
 
-      // Check if the browser supports the camera API
+      // Prüfen ob der Browser die Kamera-API unterstützt
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         toast({
-          title: "Error",
-          description: "Your browser does not support camera access",
+          title: "Fehler",
+          description: "Ihr Browser unterstützt keinen Kamera-Zugriff",
           variant: "destructive",
         })
         return
@@ -134,7 +134,7 @@ export default function RecipeDigitizer() {
           context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height)
           const imageDataUrl = canvasElement.toDataURL("image/jpeg")
 
-          // Stop all video tracks to turn off the camera
+          // Alle Video-Tracks stoppen um die Kamera auszuschalten
           stream.getTracks().forEach((track) => track.stop())
 
           setImage(imageDataUrl)
@@ -142,10 +142,10 @@ export default function RecipeDigitizer() {
         }
       }, 300)
     } catch (error) {
-      console.error("Error accessing camera:", error)
+      console.error("Fehler beim Kamera-Zugriff:", error)
       toast({
-        title: "Error",
-        description: "Could not access the camera. Please check permissions.",
+        title: "Fehler",
+        description: "Konnte nicht auf die Kamera zugreifen. Bitte überprüfen Sie die Berechtigungen.",
         variant: "destructive",
       })
       setLoading(false)
@@ -157,7 +157,7 @@ export default function RecipeDigitizer() {
     setProgress(0.1)
 
     try {
-      // Simulate progress
+      // Fortschritt simulieren
       const interval = setInterval(() => {
         setProgress((oldProgress) => {
           if (oldProgress < 0.9) {
@@ -170,29 +170,31 @@ export default function RecipeDigitizer() {
 
       setProgressInterval(interval)
 
-      // Extract base64 data from the data URL
+      // Base64-Daten aus der Daten-URL extrahieren
       const base64Data = imageData.split(",")[1]
 
-      // Use server action to analyze the image
+      // Server Action verwenden um das Bild zu analysieren
       const result = await analyzeRecipeImage(base64Data)
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to analyze image")
+        throw new Error(result.error || "Bildanalyse fehlgeschlagen")
       }
 
       setAnalysis(result.analysis)
 
-      // Save to history
+      // Im Verlauf speichern
       saveToHistory(imageData, result.analysis)
 
-      // Try to extract original servings from the recipe
+      // Versuchen die ursprünglichen Portionen aus dem Rezept zu extrahieren
       const servingsMatch =
         result.analysis.match(/serves?\s+(\d+)/i) ||
         result.analysis.match(/for\s+(\d+)\s+person/i) ||
         result.analysis.match(/(\d+)\s+person/i) ||
         result.analysis.match(/(\d+)\s+serving/i) ||
-        result.analysis.match(/para\s+(\d+)\s+persona/i) || // Spanish
-        result.analysis.match(/pour\s+(\d+)\s+personne/i) // French
+        result.analysis.match(/para\s+(\d+)\s+persona/i) || // Spanisch
+        result.analysis.match(/pour\s+(\d+)\s+personne/i) || // Französisch
+        result.analysis.match(/für\s+(\d+)\s+person/i) || // Deutsch
+        result.analysis.match(/(\d+)\s+portion/i) // Deutsch
 
       if (servingsMatch && servingsMatch[1]) {
         const extractedServings = Number.parseInt(servingsMatch[1], 10)
@@ -200,7 +202,7 @@ export default function RecipeDigitizer() {
         setServings(extractedServings)
         setDebouncedServings(extractedServings)
       } else {
-        // Default to 2 if no servings info found
+        // Standard auf 2 setzen wenn keine Portionsinfo gefunden wurde
         setOriginalServings(2)
         setServings(2)
         setDebouncedServings(2)
@@ -208,18 +210,19 @@ export default function RecipeDigitizer() {
 
       setProgress(1)
 
-      // Show success toast
+      // Erfolg-Toast anzeigen
       toast({
-        title: "Recipe Digitized",
-        description: "Your recipe has been successfully analyzed!",
+        title: "Rezept digitalisiert",
+        description: "Ihr Rezept wurde erfolgreich analysiert!",
         variant: "default",
       })
     } catch (error) {
-      console.error("Error analyzing image:", error)
-      setAnalysis("Error analyzing the image. Please try again.")
+      console.error("Fehler beim Analysieren des Bildes:", error)
+      setAnalysis("Fehler beim Analysieren des Bildes. Bitte versuchen Sie es erneut.")
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to analyze the image. Please try again.",
+        title: "Fehler",
+        description:
+          error instanceof Error ? error.message : "Bildanalyse fehlgeschlagen. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       })
     } finally {
@@ -239,23 +242,26 @@ export default function RecipeDigitizer() {
       const result = await recalculateServings(analysis, originalServings, newServings)
 
       if (!result.success) {
-        throw new Error(result.error || "Failed to recalculate servings")
+        throw new Error(result.error || "Neuberechnung der Portionen fehlgeschlagen")
       }
 
       setAnalysis(result.analysis)
       setOriginalServings(newServings)
 
-      // Show success toast
+      // Erfolg-Toast anzeigen
       toast({
-        title: "Servings Updated",
-        description: `Recipe adjusted for ${newServings} ${newServings === 1 ? "person" : "people"}.`,
+        title: "Portionen aktualisiert",
+        description: `Rezept angepasst für ${newServings} ${newServings === 1 ? "Person" : "Personen"}.`,
         variant: "default",
       })
     } catch (error) {
-      console.error("Error recalculating servings:", error)
+      console.error("Fehler beim Neuberechnen der Portionen:", error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to recalculate servings. Please try again.",
+        title: "Fehler",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Neuberechnung der Portionen fehlgeschlagen. Bitte versuchen Sie es erneut.",
         variant: "destructive",
       })
     } finally {
@@ -271,14 +277,14 @@ export default function RecipeDigitizer() {
       date: new Date().toISOString(),
     }
 
-    // Get existing history from localStorage
+    // Bestehenden Verlauf aus localStorage abrufen
     const existingHistory = localStorage.getItem("recipeHistory")
     const history = existingHistory ? JSON.parse(existingHistory) : []
 
-    // Add new item to the beginning of the array
+    // Neues Element am Anfang des Arrays hinzufügen
     const updatedHistory = [historyItem, ...history]
 
-    // Save back to localStorage
+    // Zurück in localStorage speichern
     localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
   }
 
@@ -307,7 +313,7 @@ export default function RecipeDigitizer() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Header */}
+        {/* Kopfzeile */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -316,15 +322,15 @@ export default function RecipeDigitizer() {
         >
           <div className="inline-flex items-center justify-center mb-4">
             <ChefHat className="h-10 w-10 text-emerald-500 mr-2" />
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">Recipe Digitizer</h1>
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">Rezept Digitalisierer</h1>
           </div>
           <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Transform your recipe images into digital, editable recipes with AI. Adjust servings and save your
-            favorites.
+            Verwandeln Sie Ihre Rezeptbilder mit KI in digitale, bearbeitbare Rezepte. Passen Sie Portionen an und
+            speichern Sie Ihre Favoriten.
           </p>
         </motion.div>
 
-        {/* Action Bar */}
+        {/* Aktionsleiste */}
         <div className="flex justify-between items-center mb-8">
           <div className="flex gap-2">
             <Button
@@ -333,7 +339,7 @@ export default function RecipeDigitizer() {
               className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <Settings size={18} className="text-gray-600 dark:text-gray-300" />
-              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">Settings</span>
+              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">Einstellungen</span>
             </Button>
 
             <Button
@@ -342,7 +348,7 @@ export default function RecipeDigitizer() {
               className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <History size={18} className="text-gray-600 dark:text-gray-300" />
-              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">History</span>
+              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">Verlauf</span>
             </Button>
           </div>
 
@@ -353,14 +359,14 @@ export default function RecipeDigitizer() {
               className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
             >
               <Plus size={18} className="text-emerald-500" />
-              <span className="text-gray-700 dark:text-gray-200">New Recipe</span>
+              <span className="text-gray-700 dark:text-gray-200">Neues Rezept</span>
             </Button>
           )}
         </div>
 
-        {/* Main Content */}
+        {/* Hauptinhalt */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          {/* Upload Card */}
+          {/* Upload-Karte */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -370,7 +376,7 @@ export default function RecipeDigitizer() {
               <div className="p-6 flex flex-col items-center">
                 <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white flex items-center">
                   <FileText className="h-5 w-5 text-emerald-500 mr-2" />
-                  Recipe Image
+                  Rezept Bild
                 </h2>
 
                 <div className="flex gap-4 mb-6 w-full justify-center">
@@ -380,7 +386,7 @@ export default function RecipeDigitizer() {
                     className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
                   >
                     <Camera size={18} />
-                    <span>Camera</span>
+                    <span>Kamera</span>
                   </Button>
 
                   <Button
@@ -389,7 +395,7 @@ export default function RecipeDigitizer() {
                     className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
                   >
                     <Upload size={18} />
-                    <span>Upload</span>
+                    <span>Hochladen</span>
                   </Button>
 
                   <input
@@ -412,7 +418,7 @@ export default function RecipeDigitizer() {
                     >
                       <Image
                         src={image || "/placeholder.svg"}
-                        alt="Uploaded recipe"
+                        alt="Hochgeladenes Rezept"
                         fill
                         style={{ objectFit: "cover" }}
                         className="rounded-xl"
@@ -428,7 +434,7 @@ export default function RecipeDigitizer() {
                     >
                       <Upload className="h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" />
                       <p className="text-gray-500 dark:text-gray-400 text-center">
-                        Upload a recipe image or take a photo to get started
+                        Laden Sie ein Rezeptbild hoch oder machen Sie ein Foto um zu beginnen
                       </p>
                     </motion.div>
                   )}
@@ -437,7 +443,7 @@ export default function RecipeDigitizer() {
             </Card>
           </motion.div>
 
-          {/* Recipe Card */}
+          {/* Rezept-Karte */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -447,7 +453,7 @@ export default function RecipeDigitizer() {
               <div className="p-6 flex flex-col h-full">
                 <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white flex items-center">
                   <ChefHat className="h-5 w-5 text-emerald-500 mr-2" />
-                  Digitized Recipe
+                  Digitalisiertes Rezept
                 </h2>
 
                 <AnimatePresence>
@@ -464,7 +470,7 @@ export default function RecipeDigitizer() {
                             htmlFor="servings"
                             className="min-w-[80px] text-gray-700 dark:text-gray-300 font-medium"
                           >
-                            Servings:
+                            Portionen:
                           </label>
                           <Slider
                             id="servings"
@@ -487,7 +493,7 @@ export default function RecipeDigitizer() {
                           <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
                             <div className="flex flex-col items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
                               <RefreshCw className="h-8 w-8 text-emerald-500 animate-spin mb-3" />
-                              <p className="text-gray-700 dark:text-gray-300">Recalculando cantidades...</p>
+                              <p className="text-gray-700 dark:text-gray-300">Mengen werden neu berechnet...</p>
                             </div>
                           </div>
                         )}
@@ -505,8 +511,8 @@ export default function RecipeDigitizer() {
                         <ChefHat className="h-16 w-16 text-emerald-500" />
                       </div>
                       <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                        Upload an image of your recipe to see it digitized here. You'll be able to adjust servings and
-                        save it to your collection.
+                        Laden Sie ein Bild Ihres Rezepts hoch um es hier digitalisiert zu sehen. Sie können dann
+                        Portionen anpassen und es zu Ihrer Sammlung hinzufügen.
                       </p>
                     </motion.div>
                   )}

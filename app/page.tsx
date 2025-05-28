@@ -21,7 +21,7 @@ export default function Page() {
   if (!accessGranted) {
     return (
       <form onSubmit={handleSubmit} className="flex flex-col items-center justify-center min-h-screen">
-        <label className="mb-2 text-lg font-medium">Introduce la contraseña:</label>
+        <label className="mb-2 text-lg font-medium">Geben Sie das Passwort ein:</label>
         <input
           type="password"
           value={password}
@@ -29,7 +29,7 @@ export default function Page() {
           className="border border-gray-300 px-4 py-2 rounded"
         />
         <button type="submit" className="mt-4 bg-blue-600 text-white px-4 py-2 rounded">
-          Acceder
+          Beitreten
         </button>
       </form>
     )

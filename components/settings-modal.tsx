@@ -15,26 +15,26 @@ interface SettingsModalProps {
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const [darkMode, setDarkMode] = useState(false)
-  const [language, setLanguage] = useState("english")
+  const [language, setLanguage] = useState("deutsch")
   const [autoSave, setAutoSave] = useState(true)
 
-  // Load settings from localStorage on mount
+  // Einstellungen beim Laden aus localStorage abrufen
   useEffect(() => {
     const savedSettings = localStorage.getItem("recipeDigitizerSettings")
     if (savedSettings) {
       const settings = JSON.parse(savedSettings)
       setDarkMode(settings.darkMode || false)
-      setLanguage(settings.language || "english")
+      setLanguage(settings.language || "deutsch")
       setAutoSave(settings.autoSave !== undefined ? settings.autoSave : true)
     }
   }, [])
 
-  // Save settings to localStorage when they change
+  // Einstellungen in localStorage speichern wenn sie sich ändern
   useEffect(() => {
     const settings = { darkMode, language, autoSave }
     localStorage.setItem("recipeDigitizerSettings", JSON.stringify(settings))
 
-    // Apply dark mode to the document
+    // Dunklen Modus auf das Dokument anwenden
     if (darkMode) {
       document.documentElement.classList.add("dark")
     } else {
@@ -46,44 +46,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
+          <DialogTitle>Einstellungen</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="flex items-center justify-between">
             <Label htmlFor="dark-mode" className="flex flex-col">
-              <span>Dark Mode</span>
-              <span className="text-sm text-gray-500">Enable dark theme</span>
+              <span>Dunkler Modus</span>
+              <span className="text-sm text-gray-500">Dunkles Design aktivieren</span>
             </Label>
             <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
-            <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger id="language">
-                <SelectValue placeholder="Select language" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="english">English</SelectItem>
-                <SelectItem value="spanish">Spanish</SelectItem>
-                <SelectItem value="french">French</SelectItem>
-                <SelectItem value="german">German</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
 
           <div className="flex items-center justify-between">
             <Label htmlFor="auto-save" className="flex flex-col">
-              <span>Auto-save</span>
-              <span className="text-sm text-gray-500">Automatically save recipes to history</span>
+              <span>Automatisch speichern</span>
+              <span className="text-sm text-gray-500">Rezepte automatisch im Verlauf speichern</span>
             </Label>
             <Switch id="auto-save" checked={autoSave} onCheckedChange={setAutoSave} />
           </div>
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={onClose}>Close</Button>
+          <Button onClick={onClose}>Schließen</Button>
         </div>
       </DialogContent>
     </Dialog>

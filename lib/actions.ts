@@ -1,8 +1,13 @@
 "use server"
 
+/**
+ * Server Actions to handle API requests to external services
+ * This avoids CORS issues by making requests from the server
+ */
+
 export async function analyzeRecipeImage(imageBase64: string) {
   try {
-    const response = await fetch(process.env.FOODSCAN_ANALYZE_URL!, {
+    const response = await fetch("https://foodscan-ai.com/responseImageAnalysis.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -21,14 +26,16 @@ export async function analyzeRecipeImage(imageBase64: string) {
               {
                 type: "text",
                 text: `Analyze this recipe image and extract the full recipe including ingredients with REALISTIC measurements and instructions. 
-
+                
 Important rules:
 - Standardize the recipe for 2 persons
 - Use realistic and practical quantities (e.g., 1 onion, 2 carrots, 200g flour)
 - Avoid fractions like 3/4 of a vegetable when possible
 - Use whole numbers for countable items (1 onion, 2 potatoes, etc.)
 - Use weight (grams) or volume (ml, cups) for non-countable items
-- Format it nicely with clear sections for ingredients and steps`,
+- Format it nicely with clear sections for ingredients and steps
+-Responses only in German`,
+
               },
               {
                 type: "image_url",
@@ -51,13 +58,15 @@ Important rules:
 
     const data = await response.json()
 
-    if (data.choices?.[0]?.message?.content) {
+    // Extract the recipe text from the OpenAI response format
+    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
       return { success: true, analysis: data.choices[0].message.content }
     } else if (data.analysis) {
       return { success: true, analysis: data.analysis }
     } else if (typeof data === "string") {
       return { success: true, analysis: data }
     } else {
+      console.error("Unexpected response format:", data)
       throw new Error("Unexpected response format")
     }
   } catch (error) {
@@ -71,7 +80,7 @@ Important rules:
 
 export async function recalculateServings(recipe: string, originalServings: number, newServings: number) {
   try {
-    const response = await fetch(process.env.FOODSCAN_RECALCULATE_URL!, {
+    const response = await fetch("https://foodscan-ai.com/responseChat.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -82,20 +91,22 @@ export async function recalculateServings(recipe: string, originalServings: numb
           {
             role: "system",
             content: `You are a professional chef who recalculates recipe quantities accurately. 
-
+            
 Important rules:
 - Maintain realistic and practical measurements
 - For whole vegetables/fruits: use whole numbers when possible (1, 2, 3 onions)
-- Only use fractions (1/2, 1/4) when it makes culinary sense
+- Only use fractions (1/2, 1/4) when it makes culinary sense or Grams
 - For small servings, suggest "1 small onion" instead of "1/2 onion"
 - For liquids and powders: scale proportionally (200ml becomes 400ml for double)
 - Keep the same format as the original recipe
-- Only change ingredient quantities, not the instructions`,
+- Only change ingredient quantities, not the instructions
+-Responses only in German
+`,
           },
           {
             role: "user",
             content: `This recipe is currently for ${originalServings} persons. 
-
+            
 Please recalculate all ingredient quantities for ${newServings} persons.
 Use realistic measurements that a home cook would actually use.
 
@@ -115,9 +126,11 @@ ${recipe}`,
 
     const data = await response.json()
 
-    if (data.choices?.[0]?.message?.content) {
+    // Extract the recipe text from the OpenAI response format
+    if (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) {
       return { success: true, analysis: data.choices[0].message.content }
     } else {
+      console.error("Unexpected response format:", data)
       throw new Error("Unexpected response format")
     }
   } catch (error) {
