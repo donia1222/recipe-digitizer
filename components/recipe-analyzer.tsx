@@ -233,15 +233,15 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
       <div className="flex flex-wrap gap-2 justify-end border-b border-gray-200 dark:border-gray-700 pb-4">
         <Button onClick={handleShare} variant="outline" size="sm" className="flex items-center gap-2">
           <Share className="h-4 w-4" />
-          Compartir
+          Teilen
         </Button>
         <Button onClick={handleSaveAsImage} variant="outline" size="sm" className="flex items-center gap-2">
           <Download className="h-4 w-4" />
-          Guardar Imagen
+          Speichern
         </Button>
         <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2">
           <Printer className="h-4 w-4" />
-          Imprimir
+          Drucken
         </Button>
       </div>
 
