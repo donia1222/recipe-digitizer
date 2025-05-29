@@ -21,6 +21,8 @@ interface HistoryModalProps {
   onSelectItem: (item: HistoryItem) => void
 }
 
+const MAX_HISTORY_ITEMS = 5
+
 const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectItem }) => {
   const [history, setHistory] = useState<HistoryItem[]>([])
 
@@ -29,7 +31,21 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
     if (isOpen) {
       const savedHistory = localStorage.getItem("recipeHistory")
       if (savedHistory) {
-        setHistory(JSON.parse(savedHistory))
+        try {
+          const parsedHistory = JSON.parse(savedHistory)
+          // Ensure we don't exceed the maximum number of items
+          const limitedHistory = parsedHistory.slice(0, MAX_HISTORY_ITEMS)
+          setHistory(limitedHistory)
+
+          // If we had to trim items, update localStorage
+          if (parsedHistory.length > MAX_HISTORY_ITEMS) {
+            localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+          }
+        } catch (error) {
+          console.error("Error parsing history from localStorage:", error)
+          setHistory([])
+          localStorage.removeItem("recipeHistory")
+        }
       }
     }
   }, [isOpen])
@@ -39,7 +55,12 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
 
     const updatedHistory = history.filter((item) => item.id !== id)
     setHistory(updatedHistory)
-    localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+
+    try {
+      localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+    } catch (error) {
+      console.error("Error saving to localStorage:", error)
+    }
   }
 
   const clearAllHistory = () => {
@@ -56,7 +77,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Rezeptgeschichte</DialogTitle>
+          <DialogTitle>Rezeptgeschichte (max. {MAX_HISTORY_ITEMS})</DialogTitle>
         </DialogHeader>
 
         {history.length > 0 ? (
@@ -106,7 +127,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
           <div className="py-8 text-center">
             <p className="text-gray-500">Kein Rezeptverlauf gefunden</p>
             <Button onClick={onClose} className="mt-4">
-              Close
+              Schließen
             </Button>
           </div>
         )}

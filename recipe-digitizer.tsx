@@ -272,7 +272,7 @@ export default function RecipeDigitizer() {
     try {
       const result = await recalculateServings(analysis, originalServings, newServings)
 
-      if (!result.success || !result.analysis) {
+      if (!result.success) {
         throw new Error(result.error || "Neuberechnung der Portionen fehlgeschlagen")
       }
 
@@ -300,24 +300,30 @@ export default function RecipeDigitizer() {
     }
   }
 
-  const saveToHistory = (imageData: string, analysisText: string) => {
-    const historyItem = {
-      id: Date.now(),
-      image: imageData,
-      analysis: analysisText,
-      date: new Date().toISOString(),
-    }
+const saveToHistory = (imageData: string, analysisText: string) => {
+  const historyItem = {
+    id: Date.now(),
+    image: imageData,
+    analysis: analysisText,
+    date: new Date().toISOString(),
+  }
 
-    // Bestehenden Verlauf aus localStorage abrufen
+  try {
     const existingHistory = localStorage.getItem("recipeHistory")
     const history = existingHistory ? JSON.parse(existingHistory) : []
 
-    // Neues Element am Anfang des Arrays hinzufügen
+    // Agrega el nuevo item al inicio del array
     const updatedHistory = [historyItem, ...history]
 
-    // Zurück in localStorage speichern
-    localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+    // Limita el historial a un máximo de 5 elementos
+    const limitedHistory = updatedHistory.slice(0, 5)
+
+    localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+  } catch (error) {
+    console.error("Fehler beim Speichern des Verlaufs:", error)
   }
+}
+
 
   const handleServingsChange = (value: number[]) => {
     setServings(value[0])
