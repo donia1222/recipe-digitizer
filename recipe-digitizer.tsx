@@ -272,7 +272,7 @@ export default function RecipeDigitizer() {
     try {
       const result = await recalculateServings(analysis, originalServings, newServings)
 
-      if (!result.success) {
+      if (!result.success || !result.analysis) {
         throw new Error(result.error || "Neuberechnung der Portionen fehlgeschlagen")
       }
 
