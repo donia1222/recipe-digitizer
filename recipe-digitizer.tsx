@@ -26,7 +26,10 @@ export default function RecipeDigitizer() {
   const [originalServings, setOriginalServings] = useState<number>(2)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false)
+  const [showCameraModal, setShowCameraModal] = useState<boolean>(false)
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
   const [debouncedServings, setDebouncedServings] = useState<number>(2)
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
@@ -118,29 +121,25 @@ export default function RecipeDigitizer() {
         return
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-      const videoElement = document.createElement("video")
-      const canvasElement = document.createElement("canvas")
+      // Request camera access with better settings
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: "environment", // Use back camera on mobile
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      })
 
-      videoElement.srcObject = stream
-      videoElement.play()
+      setCameraStream(stream)
+      setShowCameraModal(true)
 
+      // Wait for video element to be ready
       setTimeout(() => {
-        const context = canvasElement.getContext("2d")
-        canvasElement.width = videoElement.videoWidth
-        canvasElement.height = videoElement.videoHeight
-
-        if (context) {
-          context.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height)
-          const imageDataUrl = canvasElement.toDataURL("image/jpeg")
-
-          // Alle Video-Tracks stoppen um die Kamera auszuschalten
-          stream.getTracks().forEach((track) => track.stop())
-
-          setImage(imageDataUrl)
-          analyzeImage(imageDataUrl)
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play()
         }
-      }, 300)
+      }, 100)
     } catch (error) {
       console.error("Fehler beim Kamera-Zugriff:", error)
       toast({
@@ -150,6 +149,38 @@ export default function RecipeDigitizer() {
       })
       setLoading(false)
     }
+  }
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !cameraStream) return
+
+    const canvas = document.createElement("canvas")
+    const context = canvas.getContext("2d")
+
+    if (context) {
+      canvas.width = videoRef.current.videoWidth
+      canvas.height = videoRef.current.videoHeight
+      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+
+      const imageDataUrl = canvas.toDataURL("image/jpeg", 0.8)
+
+      // Stop camera stream
+      cameraStream.getTracks().forEach((track) => track.stop())
+      setCameraStream(null)
+      setShowCameraModal(false)
+
+      // Set captured image and analyze
+      setImage(imageDataUrl)
+      analyzeImage(imageDataUrl)
+    }
+  }
+
+  const closeCameraModal = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach((track) => track.stop())
+      setCameraStream(null)
+    }
+    setShowCameraModal(false)
   }
 
   const analyzeImage = async (imageData: string) => {
@@ -536,6 +567,39 @@ export default function RecipeDigitizer() {
           setIsHistoryModalOpen(false)
         }}
       />
+
+      {/* Camera Modal */}
+      {showCameraModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Foto aufnehmen</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={closeCameraModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </Button>
+            </div>
+
+            <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto max-h-96 object-cover" />
+            </div>
+
+            <div className="flex gap-4 justify-center">
+              <Button onClick={capturePhoto} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2">
+                <Camera size={18} className="mr-2" />
+                Foto aufnehmen
+              </Button>
+              <Button variant="outline" onClick={closeCameraModal} className="px-6 py-2">
+                Abbrechen
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
