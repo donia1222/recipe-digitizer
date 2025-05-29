@@ -512,7 +512,7 @@ const saveToHistory = (imageData: string, analysisText: string) => {
                           <Slider
                             id="servings"
                             min={1}
-                            max={12}
+                            max={100}
                             step={1}
                             value={[servings]}
                             onValueChange={handleServingsChange}
