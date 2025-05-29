@@ -315,8 +315,8 @@ const saveToHistory = (imageData: string, analysisText: string) => {
     // Agrega el nuevo item al inicio del array
     const updatedHistory = [historyItem, ...history]
 
-    // Limita el historial a un máximo de 5 elementos
-    const limitedHistory = updatedHistory.slice(0, 5)
+    // Limita el historial a un máximo de 4 elementos
+    const limitedHistory = updatedHistory.slice(0, 4)
 
     localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
   } catch (error) {
