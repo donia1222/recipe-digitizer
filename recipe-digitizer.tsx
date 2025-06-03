@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Slider } from "@/components/ui/slider"
+import { Input } from "@/components/ui/input"
 import { Camera, Upload, Settings, History, ChefHat, FileText, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import RecipeAnalyzer from "@/components/recipe-analyzer"
@@ -23,6 +23,7 @@ export default function RecipeDigitizer() {
   const [recalculatingServings, setRecalculatingServings] = useState<boolean>(false)
   const [progress, setProgress] = useState<number>(0)
   const [servings, setServings] = useState<number>(2)
+  const [servingsInput, setServingsInput] = useState<string>("2")
   const [originalServings, setOriginalServings] = useState<number>(2)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false)
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false)
@@ -231,11 +232,13 @@ export default function RecipeDigitizer() {
         const extractedServings = Number.parseInt(servingsMatch[1], 10)
         setOriginalServings(extractedServings)
         setServings(extractedServings)
+        setServingsInput(extractedServings.toString())
         setDebouncedServings(extractedServings)
       } else {
         // Standard auf 2 setzen wenn keine Portionsinfo gefunden wurde
         setOriginalServings(2)
         setServings(2)
+        setServingsInput("2")
         setDebouncedServings(2)
       }
 
@@ -300,33 +303,51 @@ export default function RecipeDigitizer() {
     }
   }
 
-const saveToHistory = (imageData: string, analysisText: string) => {
-  const historyItem = {
-    id: Date.now(),
-    image: imageData,
-    analysis: analysisText,
-    date: new Date().toISOString(),
+  const saveToHistory = (imageData: string, analysisText: string) => {
+    const historyItem = {
+      id: Date.now(),
+      image: imageData,
+      analysis: analysisText,
+      date: new Date().toISOString(),
+    }
+
+    try {
+      const existingHistory = localStorage.getItem("recipeHistory")
+      const history = existingHistory ? JSON.parse(existingHistory) : []
+
+      // Agrega el nuevo item al inicio del array
+      const updatedHistory = [historyItem, ...history]
+
+      // Limita el historial a un máximo de 4 elementos
+      const limitedHistory = updatedHistory.slice(0, 4)
+
+      localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+    } catch (error) {
+      console.error("Fehler beim Speichern des Verlaufs:", error)
+    }
   }
 
-  try {
-    const existingHistory = localStorage.getItem("recipeHistory")
-    const history = existingHistory ? JSON.parse(existingHistory) : []
+  const handleServingsInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setServingsInput(value)
 
-    // Agrega el nuevo item al inicio del array
-    const updatedHistory = [historyItem, ...history]
-
-    // Limita el historial a un máximo de 4 elementos
-    const limitedHistory = updatedHistory.slice(0, 4)
-
-    localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
-  } catch (error) {
-    console.error("Fehler beim Speichern des Verlaufs:", error)
+    // Validar y convertir a número
+    const numValue = Number.parseInt(value, 10)
+    if (!isNaN(numValue) && numValue > 0 && numValue <= 100) {
+      setServings(numValue)
+    }
   }
-}
 
-
-  const handleServingsChange = (value: number[]) => {
-    setServings(value[0])
+  const handleServingsInputBlur = () => {
+    // Asegurar que el input tenga un valor válido al perder el foco
+    const numValue = Number.parseInt(servingsInput, 10)
+    if (isNaN(numValue) || numValue < 1) {
+      setServingsInput("1")
+      setServings(1)
+    } else if (numValue > 100) {
+      setServingsInput("100")
+      setServings(100)
+    }
   }
 
   const triggerFileInput = () => {
@@ -340,6 +361,7 @@ const saveToHistory = (imageData: string, analysisText: string) => {
     setImage(null)
     setAnalysis("")
     setServings(2)
+    setServingsInput("2")
     setOriginalServings(2)
     setDebouncedServings(2)
     if (fileInputRef.current) {
@@ -509,19 +531,20 @@ const saveToHistory = (imageData: string, analysisText: string) => {
                           >
                             Portionen:
                           </label>
-                          <Slider
+                          <Input
                             id="servings"
-                            min={1}
-                            max={100}
-                            step={1}
-                            value={[servings]}
-                            onValueChange={handleServingsChange}
-                            className="flex-1"
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={servingsInput}
+                            onChange={handleServingsInputChange}
+                            onBlur={handleServingsInputBlur}
                             disabled={recalculatingServings}
+                            className="w-20 text-center bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-emerald-500 dark:focus:border-emerald-400"
                           />
-                          <div className="min-w-[40px] text-center bg-white dark:bg-gray-700 rounded-md py-1 px-2 font-medium text-emerald-600 dark:text-emerald-400 shadow-sm">
-                            {servings}
-                          </div>
+                          <span className="text-gray-600 dark:text-gray-400 text-sm">
+                            {servings === 1 ? "Person" : "Personen"}
+                          </span>
                         </div>
                       </div>
 
