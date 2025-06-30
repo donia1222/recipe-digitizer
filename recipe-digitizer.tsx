@@ -365,7 +365,7 @@ export default function RecipeDigitizer() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
       {/* Header del modo análisis */}
       <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
+        <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Button
@@ -419,8 +419,8 @@ export default function RecipeDigitizer() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Bild Panel */}
           <div className="space-y-6">
             <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden">
@@ -505,20 +505,20 @@ export default function RecipeDigitizer() {
 
           {/* Rezept Panel */}
           <div className="space-y-6">
-            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-150px)] sm:h-[calc(100vh-200px)]">
-              <div className="p-8 h-full flex flex-col min-h-0">
-                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center">
-                  <ChefHat className="h-6 w-6 text-emerald-500 mr-3" />
+            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-120px)] sm:h-[calc(100vh-160px)] lg:h-[calc(100vh-200px)]">
+              <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col min-h-0">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 lg:mb-6 text-gray-800 dark:text-white flex items-center">
+                  <ChefHat className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500 mr-2 sm:mr-3" />
                   Digitalisiertes Rezept
                 </h2>
 
                 {analysis ? (
                   <div className="space-y-6 flex-1">
-                    <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-2xl border border-emerald-200/30 dark:border-emerald-800/30">
-                      <div className="flex items-center gap-4">
+                    <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 p-3 sm:p-4 lg:p-6 rounded-2xl border border-emerald-200/30 dark:border-emerald-800/30">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                         <label
                           htmlFor="servings"
-                          className="text-gray-700 dark:text-gray-300 font-semibold min-w-[100px]"
+                          className="text-gray-700 dark:text-gray-300 font-semibold text-sm sm:text-base min-w-[80px] sm:min-w-[100px]">
                         >
                           Portionen:
                         </label>
@@ -531,9 +531,9 @@ export default function RecipeDigitizer() {
                           onChange={handleServingsInputChange}
                           onBlur={handleServingsInputBlur}
                           disabled={recalculatingServings}
-                          className="w-24 text-center bg-white/70 dark:bg-gray-800/70 border-gray-200/50 dark:border-gray-600/50 focus:border-emerald-500 dark:focus:border-emerald-400 text-lg font-semibold"
+                          className="w-20 sm:w-24 text-center bg-white/70 dark:bg-gray-800/70 border-gray-200/50 dark:border-gray-600/50 focus:border-emerald-500 dark:focus:border-emerald-400 text-base sm:text-lg font-semibold"
                         />
-                        <span className="text-gray-600 dark:text-gray-400 font-medium">
+                        <span className="text-gray-600 dark:text-gray-400 font-medium text-sm sm:text-base">
                           {servings === 1 ? "Person" : "Personen"}
                         </span>
                       </div>
@@ -550,7 +550,7 @@ export default function RecipeDigitizer() {
                           </div>
                         </div>
                       )}
-                      <div className="h-full max-h-[calc(100vh-250px)] sm:max-h-[calc(100vh-300px)] overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                      <div className="h-full max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-240px)] lg:max-h-[calc(100vh-300px)] overflow-y-auto p-3 sm:p-4 lg:p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                         <RecipeAnalyzer recipe={analysis} recipeId={currentRecipeId || undefined} />
                       </div>
                     </div>
