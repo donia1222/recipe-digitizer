@@ -43,7 +43,7 @@ export default function Page() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -52,16 +52,16 @@ export default function Page() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
         <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Erforderlicher Zugriff</h1>
+          <h1 className="text-2xl font-bold text-center mb-6 text-gray-800">Acceso Requerido</h1>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Geben Sie das Passwort ein:</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Ingrese la contraseña:</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Passwort eingeben..."
+                placeholder="Ingrese la contraseña..."
                 required
               />
             </div>
@@ -69,10 +69,10 @@ export default function Page() {
               type="submit"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors duration-200 font-medium"
             >
-              Beitreten
+              Ingresar
             </button>
           </form>
-          <p className="text-xs text-gray-500 text-center mt-4">Ihre Sitzung wird gespeichert, bis Sie sich abmelden</p>
+          <p className="text-xs text-gray-500 text-center mt-4">Tu sesión se guardará hasta que cierres sesión</p>
         </div>
       </div>
     )
@@ -86,7 +86,7 @@ export default function Page() {
           onClick={handleLogout}
           className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
         >
-          Abmelden
+          Cerrar Sesión
         </button>
       </div>
       <RecipeDigitizer />

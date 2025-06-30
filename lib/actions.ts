@@ -19,7 +19,7 @@ export async function analyzeRecipeImage(imageBase64: string) {
           {
             role: "system",
             content:
-              "Du bist ein professioneller Koch. Analysiere ein Rezept-Bild und liefere realistische Mengenangaben für 2 Personen. Vermeide Bruchteile von Gemüse. Nutze Gramm/ml für nicht zählbare Zutaten. Antworte auf Deutsch mit einer Liste von Zutaten und klaren Schritten.",
+              "Extrahiere das Rezept exakt aus dem Bild. Verwende den EXAKTEN Titel/Namen wie er im Bild steht - übersetze oder ändere ihn NICHT. Gib nur aus: Titel (wie im Bild), Zutaten-Liste, Zubereitungsschritte. Keine Tipps, Erklärungen oder Kommentare. Nur die reine Information.",
           },
           {
             role: "user",
@@ -77,28 +77,12 @@ export async function recalculateServings(recipe: string, originalServings: numb
         messages: [
           {
             role: "system",
-            content: `You are a professional chef who recalculates recipe quantities accurately. 
-            
-Important rules:
-- Maintain realistic and practical measurements
-- For whole vegetables/fruits: use whole numbers when possible (1, 2, 3 onions)
-- Only use fractions (1/2, 1/4) when it makes culinary sense or Grams
-- For small servings, suggest "1 small onion" instead of "1/2 onion"
-- For liquids and powders: scale proportionally (200ml becomes 400ml for double)
-- Keep the same format as the original recipe
-- Only change ingredient quantities, not the instructions
--Response in German
-
-`,
+            content: `Berechne nur die Mengen des Rezepts neu. Gib nur das angepasste Rezept aus ohne Erklärungen, Tipps oder Kommentare. Ändere nur die Mengenangaben, nicht die Zubereitungsschritte. Antwort auf Deutsch.`,
           },
           {
             role: "user",
-            content: `This recipe is currently for ${originalServings} persons. 
-            
-Please recalculate all ingredient quantities for ${newServings} persons.
-Use realistic measurements that a home cook would actually use.
+            content: `Berechne die Mengen für ${newServings} Personen um (original für ${originalServings} Personen):
 
-Original recipe:
 ${recipe}`,
           },
         ],

@@ -1,19 +1,81 @@
 "use client"
 
-import type React from "react"
-import { Download, Printer, Share } from "lucide-react"
+import React, { useState } from "react"
+import { Download, Printer, Share, ImagePlus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
+import Image from "next/image"
 
 interface RecipeAnalyzerProps {
   recipe: string
+  recipeId?: string
 }
 
-const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
+const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => {
   const sections = recipe.split("\n\n")
+  const [recipeImages, setRecipeImages] = useState<string[]>([])
+  const [showImageModal, setShowImageModal] = useState(false)
+  const { toast } = useToast()
+
+  // Load recipe images from localStorage on component mount
+  React.useEffect(() => {
+    if (recipeId) {
+      const savedImages = localStorage.getItem(`recipe-images-${recipeId}`)
+      if (savedImages) {
+        try {
+          setRecipeImages(JSON.parse(savedImages))
+        } catch (error) {
+          console.error('Error loading recipe images:', error)
+        }
+      }
+    }
+  }, [recipeId])
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string
+        const updatedImages = [...recipeImages, imageData]
+        setRecipeImages(updatedImages)
+        
+        // Save to localStorage
+        if (recipeId) {
+          localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
+        }
+        
+        toast({
+          title: "Bild hinzugefügt",
+          description: "Das Bild wurde lokal mit dem Rezept gespeichert.",
+        })
+      }
+      reader.readAsDataURL(file)
+    }
+    setShowImageModal(false)
+  }
+
+  const removeImage = (index: number) => {
+    const updatedImages = recipeImages.filter((_, i) => i !== index)
+    setRecipeImages(updatedImages)
+    
+    // Update localStorage
+    if (recipeId) {
+      localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
+    }
+    
+    toast({
+      title: "Bild entfernt",
+      description: "Das Bild wurde aus dem Rezept entfernt.",
+    })
+  }
 
   const handleShare = async () => {
     const shareData = {
-      title: "Receta",
+      title: "Rezept",
       text: recipe,
       url: window.location.href,
     }
@@ -24,16 +86,16 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
       } else {
         // Fallback: copy to clipboard
         await navigator.clipboard.writeText(recipe)
-        alert("Receta copiada al portapapeles para compartir")
+        alert("Rezept wurde in die Zwischenablage kopiert zum Teilen")
       }
     } catch (error) {
       console.error("Error sharing:", error)
       // Final fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(recipe)
-        alert("Receta copiada al portapapeles")
+        alert("Rezept wurde in die Zwischenablage kopiert")
       } catch (clipboardError) {
-        alert("Error al compartir la receta")
+        alert("Fehler beim Teilen des Rezepts")
       }
     }
   }
@@ -98,7 +160,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
           const url = URL.createObjectURL(blob)
           const a = document.createElement("a")
           a.href = url
-          a.download = `receta-${Date.now()}.png`
+          a.download = `rezept-${Date.now()}.png`
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)
@@ -107,7 +169,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
       }, "image/png")
     } catch (error) {
       console.error("Error saving image:", error)
-      alert("Error al guardar la imagen")
+      alert("Fehler beim Speichern des Bildes")
     }
   }
 
@@ -116,7 +178,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
     const printContent = `
       <html>
         <head>
-          <title>Receta</title>
+          <title>Rezept</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -167,7 +229,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
         <body>
           <div class="recipe-content">
             ${sections
-              .map((section, index) => {
+              .map((section) => {
                 const isHeader =
                   section.trim().length < 50 &&
                   (section.toLowerCase().includes("ingredient") ||
@@ -218,7 +280,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
 
     const printWindow = window.open("", "_blank")
     if (printWindow) {
-      printWindow.document.write(printContent)
+      printWindow.document.body.innerHTML = printContent
       printWindow.document.close()
       printWindow.focus()
       setTimeout(() => {
@@ -230,24 +292,90 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
   return (
     <div className="space-y-6">
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-2 justify-end border-b border-gray-200 dark:border-gray-700 pb-4">
-        <Button onClick={handleShare} variant="outline" size="sm" className="flex items-center gap-2">
-          <Share className="h-4 w-4" />
-          Teilen
-        </Button>
-        <Button onClick={handleSaveAsImage} variant="outline" size="sm" className="flex items-center gap-2">
-          <Download className="h-4 w-4" />
-          Speichern
-        </Button>
-        <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2">
-          <Printer className="h-4 w-4" />
-          Drucken
-        </Button>
+      <div className="flex flex-col sm:flex-row gap-2 sm:justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
+        <div className="flex flex-wrap gap-2">
+          <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200 dark:border-emerald-800 hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30 transition-all duration-200">
+                <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-emerald-700 dark:text-emerald-300">Bild hinzufügen</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5 text-emerald-600" />
+                  Bild zum Rezept hinzufügen
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid w-full max-w-sm items-center gap-1.5">
+                  <Label htmlFor="recipe-image">Bild auswählen</Label>
+                  <Input
+                    id="recipe-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="cursor-pointer"
+                  />
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Bilder werden lokal mit dem Rezept gespeichert.
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
+          <Button onClick={handleShare} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200">
+            <Share className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <span className="text-gray-700 dark:text-gray-200">Teilen</span>
+          </Button>
+          <Button onClick={handleSaveAsImage} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200">
+            <Download className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <span className="text-gray-700 dark:text-gray-200">Herunterladen</span>
+          </Button>
+          <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200">
+            <Printer className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <span className="text-gray-700 dark:text-gray-200">Drucken</span>
+          </Button>
+        </div>
       </div>
+      
+      {/* Recipe Images */}
+      {recipeImages.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            Rezeptbilder ({recipeImages.length})
+          </h4>
+          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {recipeImages.map((image, index) => (
+              <div key={index} className="relative group">
+                <div className="aspect-square relative overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                  <Image
+                    src={image}
+                    alt={`Rezeptbild ${index + 1}`}
+                    fill
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                </div>
+                <button
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors duration-200"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-      {/* Existing recipe sections */}
+      {/* Recipe sections */}
       {sections.map((section, index) => {
-        // ... rest of the existing mapping logic remains the same
         const isHeader =
           section.trim().length < 50 &&
           (section.toLowerCase().includes("ingredient") ||
@@ -264,22 +392,22 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
 
         if (isHeader) {
           return (
-            <h3
-              key={index}
-              className="text-xl font-semibold text-emerald-700 dark:text-emerald-400 border-b border-emerald-200 dark:border-emerald-800 pb-2"
-            >
-              {section}
-            </h3>
+            <div key={index} className="relative">
+              <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 pb-3 mb-4 relative">
+                {section}
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-green-500 dark:from-emerald-400 dark:to-green-400 rounded-full" />
+              </h3>
+            </div>
           )
         } else if (isIngredientList) {
           return (
-            <div key={index} className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl">
+            <div key={index} className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-teal-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
               {section.split("\n").map((line, lineIndex) => (
-                <div key={lineIndex} className="flex items-start gap-2 py-1">
+                <div key={lineIndex} className="flex items-start gap-3 py-2 hover:bg-white/50 dark:hover:bg-black/10 rounded-lg px-2 transition-colors duration-200">
                   {!line.trim().startsWith("-") && !line.trim().startsWith("•") && line.trim() !== "" && (
-                    <span className="text-emerald-500 mt-0.5 flex-shrink-0">•</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 mt-1 flex-shrink-0 font-bold text-lg">•</span>
                   )}
-                  <span className="text-gray-700 dark:text-gray-300">{line}</span>
+                  <span className="text-gray-800 dark:text-gray-200 leading-relaxed">{line}</span>
                 </div>
               ))}
             </div>
@@ -290,19 +418,21 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe }) => {
 
           if (isNumberedList || lines.length <= 1) {
             return (
-              <p key={index} className="whitespace-pre-line text-gray-700 dark:text-gray-300">
-                {section}
-              </p>
+              <div key={index} className="bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-800/50 dark:to-slate-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                <p className="whitespace-pre-line text-gray-800 dark:text-gray-200 leading-relaxed">
+                  {section}
+                </p>
+              </div>
             )
           } else {
             return (
               <ol key={index} className="list-none pl-0 space-y-4">
                 {lines.map((line, lineIndex) => (
-                  <li key={lineIndex} className="flex items-start gap-3">
-                    <div className="flex-shrink-0 bg-emerald-100 dark:bg-emerald-800 text-emerald-700 dark:text-emerald-300 w-7 h-7 rounded-full flex items-center justify-center font-medium">
+                  <li key={lineIndex} className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 hover:shadow-md transition-all duration-200">
+                    <div className="flex-shrink-0 bg-gradient-to-br from-emerald-500 to-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
                       {lineIndex + 1}
                     </div>
-                    <span className="text-gray-700 dark:text-gray-300">{line}</span>
+                    <span className="text-gray-800 dark:text-gray-200 leading-relaxed flex-1">{line}</span>
                   </li>
                 ))}
               </ol>

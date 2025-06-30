@@ -7,14 +7,14 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Camera, Upload, Settings, History, ChefHat, FileText, Plus, RefreshCw } from "lucide-react"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Camera, Upload, Settings, ChefHat, FileText, Plus, RefreshCw, X, ArrowLeft, Sparkles } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import RecipeAnalyzer from "@/components/recipe-analyzer"
 import SettingsModal from "@/components/settings-modal"
-import HistoryModal from "@/components/history-modal"
 import LoadingOverlay from "@/components/loading-overlay"
+import RecipeLibrary from "@/components/recipe-library"
 import { analyzeRecipeImage, recalculateServings } from "@/lib/actions"
-import { motion, AnimatePresence } from "framer-motion"
 
 export default function RecipeDigitizer() {
   const [image, setImage] = useState<string | null>(null)
@@ -26,9 +26,10 @@ export default function RecipeDigitizer() {
   const [servingsInput, setServingsInput] = useState<string>("2")
   const [originalServings, setOriginalServings] = useState<number>(2)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false)
-  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState<boolean>(false)
   const [showCameraModal, setShowCameraModal] = useState<boolean>(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
+  const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null)
+  const [currentView, setCurrentView] = useState<'library' | 'analyze'>('library')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
@@ -78,20 +79,7 @@ export default function RecipeDigitizer() {
 
       reader.onloadstart = () => {
         setLoading(true)
-        setProgress(0)
-
-        // Fortschritt simulieren
-        const interval = setInterval(() => {
-          setProgress((oldProgress) => {
-            if (oldProgress < 0.9) {
-              return oldProgress + 0.1
-            }
-            clearInterval(interval)
-            return 0.9
-          })
-        }, 300)
-
-        setProgressInterval(interval)
+        setProgress(0.1)
       }
 
       reader.onload = (event) => {
@@ -186,27 +174,20 @@ export default function RecipeDigitizer() {
 
   const analyzeImage = async (imageData: string) => {
     setLoading(true)
-    setProgress(0.1)
+    setProgress(0.2)
 
     try {
-      // Fortschritt simulieren
-      const interval = setInterval(() => {
-        setProgress((oldProgress) => {
-          if (oldProgress < 0.9) {
-            return oldProgress + 0.1
-          }
-          clearInterval(interval)
-          return 0.9
-        })
-      }, 500)
-
-      setProgressInterval(interval)
+      setProgress(0.3)
 
       // Base64-Daten aus der Daten-URL extrahieren
       const base64Data = imageData.split(",")[1]
-
+      
+      setProgress(0.5)
+      
       // Server Action verwenden um das Bild zu analysieren
       const result = await analyzeRecipeImage(base64Data)
+      
+      setProgress(0.8)
 
       if (!result.success) {
         throw new Error(result.error || "Bildanalyse fehlgeschlagen")
@@ -216,6 +197,11 @@ export default function RecipeDigitizer() {
 
       // Im Verlauf speichern
       saveToHistory(imageData, result.analysis)
+      
+      // Cambiar a vista de análisis si estamos en la biblioteca
+      if (currentView === 'library') {
+        setCurrentView('analyze')
+      }
 
       // Versuchen die ursprünglichen Portionen aus dem Rezept zu extrahieren
       const servingsMatch =
@@ -223,8 +209,6 @@ export default function RecipeDigitizer() {
         result.analysis.match(/for\s+(\d+)\s+person/i) ||
         result.analysis.match(/(\d+)\s+person/i) ||
         result.analysis.match(/(\d+)\s+serving/i) ||
-        result.analysis.match(/para\s+(\d+)\s+persona/i) || // Spanisch
-        result.analysis.match(/pour\s+(\d+)\s+personne/i) || // Französisch
         result.analysis.match(/für\s+(\d+)\s+person/i) || // Deutsch
         result.analysis.match(/(\d+)\s+portion/i) // Deutsch
 
@@ -247,7 +231,7 @@ export default function RecipeDigitizer() {
       // Erfolg-Toast anzeigen
       toast({
         title: "Rezept digitalisiert",
-        description: "Ihr Rezept wurde erfolgreich analysiert!",
+        description: "Rezept erfolgreich digitalisiert",
         variant: "default",
       })
     } catch (error) {
@@ -255,15 +239,10 @@ export default function RecipeDigitizer() {
       setAnalysis("Fehler beim Analysieren des Bildes. Bitte versuchen Sie es erneut.")
       toast({
         title: "Fehler",
-        description:
-          error instanceof Error ? error.message : "Bildanalyse fehlgeschlagen. Bitte versuchen Sie es erneut.",
+        description: "Fehler beim Digitalisieren des Rezepts",
         variant: "destructive",
       })
     } finally {
-      if (progressInterval) {
-        clearInterval(progressInterval)
-        setProgressInterval(null)
-      }
       setLoading(false)
     }
   }
@@ -284,8 +263,8 @@ export default function RecipeDigitizer() {
 
       // Erfolg-Toast anzeigen
       toast({
-        title: "Portionen aktualisiert",
-        description: `Rezept angepasst für ${newServings} ${newServings === 1 ? "Person" : "Personen"}.`,
+        title: "Portionen angepasst",
+        description: `Für ${newServings} ${newServings === 1 ? "Person" : "Personen"}`,
         variant: "default",
       })
     } catch (error) {
@@ -304,11 +283,21 @@ export default function RecipeDigitizer() {
   }
 
   const saveToHistory = (imageData: string, analysisText: string) => {
+    const recipeId = `recipe-${Date.now()}`
+    const extractRecipeTitle = (analysis: string) => {
+      const firstLine = analysis.split('\n')[0]
+      return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine
+    }
+    
     const historyItem = {
       id: Date.now(),
+      recipeId: recipeId,
       image: imageData,
       analysis: analysisText,
       date: new Date().toISOString(),
+      title: extractRecipeTitle(analysisText),
+      isFavorite: false,
+      folderId: undefined,
     }
 
     try {
@@ -318,10 +307,11 @@ export default function RecipeDigitizer() {
       // Agrega el nuevo item al inicio del array
       const updatedHistory = [historyItem, ...history]
 
-      // Limita el historial a un máximo de 4 elementos
-      const limitedHistory = updatedHistory.slice(0, 4)
+      // Limita el historial a un máximo de 10 elementos
+      const limitedHistory = updatedHistory.slice(0, 10)
 
       localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+      setCurrentRecipeId(recipeId)
     } catch (error) {
       console.error("Fehler beim Speichern des Verlaufs:", error)
     }
@@ -364,271 +354,310 @@ export default function RecipeDigitizer() {
     setServingsInput("2")
     setOriginalServings(2)
     setDebouncedServings(2)
+    setCurrentRecipeId(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
     }
   }
 
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 transition-colors duration-300">
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Kopfzeile */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="mb-10 text-center"
-        >
-          <div className="inline-flex items-center justify-center mb-4">
-            <ChefHat className="h-10 w-10 text-emerald-500 mr-2" />
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">Rezept Digitalisierer</h1>
+  // Vista de análisis cuando se ha seleccionado una receta o se está analizando una nueva
+  const AnalysisView = () => (
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
+      {/* Header del modo análisis */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20 sticky top-0 z-50">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCurrentView('library')
+                  handleNewRecipe()
+                }}
+                className="bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50"
+              >
+                <ArrowLeft size={18} className="mr-2" />
+                Zurück zur Bibliothek
+              </Button>
+              <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                <ChefHat className="h-5 w-5 text-white" />
+              </div>
+              <div>
+         
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+                    {analysis ? 'Digitalisiertes Rezept' : 'Neues Rezept digitalisieren'}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {analysis ? 'Rezept bearbeiten' : 'Bild hochladen oder Foto aufnehmen'}
+                  </p>
+                </div>
+              </div>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsSettingsModalOpen(true)}
+                className="bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50"
+              >
+                <Settings size={18} />
+              </Button>
+              {analysis && (
+                <Button
+                  onClick={handleNewRecipe}
+                  className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+                >
+                  <Plus size={18} className="mr-2" />
+                  Neues Rezept
+                </Button>
+              )}
+            </div>
           </div>
-          <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Verwandeln Sie Ihre Rezeptbilder mit KI in digitale, bearbeitbare Rezepte. Passen Sie Portionen an und
-            speichern Sie Ihre Favoriten.
-          </p>
-        </motion.div>
-
-        {/* Aktionsleiste */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsSettingsModalOpen(true)}
-              className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Settings size={18} className="text-gray-600 dark:text-gray-300" />
-              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">Einstellungen</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => setIsHistoryModalOpen(true)}
-              className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <History size={18} className="text-gray-600 dark:text-gray-300" />
-              <span className="hidden sm:inline text-gray-700 dark:text-gray-200">Verlauf</span>
-            </Button>
-          </div>
-
-          {analysis && (
-            <Button
-              onClick={handleNewRecipe}
-              variant="outline"
-              className="flex items-center gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            >
-              <Plus size={18} className="text-emerald-500" />
-              <span className="text-gray-700 dark:text-gray-200">Neues Rezept</span>
-            </Button>
-          )}
         </div>
+      </div>
 
-        {/* Hauptinhalt */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          {/* Upload-Karte */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card className="overflow-hidden border-0 shadow-lg bg-white dark:bg-gray-800 rounded-xl">
-              <div className="p-6 flex flex-col items-center">
-                <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white flex items-center">
-                  <FileText className="h-5 w-5 text-emerald-500 mr-2" />
-                  Rezept Bild
+      <div className="container mx-auto px-4 sm:px-6 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Bild Panel */}
+          <div className="space-y-6">
+            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden">
+              <div className="p-8">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center">
+                  <FileText className="h-6 w-6 text-emerald-500 mr-3" />
+                  Rezeptbild
                 </h2>
 
-                <div className="flex gap-4 mb-6 w-full justify-center">
-                  <Button
-                    onClick={handleCameraCapture}
-                    disabled={loading}
-                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-                  >
-                    <Camera size={18} />
-                    <span>Kamera</span>
-                  </Button>
-
-                  <Button
-                    onClick={triggerFileInput}
-                    disabled={loading}
-                    className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white transition-colors"
-                  >
-                    <Upload size={18} />
-                    <span>Hochladen</span>
-                  </Button>
-
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-
-                <AnimatePresence>
-                  {image ? (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3 }}
-                      className="w-full relative aspect-square max-h-80 overflow-hidden rounded-xl shadow-md"
+                {!image && (
+                  <div className="flex flex-col sm:flex-row gap-4 mb-8 justify-center">
+                    <Button
+                      onClick={handleCameraCapture}
+                      disabled={loading}
+                      size="lg"
+                      className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg"
                     >
+                      <Camera size={20} className="mr-2" />
+                      Kamera
+                    </Button>
+
+                    <Button
+                      onClick={triggerFileInput}
+                      disabled={loading}
+                      size="lg"
+                      className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg"
+                    >
+                      <Upload size={20} className="mr-2" />
+                      Datei hochladen
+                    </Button>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                  </div>
+                )}
+
+                {image ? (
+                  <div className="relative group">
+                    <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl">
                       <Image
-                        src={image || "/placeholder.svg"}
+                        src={image}
                         alt="Hochgeladenes Rezept"
                         fill
-                        style={{ objectFit: "cover" }}
-                        className="rounded-xl"
+                        className="object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent rounded-xl" />
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="w-full flex flex-col items-center justify-center p-10 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-900"
-                    >
-                      <Upload className="h-16 w-16 text-gray-400 dark:text-gray-600 mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400 text-center">
-                        Laden Sie ein Rezeptbild hoch oder machen Sie ein Foto um zu beginnen
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
+                    </div>
+                    
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <Button
+                        onClick={triggerFileInput}
+                        size="sm"
+                        className="bg-white/20 backdrop-blur-md text-white border-white/30 hover:bg-white/30"
+                        variant="outline"
+                      >
+                        <Upload size={16} className="mr-1" />
+                        Ändern
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-[4/3] flex flex-col items-center justify-center border-2 border-dashed border-gray-300/50 dark:border-gray-600/50 rounded-2xl bg-gradient-to-br from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-900/50">
+                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-2xl flex items-center justify-center mb-6">
+                      <Upload className="h-10 w-10 text-emerald-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      Laden Sie Ihr Rezept hoch
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 text-center max-w-md leading-relaxed">
+                      Nehmen Sie ein Foto mit der Kamera auf oder laden Sie ein Bild von Ihrem Gerät hoch, um mit der Digitalisierung zu beginnen
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
-          </motion.div>
+          </div>
 
-          {/* Rezept-Karte */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <Card className="overflow-hidden border-0 shadow-lg bg-white dark:bg-gray-800 rounded-xl h-full">
-              <div className="p-6 flex flex-col h-full">
-                <h2 className="text-2xl font-semibold mb-6 text-gray-800 dark:text-white flex items-center">
-                  <ChefHat className="h-5 w-5 text-emerald-500 mr-2" />
+          {/* Rezept Panel */}
+          <div className="space-y-6">
+            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-150px)] sm:h-[calc(100vh-200px)]">
+              <div className="p-8 h-full flex flex-col min-h-0">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white flex items-center">
+                  <ChefHat className="h-6 w-6 text-emerald-500 mr-3" />
                   Digitalisiertes Rezept
                 </h2>
 
-                <AnimatePresence>
-                  {analysis ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="space-y-6 flex-1"
-                    >
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-xl">
-                        <div className="flex items-center gap-4">
-                          <label
-                            htmlFor="servings"
-                            className="min-w-[80px] text-gray-700 dark:text-gray-300 font-medium"
-                          >
-                            Portionen:
-                          </label>
-                          <Input
-                            id="servings"
-                            type="number"
-                            min="1"
-                            max="100"
-                            value={servingsInput}
-                            onChange={handleServingsInputChange}
-                            onBlur={handleServingsInputBlur}
-                            disabled={recalculatingServings}
-                            className="w-20 text-center bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 focus:border-emerald-500 dark:focus:border-emerald-400"
-                          />
-                          <span className="text-gray-600 dark:text-gray-400 text-sm">
-                            {servings === 1 ? "Person" : "Personen"}
-                          </span>
-                        </div>
+                {analysis ? (
+                  <div className="space-y-6 flex-1">
+                    <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 p-6 rounded-2xl border border-emerald-200/30 dark:border-emerald-800/30">
+                      <div className="flex items-center gap-4">
+                        <label
+                          htmlFor="servings"
+                          className="text-gray-700 dark:text-gray-300 font-semibold min-w-[100px]"
+                        >
+                          Portionen:
+                        </label>
+                        <Input
+                          id="servings"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={servingsInput}
+                          onChange={handleServingsInputChange}
+                          onBlur={handleServingsInputBlur}
+                          disabled={recalculatingServings}
+                          className="w-24 text-center bg-white/70 dark:bg-gray-800/70 border-gray-200/50 dark:border-gray-600/50 focus:border-emerald-500 dark:focus:border-emerald-400 text-lg font-semibold"
+                        />
+                        <span className="text-gray-600 dark:text-gray-400 font-medium">
+                          {servings === 1 ? "Person" : "Personen"}
+                        </span>
                       </div>
+                    </div>
 
-                      <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-xl max-h-[400px] overflow-y-auto relative flex-1 shadow-inner">
-                        {recalculatingServings && (
-                          <div className="absolute inset-0 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl">
-                            <div className="flex flex-col items-center bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg">
-                              <RefreshCw className="h-8 w-8 text-emerald-500 animate-spin mb-3" />
-                              <p className="text-gray-700 dark:text-gray-300">Mengen werden neu berechnet...</p>
-                            </div>
+                    <div className="bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm rounded-2xl border border-gray-200/30 dark:border-gray-700/30 relative flex-1 min-h-0">
+                      {recalculatingServings && (
+                        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
+                          <div className="flex flex-col items-center bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl">
+                            <RefreshCw className="h-10 w-10 text-emerald-500 mb-4" />
+                            <p className="text-gray-700 dark:text-gray-300 font-medium">
+                              Portionen werden neu berechnet...
+                            </p>
                           </div>
-                        )}
-                        <RecipeAnalyzer recipe={analysis} />
+                        </div>
+                      )}
+                      <div className="h-full max-h-[calc(100vh-250px)] sm:max-h-[calc(100vh-300px)] overflow-y-auto p-4 sm:p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                        <RecipeAnalyzer recipe={analysis} recipeId={currentRecipeId || undefined} />
                       </div>
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex-1 flex flex-col items-center justify-center p-10 text-center"
-                    >
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 rounded-full mb-4">
-                        <ChefHat className="h-16 w-16 text-emerald-500" />
-                      </div>
-                      <p className="text-gray-500 dark:text-gray-400 max-w-md">
-                        Laden Sie ein Bild Ihres Rezepts hoch um es hier digitalisiert zu sehen. Sie können dann
-                        Portionen anpassen und es zu Ihrer Sammlung hinzufügen.
-                      </p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center py-12">
+                    <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-3xl flex items-center justify-center mb-8">
+                      <ChefHat className="h-12 w-12 text-emerald-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-700 dark:text-gray-300 mb-4">
+                      Laden Sie ein Bild hoch, um zu beginnen!
+                    </h3>
+                    <p className="text-gray-500 dark:text-gray-400 max-w-md leading-relaxed">
+                      Sobald Sie das Bild Ihres Rezepts hochladen, wird die KI es analysieren und Sie können die Portionen anpassen.
+                    </p>
+                  </div>
+                )}
               </div>
             </Card>
-          </motion.div>
+          </div>
         </div>
       </div>
 
       {loading && <LoadingOverlay progress={progress} />}
+    </div>
+  )
+
+  return (
+    <div>
+      {currentView === 'library' ? (
+        <RecipeLibrary
+          onSelectItem={(item) => {
+            setImage(item.image)
+            setAnalysis(item.analysis)
+            setCurrentRecipeId(item.recipeId || null)
+            setCurrentView('analyze')
+            
+            // Extract servings from analysis if available
+            const servingsMatch = item.analysis.match(/serves?\s+(\d+)/i) ||
+                                  item.analysis.match(/für\s+(\d+)\s+person/i) ||
+                                  item.analysis.match(/(\d+)\s+portion/i)
+            
+            if (servingsMatch && servingsMatch[1]) {
+              const extractedServings = parseInt(servingsMatch[1], 10)
+              setOriginalServings(extractedServings)
+              setServings(extractedServings)
+              setServingsInput(extractedServings.toString())
+              setDebouncedServings(extractedServings)
+            } else {
+              setOriginalServings(2)
+              setServings(2)
+              setServingsInput("2")
+              setDebouncedServings(2)
+            }
+          }}
+          onCreateNew={() => setCurrentView('analyze')}
+        />
+      ) : (
+        <AnalysisView />
+      )}
 
       <SettingsModal isOpen={isSettingsModalOpen} onClose={() => setIsSettingsModalOpen(false)} />
-
-      <HistoryModal
-        isOpen={isHistoryModalOpen}
-        onClose={() => setIsHistoryModalOpen(false)}
-        onSelectItem={(item) => {
-          setImage(item.image)
-          setAnalysis(item.analysis)
-          setIsHistoryModalOpen(false)
-        }}
-      />
 
       {/* Camera Modal */}
       {showCameraModal && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800 dark:text-white">Foto aufnehmen</h3>
+          <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl p-8 max-w-2xl w-full mx-4 border border-white/20 dark:border-gray-700/20">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
+                <Camera className="h-6 w-6 text-emerald-500" />
+                Foto aufnehmen
+              </h3>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={closeCameraModal}
-                className="text-gray-500 hover:text-gray-700"
+                className="bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50"
               >
-                ✕
+                <X size={18} />
               </Button>
             </div>
 
-            <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+            <div className="relative bg-black rounded-2xl overflow-hidden mb-6 shadow-2xl">
               <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto max-h-96 object-cover" />
             </div>
 
             <div className="flex gap-4 justify-center">
-              <Button onClick={capturePhoto} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2">
-                <Camera size={18} className="mr-2" />
+              <Button
+                onClick={capturePhoto}
+                size="lg"
+                className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg px-8"
+              >
+                <Camera size={20} className="mr-2" />
                 Foto aufnehmen
               </Button>
-              <Button variant="outline" onClick={closeCameraModal} className="px-6 py-2">
+              <Button
+                variant="outline"
+                onClick={closeCameraModal}
+                size="lg"
+                className="px-8 bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50"
+              >
                 Abbrechen
               </Button>
             </div>
           </div>
         </div>
       )}
-    </main>
+    </div>
   )
 }
