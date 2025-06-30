@@ -81,12 +81,12 @@ export default function Page() {
   return (
     <div>
       {/* Logout button in the top right corner */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+          className="bg-red-500/90 hover:bg-red-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md text-xs sm:text-sm transition-colors duration-200 backdrop-blur-sm shadow-lg"
         >
-          Cerrar Sesión
+          Ausloggen
         </button>
       </div>
       <RecipeDigitizer />

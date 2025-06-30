@@ -33,24 +33,8 @@ export default function RecipeDigitizer() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
-  const [debouncedServings, setDebouncedServings] = useState<number>(2)
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
 
-  // Verzögerung bei Portionsänderungen um zu viele API-Aufrufe zu vermeiden
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedServings(servings)
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [servings])
-
-  // Effekt zur Neuberechnung der Portionen wenn sich der verzögerte Wert ändert
-  useEffect(() => {
-    if (analysis && debouncedServings !== originalServings) {
-      handleServingsRecalculation(debouncedServings)
-    }
-  }, [debouncedServings, analysis, originalServings])
 
   // Interval beim Unmount bereinigen
   useEffect(() => {
@@ -217,13 +201,11 @@ export default function RecipeDigitizer() {
         setOriginalServings(extractedServings)
         setServings(extractedServings)
         setServingsInput(extractedServings.toString())
-        setDebouncedServings(extractedServings)
       } else {
         // Standard auf 2 setzen wenn keine Portionsinfo gefunden wurde
         setOriginalServings(2)
         setServings(2)
         setServingsInput("2")
-        setDebouncedServings(2)
       }
 
       setProgress(1)
@@ -245,6 +227,11 @@ export default function RecipeDigitizer() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleManualRecalculation = async () => {
+    if (!analysis || servings === originalServings) return
+    await handleServingsRecalculation(servings)
   }
 
   const handleServingsRecalculation = async (newServings: number) => {
@@ -353,7 +340,6 @@ export default function RecipeDigitizer() {
     setServings(2)
     setServingsInput("2")
     setOriginalServings(2)
-    setDebouncedServings(2)
     setCurrentRecipeId(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
@@ -364,10 +350,10 @@ export default function RecipeDigitizer() {
   const AnalysisView = () => (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
       {/* Header del modo análisis */}
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20 sticky top-0 z-50">
-        <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20">
+        <div className="container mx-auto px-4 sm:px-6 py-1 sm:py-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -379,9 +365,9 @@ export default function RecipeDigitizer() {
                 <ArrowLeft size={18} className="mr-2" />
                 Zurück zur Bibliothek
               </Button>
-              <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
-                <ChefHat className="h-5 w-5 text-white" />
+              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                <ChefHat className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
               <div>
          
@@ -419,7 +405,7 @@ export default function RecipeDigitizer() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 max-w-7xl">
+      <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-4 lg:py-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
           {/* Bild Panel */}
           <div className="space-y-6">
@@ -505,7 +491,7 @@ export default function RecipeDigitizer() {
 
           {/* Rezept Panel */}
           <div className="space-y-6">
-            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-120px)] sm:h-[calc(100vh-160px)] lg:h-[calc(100vh-200px)]">
+            <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl border border-white/20 dark:border-gray-800/20 shadow-2xl rounded-2xl overflow-hidden h-[calc(100vh-80px)] sm:h-[calc(100vh-120px)] lg:h-[calc(100vh-160px)]">
               <div className="p-4 sm:p-6 lg:p-8 h-full flex flex-col min-h-0">
                 <h2 className="text-lg sm:text-xl lg:text-2xl font-bold mb-3 sm:mb-4 lg:mb-6 text-gray-800 dark:text-white flex items-center">
                   <ChefHat className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500 mr-2 sm:mr-3" />
@@ -513,8 +499,8 @@ export default function RecipeDigitizer() {
                 </h2>
 
                 {analysis ? (
-                  <div className="space-y-6 flex-1">
-                    <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 p-3 sm:p-4 lg:p-6 rounded-2xl border border-emerald-200/30 dark:border-emerald-800/30">
+                  <div className="space-y-3 sm:space-y-4 lg:space-y-6 flex-1">
+                    <div className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 dark:from-emerald-900/20 dark:to-teal-900/20 p-2 sm:p-3 lg:p-4 rounded-xl sm:rounded-2xl border border-emerald-200/30 dark:border-emerald-800/30">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                         <label
                           htmlFor="servings"
@@ -536,6 +522,24 @@ export default function RecipeDigitizer() {
                         <span className="text-gray-600 dark:text-gray-400 font-medium text-sm sm:text-base">
                           {servings === 1 ? "Person" : "Personen"}
                         </span>
+                        <Button
+                          onClick={handleManualRecalculation}
+                          disabled={recalculatingServings || servings === originalServings}
+                          size="sm"
+                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {recalculatingServings ? (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                              Wird berechnet...
+                            </>
+                          ) : (
+                            <>
+                              <RefreshCw className="h-4 w-4 mr-1" />
+                              Berechnen
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </div>
 
@@ -550,7 +554,7 @@ export default function RecipeDigitizer() {
                           </div>
                         </div>
                       )}
-                      <div className="h-full max-h-[calc(100vh-180px)] sm:max-h-[calc(100vh-240px)] lg:max-h-[calc(100vh-300px)] overflow-y-auto p-3 sm:p-4 lg:p-6 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                      <div className="h-full max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-180px)] lg:max-h-[calc(100vh-250px)] overflow-y-auto p-3 sm:p-4 lg:p-6 pb-8 sm:pb-12 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                         <RecipeAnalyzer recipe={analysis} recipeId={currentRecipeId || undefined} />
                       </div>
                     </div>
@@ -598,12 +602,10 @@ export default function RecipeDigitizer() {
               setOriginalServings(extractedServings)
               setServings(extractedServings)
               setServingsInput(extractedServings.toString())
-              setDebouncedServings(extractedServings)
             } else {
               setOriginalServings(2)
               setServings(2)
               setServingsInput("2")
-              setDebouncedServings(2)
             }
           }}
           onCreateNew={() => setCurrentView('analyze')}
