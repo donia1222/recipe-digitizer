@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users } from "lucide-react"
+import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users, LogOut } from "lucide-react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
@@ -34,9 +34,10 @@ interface RecipeLibraryProps {
   onUploadImage: (file: File, onProgress?: (progress: number) => void, onComplete?: () => void) => void
   onTakePhoto: (onPhotoTaken: (imageData: string) => void) => void
   onStartAnalysis: () => void
+  handleLogout: () => void
 }
 
-const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew, onUploadImage, onTakePhoto, onStartAnalysis }) => {
+const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew, onUploadImage, onTakePhoto, onStartAnalysis, handleLogout }) => {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [folders, setFolders] = useState<RecipeFolder[]>([])
   const [selectedFolder, setSelectedFolder] = useState<string | undefined>(undefined)
@@ -326,36 +327,53 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
-      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20">
-        <div className="container mx-auto px-4 sm:px-6 py-1 sm:py-2">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1 sm:gap-2">
-            <div className="flex items-center gap-2 sm:gap-4 w-full lg:w-auto">
-              <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto mt-4 mb-4">
-                <div className="w-12 h-12 sm:w-10 sm:h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-slate-500 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg">
-                  <Home className="h-6 w-6 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-base sm:text-lg lg:text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                    Altersheim Gärbi
-                  </h1>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                    <ChefHat className="h-3 w-3" />
-                    Digitalisierung von Rezepten
-                  </p>
-                </div>
+      {/* Header fijo - Solo título, subtítulo e icono logout */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20">
+        <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Home className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-sm sm:text-base lg:text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+                  Altersheim Gärbi
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <ChefHat className="h-3 w-3" />
+                  Digitalisierung von Rezepten
+                </p>
               </div>
             </div>
 
-            {history.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
-                <div className="relative w-full sm:w-auto order-1 sm:order-none">
+            {/* Botón logout siempre visible */}
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="sm"
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2"
+              title="Ausloggen"
+            >
+              <LogOut size={18} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Controles que hacen scroll - No fijos */}
+      {history.length > 0 && (
+        <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur border-b border-white/10 dark:border-gray-800/10 pt-16 sm:pt-20">
+          <div className="container mx-auto px-4 sm:px-6 py-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-between">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="relative w-full sm:w-auto">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     type="text"
                     placeholder="Rezepte suchen..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 w-full sm:w-64 lg:w-80 bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50 backdrop-blur-sm"
+                    className="pl-10 w-full sm:w-64 lg:w-80 bg-white/70 dark:bg-gray-800/70 border-gray-200/60 dark:border-gray-700/60 backdrop-blur-sm"
                   />
                 </div>
 
@@ -363,37 +381,37 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   variant="outline"
                   size="sm"
                   onClick={() => setShowSidebar(!showSidebar)}
-                  className="lg:hidden mt-2 sm:mt-0 bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 px-3 py-2 flex items-center gap-2"
+                  className="lg:hidden bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 px-3 py-2 flex items-center gap-2"
                 >
                   <span className="text-slate-700 dark:text-slate-300 font-medium text-sm">Kategorien</span>
                   <Filter size={14} className="text-slate-600 dark:text-slate-400" />
                 </Button>
-
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
-                  <Button
-                    variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('grid')}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Grid3x3 size={16} />
-                  </Button>
-                  <Button
-                    variant={viewMode === 'list' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => setViewMode('list')}
-                    className="h-8 w-8 p-0"
-                  >
-                    <List size={16} />
-                  </Button>
-                </div>
               </div>
-            )}
+
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="h-8 w-8 p-0"
+                >
+                  <Grid3x3 size={16} />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="h-8 w-8 p-0"
+                >
+                  <List size={16} />
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8">
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8" style={{ paddingTop: history.length > 0 ? '8px' : '80px' }}>
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
           {showSidebar && (
             <>

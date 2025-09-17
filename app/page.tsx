@@ -81,17 +81,7 @@ export default function Page() {
 
   return (
     <div>
-      <RecipeDigitizer />
-      {/* Logout button in the bottom right */}
-      <div className="fixed bottom-4 right-4 z-50">
-        <button
-          onClick={handleLogout}
-          className="bg-red-500/90 hover:bg-red-600 text-white p-3 rounded-full transition-colors duration-200 backdrop-blur-sm shadow-lg"
-          title="Ausloggen"
-        >
-          <LogOut size={18} />
-        </button>
-      </div>
+      <RecipeDigitizer handleLogout={handleLogout} />
     </div>
   )
 }
