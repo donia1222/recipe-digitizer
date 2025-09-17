@@ -34,7 +34,6 @@ export default function RecipeDigitizer() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
-  const [photoCallback, setPhotoCallback] = useState<((imageData: string) => void) | null>(null)
 
 
   // Interval beim Unmount bereinigen
@@ -143,15 +142,9 @@ export default function RecipeDigitizer() {
       setCameraStream(null)
       setShowCameraModal(false)
 
-      // If there's a callback (from RecipeLibrary), use it
-      if (photoCallback) {
-        photoCallback(imageDataUrl)
-        setPhotoCallback(null)
-      } else {
-        // Original behavior for direct analysis
-        setImage(imageDataUrl)
-        analyzeImage(imageDataUrl)
-      }
+      // Set captured image and analyze
+      setImage(imageDataUrl)
+      analyzeImage(imageDataUrl)
     }
   }
 
@@ -404,7 +397,7 @@ export default function RecipeDigitizer() {
                   className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white"
                 >
                   <Plus size={18} className="mr-2" />
-                Neues Rezept
+                Altersheim Gärbi
                 </Button>
               )}
             </div>
@@ -598,12 +591,12 @@ export default function RecipeDigitizer() {
             setAnalysis(item.analysis)
             setCurrentRecipeId(item.recipeId || null)
             setCurrentView('analyze')
-
+            
             // Extract servings from analysis if available
             const servingsMatch = item.analysis.match(/serves?\s+(\d+)/i) ||
                                   item.analysis.match(/für\s+(\d+)\s+person/i) ||
                                   item.analysis.match(/(\d+)\s+portion/i)
-
+            
             if (servingsMatch && servingsMatch[1]) {
               const extractedServings = parseInt(servingsMatch[1], 10)
               setOriginalServings(extractedServings)
@@ -616,55 +609,6 @@ export default function RecipeDigitizer() {
             }
           }}
           onCreateNew={() => setCurrentView('analyze')}
-          onUploadImage={(file: File, onProgress, onComplete) => {
-            resetState()
-
-            const reader = new FileReader()
-
-            reader.onloadstart = () => {
-              setLoading(true)
-              setProgress(0.1)
-              onProgress?.(0.1)
-            }
-
-            reader.onload = async (event) => {
-              if (event.target?.result) {
-                setImage(event.target.result as string)
-
-                // Simulate progress updates during analysis
-                let localProgressInterval: NodeJS.Timeout | null = null
-                if (onProgress) {
-                  localProgressInterval = setInterval(() => {
-                    setProgress(prev => {
-                      const newProgress = Math.min(prev + 0.1, 0.9)
-                      onProgress(newProgress)
-                      return newProgress
-                    })
-                  }, 200)
-
-                  // Store interval to clear it later
-                  setProgressInterval(localProgressInterval)
-                }
-
-                // Call analyzeImage and handle completion
-                analyzeImage(event.target.result as string).finally(() => {
-                  // Clear the progress interval when analysis is done
-                  if (localProgressInterval) {
-                    clearInterval(localProgressInterval)
-                    setProgressInterval(null)
-                  }
-                  onComplete?.()
-                })
-              }
-            }
-
-            reader.readAsDataURL(file)
-          }}
-          onTakePhoto={(onPhotoTaken) => {
-            setPhotoCallback(() => onPhotoTaken)
-            handleCameraCapture()
-          }}
-          onStartAnalysis={() => setCurrentView('analyze')}
         />
       ) : (
         // Vista de receta guardada - solo análisis con imágenes

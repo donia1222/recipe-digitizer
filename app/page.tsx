@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { LogOut } from "lucide-react"
 import RecipeDigitizer from "../recipe-digitizer"
 
 export default function Page() {
@@ -28,7 +29,7 @@ export default function Page() {
       // Save authentication state to localStorage
       localStorage.setItem("recipe-auth", "granted")
     } else {
-      alert("Contraseña incorrecta")
+      alert("Falsches Passwort")
     }
   }
 
@@ -80,16 +81,17 @@ export default function Page() {
 
   return (
     <div>
-      {/* Logout button in the top right corner */}
-      <div className="fixed top-2 right-2 sm:top-4 sm:right-4 z-50">
+      <RecipeDigitizer />
+      {/* Logout button in the bottom right */}
+      <div className="fixed bottom-4 right-4 z-50">
         <button
           onClick={handleLogout}
-          className="bg-red-500/90 hover:bg-red-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md text-xs sm:text-sm transition-colors duration-200 backdrop-blur-sm shadow-lg"
+          className="bg-red-500/90 hover:bg-red-600 text-white p-3 rounded-full transition-colors duration-200 backdrop-blur-sm shadow-lg"
+          title="Ausloggen"
         >
-          Ausloggen
+          <LogOut size={18} />
         </button>
       </div>
-      <RecipeDigitizer />
     </div>
   )
 }

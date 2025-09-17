@@ -1,10 +1,10 @@
 export default function OfflinePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900 flex items-center justify-center">
       <div className="text-center p-8">
-        <div className="w-24 h-24 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-3xl flex items-center justify-center mb-8 mx-auto">
+        <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-blue-100 dark:from-slate-900/20 dark:to-blue-900/20 rounded-3xl flex items-center justify-center mb-8 mx-auto">
           <svg
-            className="h-12 w-12 text-emerald-500"
+            className="h-12 w-12 text-slate-500"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

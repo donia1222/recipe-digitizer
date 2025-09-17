@@ -21,7 +21,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ progress }) => {
       >
         <div className="flex flex-col items-center">
           <div className="relative mb-6">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-slate-500 to-blue-600 rounded-2xl flex items-center justify-center">
               <ChefHat className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -30,7 +30,7 @@ const LoadingOverlay: React.FC<LoadingOverlayProps> = ({ progress }) => {
 
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-4 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 h-3 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-slate-500 to-blue-500 h-3 rounded-full transition-all duration-300"
               style={{ width: `${percentage}%` }}
             />
           </div>

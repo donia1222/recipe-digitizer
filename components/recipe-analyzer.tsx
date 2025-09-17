@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Download, Printer, Share, ImagePlus, X } from "lucide-react"
+import { Download, Printer, Share, ImagePlus, X, ChevronLeft, ChevronRight, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -12,12 +12,15 @@ import Image from "next/image"
 interface RecipeAnalyzerProps {
   recipe: string
   recipeId?: string
+  originalImage?: string
 }
 
-const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => {
+const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, originalImage }) => {
   const sections = recipe.split("\n\n")
   const [recipeImages, setRecipeImages] = useState<string[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [showGalleryModal, setShowGalleryModal] = useState(false)
   const { toast } = useToast()
 
   // Load recipe images from localStorage on component mount
@@ -192,13 +195,13 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
             .recipe-header {
               font-size: 18px;
               font-weight: bold;
-              color: #059669;
-              border-bottom: 2px solid #059669;
+              color: #475569;
+              border-bottom: 2px solid #475569;
               padding-bottom: 5px;
               margin-bottom: 10px;
             }
             .ingredient-list {
-              background-color: #f0fdf4;
+              background-color: #f8fafc;
               padding: 15px;
               border-radius: 8px;
               margin-bottom: 15px;
@@ -209,7 +212,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
               align-items: flex-start;
             }
             .step-number {
-              background-color: #059669;
+              background-color: #475569;
               color: white;
               width: 25px;
               height: 25px;
@@ -289,22 +292,61 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
     }
   }
 
+  // Combine all images (original + additional)
+  const allImages = originalImage ? [originalImage, ...recipeImages] : recipeImages
+
+  const openGallery = (index: number) => {
+    setCurrentImageIndex(index)
+    setShowGalleryModal(true)
+  }
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length)
+  }
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
+  }
+
+  // Extract recipe title from analysis
+  const getRecipeTitle = () => {
+    const lines = recipe.split('\n').filter(line => line.trim())
+    for (let line of lines.slice(0, 5)) {
+      if (line.length < 60 && !line.toLowerCase().includes('ingredient') &&
+          !line.toLowerCase().includes('zutaten') && !line.toLowerCase().includes('instruction') &&
+          !line.toLowerCase().includes('schritt') && !line.toLowerCase().includes('portion') &&
+          !line.includes('cup') && !line.includes('tbsp') && !line.includes('tsp') &&
+          !line.includes('ml') && !line.includes('g ') && !line.includes('oz')) {
+        return line.trim()
+      }
+    }
+    return 'Mein Rezept'
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mb-20">
+      {/* Recipe Title */}
+      <div className="text-center py-6 bg-gradient-to-r from-slate-50 via-gray-50 to-blue-50 dark:from-gray-800/50 dark:via-gray-700/50 dark:to-gray-800/50 rounded-2xl border border-slate-200/30 dark:border-gray-600/30">
+        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-700 via-gray-700 to-blue-700 dark:from-slate-300 dark:via-gray-300 dark:to-blue-300 bg-clip-text text-transparent mb-2">
+          {getRecipeTitle()}
+        </h1>
+        <div className="w-24 h-1 bg-gradient-to-r from-slate-500 to-blue-500 mx-auto rounded-full"></div>
+      </div>
+
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
         <div className="flex flex-wrap gap-2">
           <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 border-emerald-200 dark:border-emerald-800 hover:from-emerald-100 hover:to-green-100 dark:hover:from-emerald-900/30 dark:hover:to-green-900/30 transition-all duration-200">
-                <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-emerald-700 dark:text-emerald-300">Bild hinzufügen</span>
+              <Button variant="outline" size="sm" className="flex items-center gap-2 bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-900/20 dark:to-blue-900/20 border-slate-200 dark:border-slate-700 hover:from-slate-100 hover:to-blue-100 dark:hover:from-slate-900/30 dark:hover:to-blue-900/30 transition-all duration-200">
+                <ImagePlus className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                <span className="text-slate-700 dark:text-slate-300">Bild hinzufügen</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <ImagePlus className="h-5 w-5 text-emerald-600" />
+                  <ImagePlus className="h-5 w-5 text-slate-600" />
                   Bild zum Rezept hinzufügen
                 </DialogTitle>
               </DialogHeader>
@@ -327,47 +369,75 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
           </Dialog>
         </div>
         
-        <div className="flex flex-wrap gap-2 mt-2 sm:mt-0">
-          <Button onClick={handleShare} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all duration-200">
-            <Share className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-gray-700 dark:text-gray-200">Teilen</span>
+        <div className="flex flex-wrap gap-3 mt-2 sm:mt-0">
+          <Button
+            onClick={handleShare}
+            size="sm"
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Share className="h-4 w-4" />
+            <span>Teilen</span>
           </Button>
-          <Button onClick={handleSaveAsImage} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200">
-            <Download className="h-4 w-4 text-green-600 dark:text-green-400" />
-            <span className="text-gray-700 dark:text-gray-200">Herunterladen</span>
+          <Button
+            onClick={handleSaveAsImage}
+            size="sm"
+            className="flex items-center gap-2 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Download className="h-4 w-4" />
+            <span>Herunterladen</span>
           </Button>
-          <Button onClick={handlePrint} variant="outline" size="sm" className="flex items-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200">
-            <Printer className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-            <span className="text-gray-700 dark:text-gray-200">Drucken</span>
+          <Button
+            onClick={handlePrint}
+            size="sm"
+            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+          >
+            <Printer className="h-4 w-4" />
+            <span>Drucken</span>
           </Button>
         </div>
       </div>
       
-      {/* Recipe Images */}
-      {recipeImages.length > 0 && (
+      {/* Recipe Images Gallery */}
+      {allImages.length > 0 && (
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-            <ImagePlus className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-            Rezeptbilder ({recipeImages.length})
+            <ImagePlus className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+            Rezeptbilder ({allImages.length})
           </h4>
           <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {recipeImages.map((image, index) => (
+            {allImages.map((image, index) => (
               <div key={index} className="relative group">
-                <div className="aspect-square relative overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+                <div
+                  className="aspect-square relative overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => openGallery(index)}
+                >
                   <Image
                     src={image}
-                    alt={`Rezeptbild ${index + 1}`}
+                    alt={index === 0 && originalImage ? "Imagen original" : `Rezeptbild ${originalImage ? index : index + 1}`}
                     fill
                     className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                    <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  </div>
+                  {index === 0 && originalImage && (
+                    <div className="absolute top-2 left-2 bg-slate-600 text-white px-2 py-1 rounded text-xs font-semibold">
+                      Original
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors duration-200"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+                {index > 0 || !originalImage ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      removeImage(originalImage ? index - 1 : index)
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-lg transition-colors duration-200"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
@@ -376,6 +446,11 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
 
       {/* Recipe sections */}
       {sections.map((section, index) => {
+        // Skip if this section is the title we already extracted
+        const sectionTitle = getRecipeTitle()
+        if (section.trim() === sectionTitle && index === 0) {
+          return null
+        }
         const isHeader =
           section.trim().length < 50 &&
           (section.toLowerCase().includes("ingredient") ||
@@ -393,19 +468,19 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
         if (isHeader) {
           return (
             <div key={index} className="relative">
-              <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-green-600 dark:from-emerald-400 dark:to-green-400 pb-3 mb-4 relative">
+              <h3 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-600 to-blue-600 dark:from-slate-400 dark:to-blue-400 pb-3 mb-4 relative">
                 {section}
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-emerald-500 to-green-500 dark:from-emerald-400 dark:to-green-400 rounded-full" />
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-slate-500 to-blue-500 dark:from-slate-400 dark:to-blue-400 rounded-full" />
               </h3>
             </div>
           )
         } else if (isIngredientList) {
           return (
-            <div key={index} className="bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-900/20 dark:via-green-900/20 dark:to-teal-900/20 p-6 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 shadow-sm">
+            <div key={index} className="bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-slate-900/20 dark:via-gray-900/20 dark:to-blue-900/20 p-6 rounded-2xl border border-slate-100 dark:border-slate-800/50 shadow-sm">
               {section.split("\n").map((line, lineIndex) => (
                 <div key={lineIndex} className="flex items-start gap-3 py-2 hover:bg-white/50 dark:hover:bg-black/10 rounded-lg px-2 transition-colors duration-200">
                   {!line.trim().startsWith("-") && !line.trim().startsWith("•") && line.trim() !== "" && (
-                    <span className="text-emerald-600 dark:text-emerald-400 mt-1 flex-shrink-0 font-bold text-lg">•</span>
+                    <span className="text-slate-600 dark:text-slate-400 mt-1 flex-shrink-0 font-bold text-lg">•</span>
                   )}
                   <span className="text-gray-800 dark:text-gray-200 leading-relaxed">{line}</span>
                 </div>
@@ -429,7 +504,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
               <ol key={index} className="list-none pl-0 space-y-4">
                 {lines.map((line, lineIndex) => (
                   <li key={lineIndex} className="flex items-start gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 hover:shadow-md transition-all duration-200">
-                    <div className="flex-shrink-0 bg-gradient-to-br from-emerald-500 to-green-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
+                    <div className="flex-shrink-0 bg-gradient-to-br from-slate-500 to-blue-600 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shadow-lg">
                       {lineIndex + 1}
                     </div>
                     <span className="text-gray-800 dark:text-gray-200 leading-relaxed flex-1">{line}</span>
@@ -440,6 +515,63 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId }) => 
           }
         }
       })}
+
+      {/* Image Gallery Modal */}
+      {showGalleryModal && allImages.length > 0 && (
+        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={() => setShowGalleryModal(false)}>
+          <div className="relative max-w-4xl max-h-[90vh] w-full mx-4">
+            {/* Close button */}
+            <button
+              onClick={() => setShowGalleryModal(false)}
+              className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 z-10 backdrop-blur-sm"
+            >
+              <X className="h-6 w-6" />
+            </button>
+
+            {/* Navigation arrows */}
+            {allImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 z-10 backdrop-blur-sm"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 z-10 backdrop-blur-sm"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </>
+            )}
+
+            {/* Image counter */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+              {currentImageIndex + 1} / {allImages.length}
+              {currentImageIndex === 0 && originalImage && (
+                <span className="ml-2 text-slate-400">(Original)</span>
+              )}
+            </div>
+
+            {/* Main image */}
+            <div
+              className="relative w-full h-full flex items-center justify-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative max-w-full max-h-full">
+                <Image
+                  src={allImages[currentImageIndex]}
+                  alt={`Imagen ${currentImageIndex + 1}`}
+                  width={800}
+                  height={600}
+                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

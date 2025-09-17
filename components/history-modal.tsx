@@ -135,6 +135,15 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
 
     // Find the item to delete and remove its associated images
     const itemToDelete = history.find(item => item.id === id)
+    const recipeTitle = itemToDelete?.title || extractRecipeTitle(itemToDelete?.analysis || '')
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(`¿Está seguro de que desea eliminar la receta "${recipeTitle}"?\n\nEsta acción no se puede deshacer.`)
+
+    if (!confirmed) {
+      return
+    }
+
     if (itemToDelete?.recipeId) {
       localStorage.removeItem(`recipe-images-${itemToDelete.recipeId}`)
     }
@@ -145,13 +154,20 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
   }
 
   const clearAllHistory = () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm(`¿Está seguro de que desea eliminar TODAS las recetas (${history.length} recetas)?\n\nEsta acción no se puede deshacer y eliminará todas sus recetas guardadas.`)
+
+    if (!confirmed) {
+      return
+    }
+
     // Remove all recipe images from localStorage
     history.forEach(item => {
       if (item.recipeId) {
         localStorage.removeItem(`recipe-images-${item.recipeId}`)
       }
     })
-    
+
     setHistory([])
     localStorage.removeItem("recipeHistory")
   }
@@ -188,7 +204,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
       <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-2xl">
-            <ChefHat className="h-8 w-8 text-emerald-600" />
+            <ChefHat className="h-8 w-8 text-slate-600" />
             Mis Recetas
           </DialogTitle>
         </DialogHeader>
@@ -214,13 +230,13 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
                 {/* Todas las recetas */}
                 <motion.div
                   className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedFolder === undefined ? 'bg-emerald-100 dark:bg-emerald-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                    selectedFolder === undefined ? 'bg-slate-100 dark:bg-slate-900/20' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
                   onClick={() => setSelectedFolder(undefined)}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <ChefHat className="h-5 w-5 text-emerald-600" />
+                  <ChefHat className="h-5 w-5 text-slate-600" />
                   <span className="flex-1 font-medium">Todas las recetas</span>
                   <span className="text-sm text-gray-500 bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded-full">
                     {history.length}
