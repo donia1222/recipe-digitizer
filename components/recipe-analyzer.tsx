@@ -321,6 +321,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
       }
     }
     return 'Mein Rezept'
+    
   }
 
   return (
