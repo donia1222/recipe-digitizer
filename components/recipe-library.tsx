@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users, LogOut } from "lucide-react"
+import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users, LogOut, ArrowLeft } from "lucide-react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
@@ -34,10 +34,11 @@ interface RecipeLibraryProps {
   onUploadImage: (file: File, onProgress?: (progress: number) => void, onComplete?: () => void) => void
   onTakePhoto: (onPhotoTaken: (imageData: string) => void) => void
   onStartAnalysis: () => void
+  onBackToHome?: () => void
   handleLogout: () => void
 }
 
-const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew, onUploadImage, onTakePhoto, onStartAnalysis, handleLogout }) => {
+const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew, onUploadImage, onTakePhoto, onStartAnalysis, onBackToHome, handleLogout }) => {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [folders, setFolders] = useState<RecipeFolder[]>([])
   const [selectedFolder, setSelectedFolder] = useState<string | undefined>(undefined)
@@ -374,16 +375,26 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
         <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
+              {onBackToHome && (
+                <Button
+                  onClick={onBackToHome}
+                  variant="ghost"
+                  size="sm"
+                  className="p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full"
+                >
+                  <ArrowLeft className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </Button>
+              )}
               <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Home className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-sm sm:text-base lg:text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                  Altersheim Gärbi
+                  Rezept Bibliothek
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  <ChefHat className="h-3 w-3" />
-                  Digitalisierung von Rezepten
+                  <BookOpen className="h-3 w-3" />
+                  Ihre digitalisierten Rezepte
                 </p>
               </div>
             </div>

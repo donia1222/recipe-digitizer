@@ -14,6 +14,7 @@ import RecipeAnalyzer from "@/components/recipe-analyzer"
 import SettingsModal from "@/components/settings-modal"
 import LoadingOverlay from "@/components/loading-overlay"
 import RecipeLibrary from "@/components/recipe-library"
+import HomeDashboard from "@/components/home-dashboard"
 import { analyzeRecipeImage, recalculateServings } from "@/lib/actions"
 
 interface RecipeDigitizerProps {
@@ -33,7 +34,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
   const [showCameraModal, setShowCameraModal] = useState<boolean>(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null)
-  const [currentView, setCurrentView] = useState<'library' | 'analyze'>('library')
+  const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze'>('home')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
@@ -609,7 +610,12 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
 
   return (
     <div>
-      {currentView === 'library' ? (
+      {currentView === 'home' ? (
+        <HomeDashboard
+          onStartDigitalization={() => setCurrentView('library')}
+          handleLogout={handleLogout}
+        />
+      ) : currentView === 'library' ? (
         <RecipeLibrary
           onSelectItem={(item) => {
             setImage(item.image)
@@ -683,6 +689,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
             handleCameraCapture()
           }}
           onStartAnalysis={() => setCurrentView('analyze')}
+          onBackToHome={() => setCurrentView('home')}
           handleLogout={handleLogout}
         />
       ) : (
@@ -693,7 +700,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
             <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => setCurrentView('library')}
+                  onClick={() => setCurrentView('home')}
                   size="lg"
                   className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0"
                 >
