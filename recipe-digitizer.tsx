@@ -40,6 +40,20 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
   const [photoCallback, setPhotoCallback] = useState<((imageData: string) => void) | null>(null)
 
+  // Extract recipe title from analysis
+  const getRecipeTitle = (recipe: string) => {
+    const lines = recipe.split('\n').filter(line => line.trim())
+    for (let line of lines.slice(0, 5)) {
+      if (line.length < 60 && !line.toLowerCase().includes('ingredient') &&
+          !line.toLowerCase().includes('zutaten') && !line.toLowerCase().includes('instruction') &&
+          !line.toLowerCase().includes('schritt') && !line.toLowerCase().includes('portion') &&
+          !line.includes('cup') && !line.includes('tbsp') && !line.includes('tsp') &&
+          !line.includes('ml') && !line.includes('g ') && !line.includes('oz')) {
+        return line.trim()
+      }
+    }
+    return 'Mein Rezept'
+  }
 
   // Interval beim Unmount bereinigen
   useEffect(() => {
@@ -675,25 +689,28 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
         // Vista de receta guardada - solo análisis con imágenes
         <div>
           {/* Header principal */}
-          <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b border-slate-200/20 dark:border-gray-700/20">
-            <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                <div className="flex items-center gap-4">
-                  <Button
-                    onClick={() => setCurrentView('library')}
-                    size="lg"
-                    className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3"
-                  >
-                    <ArrowLeft className="h-5 w-5 mr-2" />
-                    Zurück zur Bibliothek
-                  </Button>
+          <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b-4 border-blue-500 shadow-lg">
+            <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setCurrentView('library')}
+                  size="lg"
+                  className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+
+                <div className="inline-flex items-center px-3 py-1.5 bg-blue-100/60 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-300/60 dark:border-blue-600/60 rounded-full shadow-lg">
+                  <h1 className="text-base sm:text-lg lg:text-xl font-bold text-blue-800 dark:text-blue-200 truncate">
+                    {analysis ? (getRecipeTitle(analysis).length > 40 ? getRecipeTitle(analysis).substring(0, 40) + '...' : getRecipeTitle(analysis)) : 'Rezept'}
+                  </h1>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Recipe Analysis */}
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8 max-w-4xl pt-24 sm:pt-28">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8 max-w-4xl pt-32 sm:pt-36 lg:pt-40">
             {analysis && (
               <RecipeAnalyzer
                 recipe={analysis}

@@ -46,7 +46,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editFolderName, setEditFolderName] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
   const [showSidebar, setShowSidebar] = useState(false)
   const [imageIndices, setImageIndices] = useState<{[key: number]: number}>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -313,6 +313,48 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
     })
   }
 
+  const handleScanDocument = async () => {
+    try {
+      // Intentar usar la API Web Scanning si está disponible
+      if ('scanner' in navigator) {
+        // @ts-ignore - API experimental
+        const scanner = await navigator.scanner.requestDevice()
+        const scanResult = await scanner.scan()
+
+        if (scanResult && scanResult.imageData) {
+          setSelectedImageData(scanResult.imageData)
+          setShowConfirmModal(true)
+        }
+      } else {
+        // Fallback: Simular input file con accept específico para scanner
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/*'
+        input.capture = 'environment' // Priorizar cámara trasera/scanner
+
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0]
+          if (file) {
+            const reader = new FileReader()
+            reader.onload = (event) => {
+              if (event.target?.result) {
+                setSelectedImageData(event.target.result as string)
+                setShowConfirmModal(true)
+              }
+            }
+            reader.readAsDataURL(file)
+          }
+        }
+
+        input.click()
+      }
+    } catch (error) {
+      console.error('Error al acceder al scanner:', error)
+      // Fallback a selección de archivo normal
+      triggerFileInput()
+    }
+  }
+
   const filteredHistory = history.filter(item => {
     const matchesSearch = searchTerm === "" ||
       item.analysis.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -381,19 +423,23 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   variant="outline"
                   size="sm"
                   onClick={() => setShowSidebar(!showSidebar)}
-                  className="lg:hidden bg-slate-100/80 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 border-slate-200 dark:border-slate-700 px-3 py-2 flex items-center gap-2"
+                  className="lg:hidden bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 dark:hover:from-blue-800/40 dark:hover:to-indigo-800/40 border-blue-200/50 dark:border-blue-700/50 px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all duration-200"
                 >
-                  <span className="text-slate-700 dark:text-slate-300 font-medium text-sm">Kategorien</span>
-                  <Filter size={14} className="text-slate-600 dark:text-slate-400" />
+                  <span className="text-blue-700 dark:text-blue-300 font-semibold text-sm">Kategorien</span>
+                  <Filter size={14} className="text-blue-600 dark:text-blue-400 ml-1" />
                 </Button>
               </div>
 
-              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+              <div className="flex items-center gap-1 bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-800 dark:to-slate-800 rounded-full p-1 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
-                  className="h-8 w-8 p-0"
+                  className={`h-9 w-9 p-0 rounded-full transition-all duration-200 ${
+                    viewMode === 'grid'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
                 >
                   <Grid3x3 size={16} />
                 </Button>
@@ -401,7 +447,11 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
-                  className="h-8 w-8 p-0"
+                  className={`h-9 w-9 p-0 rounded-full transition-all duration-200 ${
+                    viewMode === 'list'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600 dark:hover:text-blue-400'
+                  }`}
                 >
                   <List size={16} />
                 </Button>
@@ -411,7 +461,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
         </div>
       )}
 
-      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8" style={{ paddingTop: history.length > 0 ? '8px' : '80px' }}>
+      <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-8 pb-20" style={{ paddingTop: history.length > 0 ? '8px' : '80px' }}>
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-8">
           {showSidebar && (
             <>
@@ -623,28 +673,6 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
           )}
 
           <div className="flex-1 min-w-0 order-1 lg:order-2">
-            {history.length > 0 && (
-              <div className="mb-8 mt-2 flex justify-end">
-                <div className="flex flex-row gap-2 sm:gap-6 flex-wrap justify-end">
-                  <Button
-                    onClick={handleTakePhoto}
-                    size="sm"
-                    className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-nowrap"
-                  >
-                    <Camera size={14} className="mr-1" />
-                    Foto aufnehmen
-                  </Button>
-                  <Button
-                    onClick={triggerFileInput}
-                    size="sm"
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm whitespace-nowrap"
-                  >
-                    <Upload size={14} className="mr-1" />
-                    Bild hochladen
-                  </Button>
-                </div>
-              </div>
-            )}
 
             {filteredHistory.length > 0 ? (
               <div>
@@ -814,7 +842,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   {searchTerm
                     ? `Wir haben keine Rezepte gefunden, die mit "${searchTerm}" übereinstimmen. Versuchen Sie andere Begriffe.`
                     : selectedFolder === undefined
-                      ? 'Beginnen Sie mit der Digitalisierung Ihres ersten Rezepts. Machen Sie ein Foto oder laden Sie ein Bild hoch.'
+                      ? 'Beginnen Sie mit der Digitalisierung Ihres ersten Rezepts. Machen Sie ein Foto, scannen Sie ein Dokument oder laden Sie ein Bild hoch.'
                       : 'Dieser Ordner hat noch keine Rezepte. Verschieben Sie einige Rezepte hierher oder erstellen Sie ein neues.'
                   }
                 </p>
@@ -826,6 +854,14 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   >
                     <Camera size={20} className="mr-3" />
                     Foto aufnehmen
+                  </Button>
+                  <Button
+                    onClick={handleScanDocument}
+                    size="lg"
+                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3"
+                  >
+                    <Scan size={20} className="mr-3" />
+                    Scannen
                   </Button>
                   <Button
                     onClick={triggerFileInput}
@@ -922,6 +958,38 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Footer fijo con botones principales */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-t border-gray-200 dark:border-gray-700 shadow-lg">
+        <div className="container mx-auto px-4 sm:px-6 py-3">
+          <div className="flex justify-center gap-3 sm:gap-4">
+            <Button
+              onClick={handleTakePhoto}
+              size="sm"
+              className="flex-1 max-w-[120px] bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-4 py-2"
+            >
+              <Camera size={16} className="mr-2" />
+              <span className="text-xs sm:text-sm">Foto</span>
+            </Button>
+            <Button
+              onClick={handleScanDocument}
+              size="sm"
+              className="flex-1 max-w-[120px] bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-4 py-2"
+            >
+              <Scan size={16} className="mr-2" />
+              <span className="text-xs sm:text-sm">Scanner</span>
+            </Button>
+            <Button
+              onClick={triggerFileInput}
+              size="sm"
+              className="flex-1 max-w-[120px] bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-4 py-2"
+            >
+              <Upload size={16} className="mr-2" />
+              <span className="text-xs sm:text-sm">Upload</span>
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

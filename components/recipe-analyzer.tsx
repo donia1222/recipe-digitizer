@@ -327,12 +327,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
   return (
     <div className="space-y-6 mb-20">
       {/* Recipe Title */}
-      <div className="text-center py-6 bg-gradient-to-r from-slate-50 via-gray-50 to-blue-50 dark:from-gray-800/50 dark:via-gray-700/50 dark:to-gray-800/50 rounded-2xl border border-slate-200/30 dark:border-gray-600/30">
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-700 via-gray-700 to-blue-700 dark:from-slate-300 dark:via-gray-300 dark:to-blue-300 bg-clip-text text-transparent mb-2">
-          {getRecipeTitle()}
-        </h1>
-        <div className="w-24 h-1 bg-gradient-to-r from-slate-500 to-blue-500 mx-auto rounded-full"></div>
-      </div>
 
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-2 sm:justify-between border-b border-gray-200 dark:border-gray-700 pb-4">
@@ -370,53 +364,56 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
           </Dialog>
         </div>
         
-        <div className="flex flex-wrap gap-3 mt-2 sm:mt-0">
-          <Button
-            onClick={handleShare}
-            size="sm"
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Share className="h-4 w-4" />
-            <span>Teilen</span>
-          </Button>
-          <Button
-            onClick={handleSaveAsImage}
-            size="sm"
-            className="flex items-center gap-2 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Download className="h-4 w-4" />
-            <span>Herunterladen</span>
-          </Button>
-          <Button
-            onClick={handlePrint}
-            size="sm"
-            className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-          >
-            <Printer className="h-4 w-4" />
-            <span>Drucken</span>
-          </Button>
+        <div className="overflow-x-auto mt-2 sm:mt-0">
+          <div className="flex gap-3 min-w-max pb-2">
+            <Button
+              onClick={handleShare}
+              size="sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+            >
+              <Share className="h-4 w-4" />
+              <span>Teilen</span>
+            </Button>
+            <Button
+              onClick={handleSaveAsImage}
+              size="sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+            >
+              <Download className="h-4 w-4" />
+              <span>Herunterladen</span>
+            </Button>
+            <Button
+              onClick={handlePrint}
+              size="sm"
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap"
+            >
+              <Printer className="h-4 w-4" />
+              <span>Drucken</span>
+            </Button>
+          </div>
         </div>
       </div>
       
       {/* Recipe Images Gallery */}
       {allImages.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-3 mt-8">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
             <ImagePlus className="h-4 w-4 text-slate-600 dark:text-slate-400" />
             Rezeptbilder ({allImages.length})
           </h4>
-          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {allImages.map((image, index) => (
-              <div key={index} className="relative group">
-                <div
-                  className="aspect-square relative overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
-                  onClick={() => openGallery(index)}
-                >
-                  <Image
-                    src={image}
-                    alt={index === 0 && originalImage ? "Imagen original" : `Rezeptbild ${originalImage ? index : index + 1}`}
-                    fill
-                    className="object-cover"
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 px-4 py-4" style={{ minWidth: 'max-content' }}>
+              {allImages.map((image, index) => (
+                <div key={index} className="relative group flex-none">
+                  <div
+                    className="w-24 h-24 sm:w-32 sm:h-32 relative overflow-hidden rounded-lg shadow-md border border-gray-200 dark:border-gray-700 cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => openGallery(index)}
+                  >
+                    <Image
+                      src={image}
+                      alt={index === 0 && originalImage ? "Imagen original" : `Rezeptbild ${originalImage ? index : index + 1}`}
+                      fill
+                      className="object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
@@ -441,6 +438,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
                 ) : null}
               </div>
             ))}
+            </div>
           </div>
         </div>
       )}
@@ -519,14 +517,14 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
 
       {/* Image Gallery Modal */}
       {showGalleryModal && allImages.length > 0 && (
-        <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50" onClick={() => setShowGalleryModal(false)}>
-          <div className="relative max-w-4xl max-h-[90vh] w-full mx-4">
+        <div className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-slate-900/98 to-gray-900/95 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => setShowGalleryModal(false)}>
+          <div className="relative max-w-5xl max-h-[95vh] w-full mx-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden">
             {/* Close button */}
             <button
               onClick={() => setShowGalleryModal(false)}
-              className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 text-white rounded-full p-2 z-10 backdrop-blur-sm"
+              className="absolute top-4 right-4 bg-gradient-to-br from-red-500/80 to-red-600/80 hover:from-red-600/90 hover:to-red-700/90 text-white rounded-full p-3 z-10 backdrop-blur-sm shadow-lg transition-all duration-200"
             >
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             </button>
 
             {/* Navigation arrows */}
@@ -534,13 +532,13 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 z-10 backdrop-blur-sm"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-br from-blue-500/80 to-blue-600/80 hover:from-blue-600/90 hover:to-blue-700/90 text-white rounded-full p-4 z-10 backdrop-blur-sm shadow-lg transition-all duration-200"
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white rounded-full p-3 z-10 backdrop-blur-sm"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gradient-to-br from-blue-500/80 to-blue-600/80 hover:from-blue-600/90 hover:to-blue-700/90 text-white rounded-full p-4 z-10 backdrop-blur-sm shadow-lg transition-all duration-200"
                 >
                   <ChevronRight className="h-6 w-6" />
                 </button>
@@ -548,25 +546,27 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({ recipe, recipeId, origi
             )}
 
             {/* Image counter */}
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
-              {currentImageIndex + 1} / {allImages.length}
+            <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-slate-800/90 to-slate-700/90 text-white px-4 py-2 rounded-full text-sm backdrop-blur-md shadow-lg border border-white/10">
+              <span className="font-semibold">{currentImageIndex + 1}</span>
+              <span className="mx-1 text-slate-300">/</span>
+              <span className="text-slate-200">{allImages.length}</span>
               {currentImageIndex === 0 && originalImage && (
-                <span className="ml-2 text-slate-400">(Original)</span>
+                <span className="ml-2 px-2 py-1 bg-blue-500/80 text-white text-xs rounded-full">(Original)</span>
               )}
             </div>
 
             {/* Main image */}
             <div
-              className="relative w-full h-full flex items-center justify-center"
+              className="relative w-full h-full flex items-center justify-center p-8"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="relative max-w-full max-h-full">
+              <div className="relative max-w-full max-h-full bg-white/5 backdrop-blur-sm rounded-xl border border-white/20 shadow-2xl overflow-hidden">
                 <Image
                   src={allImages[currentImageIndex]}
                   alt={`Imagen ${currentImageIndex + 1}`}
                   width={800}
                   height={600}
-                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                  className="max-w-full max-h-[75vh] object-contain rounded-xl"
                 />
               </div>
             </div>
