@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users, LogOut, ArrowLeft } from "lucide-react"
+import { Trash2, Folder, FolderPlus, Edit3, Check, X, Star, Calendar, ChefHat, Search, Plus, Grid3x3, List, Filter, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, FileText, BookOpen, Home, Heart, Users, LogOut, ArrowLeft, Shield } from "lucide-react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
@@ -399,16 +399,27 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
               </div>
             </div>
 
-            {/* Botón logout siempre visible */}
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              size="sm"
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2"
-              title="Ausloggen"
-            >
-              <LogOut size={18} />
-            </Button>
+            {/* Botones admin y logout */}
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => window.location.href = '/admin'}
+                variant="ghost"
+                size="sm"
+                className="text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2"
+                title="Panel de Administración"
+              >
+                <Shield size={18} />
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                size="sm"
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-2"
+                title="Ausloggen"
+              >
+                <LogOut size={18} />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -857,32 +868,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                       : 'Dieser Ordner hat noch keine Rezepte. Verschieben Sie einige Rezepte hierher oder erstellen Sie ein neues.'
                   }
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Button
-                    onClick={handleTakePhoto}
-                    size="lg"
-                    className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3"
-                  >
-                    <Camera size={20} className="mr-3" />
-                    Foto aufnehmen
-                  </Button>
-                  <Button
-                    onClick={handleScanDocument}
-                    size="lg"
-                    className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3"
-                  >
-                    <Scan size={20} className="mr-3" />
-                    Scannen
-                  </Button>
-                  <Button
-                    onClick={triggerFileInput}
-                    size="lg"
-                    className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-3"
-                  >
-                    <Upload size={20} className="mr-3" />
-                    Bild hochladen
-                  </Button>
-                </div>
+         
               </div>
             )}
           </div>

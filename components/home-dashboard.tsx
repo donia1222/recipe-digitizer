@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Upload, Scan, ChefHat, Brain, Eye, MessageCircle, ArrowRight, Sparkles, Utensils, Bot, Users, Heart, BookOpen } from "lucide-react"
+import { Camera, Upload, Scan, ChefHat, Brain, Eye, MessageCircle, ArrowRight, Sparkles, Utensils, Bot, Users, Heart, BookOpen, LogOut, Shield } from "lucide-react"
 
 interface HomeDashboardProps {
   onStartDigitalization: () => void
@@ -33,24 +33,34 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header fijo */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b-4 border-blue-500 shadow-lg">
-        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                 <ChefHat className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Rezept Digitalisierung
-              </h1>
+       
             </div>
 
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 dark:from-red-900/30 dark:to-red-800/30 border-red-200/50 dark:border-red-700/50 text-red-700 dark:text-red-300 rounded-full px-4 py-2"
-            >
-              Abmelden
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => window.location.href = '/admin'}
+                variant="outline"
+                className="bg-gradient-to-r from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 border-blue-200/50 dark:border-blue-700/50 text-blue-700 dark:text-blue-300 rounded-full px-4 py-2"
+                title="Panel de Administración"
+              >
+                <Shield className="h-4 w-4 mr-2" />
+                Admin Panel
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="bg-gradient-to-r from-red-50 to-red-100 hover:from-red-100 hover:to-red-200 dark:from-red-900/30 dark:to-red-800/30 border-red-200/50 dark:border-red-700/50 text-red-700 dark:text-red-300 rounded-full px-4 py-2"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Abmelden
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -60,15 +70,8 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
         {/* Navegación principal */}
         <div className="mb-12">
           <div className="text-center mb-8">
-            <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-400 via-blue-600 to-blue-800 dark:from-blue-300 dark:via-blue-500 dark:to-blue-700 bg-clip-text text-transparent mb-6 leading-tight">
-              Willkommen bei Ihrem Rezept-Assistenten
-            </h2>
-            <p className="text-lg bg-gradient-to-r from-gray-600 via-slate-700 to-gray-800 dark:from-gray-300 dark:via-slate-300 dark:to-gray-200 bg-clip-text text-transparent max-w-2xl mx-auto font-medium min-h-[3.5rem] flex items-center justify-center">
-              <span className="inline-block">
-                {typedText}
-                <span className="inline-block w-0.5 h-6 bg-gradient-to-r from-blue-600 to-purple-600 ml-1 animate-pulse"></span>
-              </span>
-            </p>
+
+
           </div>
 
           {/* Botón principal de Digitalizar */}
@@ -162,22 +165,25 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
           </Card>
 
           {/* Administrator - TERCER LUGAR */}
-          <Card className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-200/50 dark:border-red-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+          <Card
+            className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-200/50 dark:border-red-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+            onClick={() => window.location.href = '/admin'}
+          >
             <CardHeader className="pb-4">
               <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-rose-500 rounded-full flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 mb-4">
-                <Users className="h-8 w-8 text-white" />
+                <Shield className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                Administrator
+               Administrationsbereich
               </CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
-                Benutzer verwalten, Funktionen konfigurieren, Konten administrieren
+                Verwalten von Benutzern, Rezepten, Subadministratoren und Systemkonfiguration
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-                <Sparkles className="h-4 w-4" />
-                <span>Bald verfügbar</span>
+                <ArrowRight className="h-4 w-4" />
+                <span>Admin</span>
               </div>
             </CardContent>
           </Card>
