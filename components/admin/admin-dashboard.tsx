@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Shield, Users, ChefHat, Bell, Settings, BookOpen, UserCheck, UserPlus, Trash2, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Shield, Users, ChefHat, Bell, Trash2, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react"
 import RecipeManagement from "./recipe-management"
 import UserManagement from "./user-management"
 import SubAdminManagement from "./sub-admin-management"
@@ -181,29 +181,29 @@ export default function AdminDashboard() {
 
       {/* Sección de notificaciones */}
       {notifications > 0 && (
-        <Card className="bg-gradient-to-r from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20 border-gray-200 dark:border-gray-800">
+        <Card className="bg-white/70 backdrop-blur-md border-gray-200/50 shadow-xl">
           <CardHeader>
             <div className="flex items-center gap-3">
-              <Bell className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-              <CardTitle className="text-gray-800 dark:text-gray-200">
+              <Bell className="h-6 w-6 text-gray-700" />
+              <CardTitle className="text-gray-800">
                 Wichtige Benachrichtigungen
               </CardTitle>
-              <Badge variant="destructive" className="bg-slate-600">{notifications}</Badge>
+              <Badge variant="destructive" className="bg-blue-600">{notifications}</Badge>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex items-center justify-between bg-white/50 dark:bg-gray-800/50 p-3 rounded-lg">
+              <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm p-3 rounded-lg border border-gray-200/30">
                 <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-5 w-5 text-gray-600" />
-                  <span className="text-gray-800 dark:text-gray-200">
+                  <AlertTriangle className="h-5 w-5 text-gray-700" />
+                  <span className="text-gray-800">
                     {notifications} Rezepte warten auf Genehmigung
                   </span>
                 </div>
                 <Button
                   onClick={() => setCurrentView('pending')}
                   size="sm"
-                  className="bg-slate-600 hover:bg-slate-700 text-white"
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <Eye className="h-4 w-4 mr-1" />
                   Überprüfen
@@ -214,70 +214,26 @@ export default function AdminDashboard() {
         </Card>
       )}
 
-      {/* Schnellaktionen */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Schnellaktionen
-          </CardTitle>
-          <CardDescription>
-            Verwalten Sie die Hauptaspekte des Systems
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button
-              onClick={() => setCurrentView('recipes')}
-              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white h-16 flex-col gap-2"
-            >
-              <BookOpen className="h-5 w-5" />
-              Rezepte verwalten
-            </Button>
-            <Button
-              onClick={() => setCurrentView('users')}
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white h-16 flex-col gap-2"
-            >
-              <UserCheck className="h-5 w-5" />
-              Benutzer verwalten
-            </Button>
-            <Button
-              onClick={() => setCurrentView('subadmins')}
-              className="bg-gradient-to-r from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 text-white h-16 flex-col gap-2"
-            >
-              <UserPlus className="h-5 w-5" />
-              Sub-Administratoren
-            </Button>
-            <Button
-              onClick={() => setCurrentView('pending')}
-              className="bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white h-16 flex-col gap-2"
-            >
-              <Clock className="h-5 w-5" />
-              Ausstehende Rezepte
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Letzte Aktivitäten */}
-      <Card>
+      <Card className="bg-white/70 backdrop-blur-md border-gray-200/50 shadow-xl">
         <CardHeader>
-          <CardTitle>Letzte Aktivitäten</CardTitle>
-          <CardDescription>Neueste Aktionen im System</CardDescription>
+          <CardTitle className="text-gray-800">Letzte Aktivitäten</CardTitle>
+          <CardDescription className="text-gray-600">Neueste Aktionen im System</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {pendingRecipes.slice(0, 3).map((recipe) => (
-              <div key={recipe.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div key={recipe.id} className="flex items-center justify-between p-3 bg-white/60 backdrop-blur-sm rounded-lg border border-gray-200/30">
                 <div className="flex items-center gap-3">
                   <ChefHat className="h-5 w-5 text-blue-600" />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{recipe.title}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Gesendet von {recipe.user}</p>
+                    <p className="font-medium text-gray-800">{recipe.title}</p>
+                    <p className="text-sm text-gray-600">Gesendet von {recipe.user}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-slate-600 border-slate-600">
+                  <Badge variant="outline" className="text-blue-600 border-blue-600 bg-blue-50">
                     Ausstehend
                   </Badge>
                   <span className="text-sm text-gray-500">{recipe.date}</span>
@@ -291,9 +247,9 @@ export default function AdminDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 backdrop-blur-xl border-b border-blue-700 sticky top-0 z-50">
+      <div className="bg-white/95 backdrop-blur-xl border-b border-gray-200/60 sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -301,20 +257,20 @@ export default function AdminDashboard() {
                 onClick={handleBackToMain}
                 variant="outline"
                 size="sm"
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30 rounded-full w-10 h-10 p-0"
+                className="bg-blue-50/80 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-full w-10 h-10 p-0"
                 title="Zurück zur Startseite"
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-white" />
+                <div className="w-10 h-10 bg-blue-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <Shield className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">
+                  <h1 className="text-2xl font-bold text-blue-800">
                     Verwaltungspanel
                   </h1>
-                  <p className="text-sm text-blue-100">
+                  <p className="text-sm text-blue-600/80">
                     Vollständige Systemverwaltung
                   </p>
                 </div>
@@ -324,11 +280,11 @@ export default function AdminDashboard() {
             {notifications > 0 && (
               <Button
                 onClick={() => setCurrentView('pending')}
-                className="bg-white/20 border-white/30 text-white hover:bg-white/30 relative"
+                className="bg-blue-50/80 border-blue-200 text-blue-600 hover:bg-blue-100 relative"
               >
                 <Bell className="h-4 w-4 mr-2" />
                 Benachrichtigungen
-                <Badge className="absolute -top-2 -right-2 bg-slate-600 text-white">
+                <Badge className="absolute -top-2 -right-2 bg-blue-600 text-white">
                   {notifications}
                 </Badge>
               </Button>
@@ -339,18 +295,19 @@ export default function AdminDashboard() {
 
       {/* Navegación de vistas */}
       {currentView !== 'dashboard' && (
-        <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur border-b border-gray-200 dark:border-gray-800">
+        <div className="bg-white/70 backdrop-blur-md border-b border-gray-200/50">
           <div className="container mx-auto px-6 py-3">
             <div className="flex items-center gap-4">
               <Button
                 onClick={() => setCurrentView('dashboard')}
                 variant="ghost"
                 size="sm"
+                className="text-gray-700 hover:bg-gray-100"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Dashboard
               </Button>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 / {currentView === 'recipes' && 'Rezepteverwaltung'}
                 {currentView === 'users' && 'Benutzerverwaltung'}
                 {currentView === 'subadmins' && 'Sub-Administratoren'}

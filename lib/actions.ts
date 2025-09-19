@@ -19,7 +19,7 @@ export async function analyzeRecipeImage(imageBase64: string) {
           {
             role: "system",
             content:
-              "Extrahiere das Rezept exakt aus dem Bild. Verwende den EXAKTEN Titel/Namen wie er im Bild steht - übersetze oder ändere ihn NICHT. Gib nur aus: Titel (wie im Bild), Zutaten-Liste, Zubereitungsschritte. Keine Tipps, Erklärungen oder Kommentare. Nur die reine Information.",
+              "Extrahiere das Rezept exakt aus dem Bild. Verwende den EXAKTEN Titel/Namen wie er im Bild steht - übersetze oder ändere ihn NICHT. Format: Titel als erste Zeile, dann direkt die Zutatenliste (ohne 'Zutaten:' Überschrift), dann die Zubereitungsschritte. Keine zusätzlichen Überschriften, Tipps oder Kommentare.",
           },
           {
             role: "user",

@@ -8,14 +8,17 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Camera, Upload, Settings, ChefHat, FileText, Plus, RefreshCw, X, ArrowLeft, Sparkles, LogOut, Shield } from "lucide-react"
+import { Camera, Upload, Settings, ChefHat, FileText, Plus, RefreshCw, X, ArrowLeft, Sparkles, LogOut, Shield, Users } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import RecipeAnalyzer from "@/components/recipe-analyzer"
 import SettingsModal from "@/components/settings-modal"
 import LoadingOverlay from "@/components/loading-overlay"
 import RecipeLibrary from "@/components/recipe-library"
 import HomeDashboard from "@/components/home-dashboard"
+import RecipeArchivePage from "@/components/recipe-archive-page"
+import UserPage from "@/components/user-page"
 import { analyzeRecipeImage, recalculateServings } from "@/lib/actions"
+import ServingsModal from "@/components/servings-modal"
 
 interface RecipeDigitizerProps {
   handleLogout: () => void
@@ -27,19 +30,52 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
   const [loading, setLoading] = useState<boolean>(false)
   const [recalculatingServings, setRecalculatingServings] = useState<boolean>(false)
   const [progress, setProgress] = useState<number>(0)
-  const [servings, setServings] = useState<number>(2)
-  const [servingsInput, setServingsInput] = useState<string>("2")
-  const [originalServings, setOriginalServings] = useState<number>(2)
+  const [servings, setServings] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('recipe-servings')
+      return saved ? parseInt(saved) : 2
+    }
+    return 2
+  })
+  const [servingsInput, setServingsInput] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('recipe-servings')
+      return saved ? saved : "2"
+    }
+    return "2"
+  })
+  const [originalServings, setOriginalServings] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('recipe-original-servings')
+      return saved ? parseInt(saved) : 2
+    }
+    return 2
+  })
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false)
   const [showCameraModal, setShowCameraModal] = useState<boolean>(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null)
-  const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze'>('home')
+  const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
+  const [showServingsModal, setShowServingsModal] = useState<boolean>(false)
+  const [previousView, setPreviousView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
   const [photoCallback, setPhotoCallback] = useState<((imageData: string) => void) | null>(null)
+
+  // Save servings to localStorage whenever they change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recipe-servings', servings.toString())
+    }
+  }, [servings])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('recipe-original-servings', originalServings.toString())
+    }
+  }, [originalServings])
 
   // Extract recipe title from analysis
   const getRecipeTitle = (recipe: string) => {
@@ -72,6 +108,22 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
     }
     setProgress(0)
     setAnalysis("")
+  }
+
+  // Function to change view and save previous view
+  const changeView = (newView: 'home' | 'library' | 'analyze' | 'archive' | 'users') => {
+    setPreviousView(currentView)
+    setCurrentView(newView)
+  }
+
+  // Function to go back to previous view
+  const goBack = () => {
+    setCurrentView(previousView)
+  }
+
+  // Handler for recipe updates from edit functionality
+  const handleRecipeUpdate = (newRecipe: string) => {
+    setAnalysis(newRecipe)
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,7 +262,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
       
       // Cambiar a vista de análisis si estamos en la biblioteca
       if (currentView === 'library') {
-        setCurrentView('analyze')
+        changeView('analyze')
       }
 
       // Versuchen die ursprünglichen Portionen aus dem Rezept zu extrahieren
@@ -225,13 +277,21 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
       if (servingsMatch && servingsMatch[1]) {
         const extractedServings = Number.parseInt(servingsMatch[1], 10)
         setOriginalServings(extractedServings)
-        setServings(extractedServings)
-        setServingsInput(extractedServings.toString())
+        // Solo actualizar servings si es la primera vez o si no hay servings ajustados manualmente
+        if (servings === originalServings) {
+          setServings(extractedServings)
+          setServingsInput(extractedServings.toString())
+        }
       } else {
-        // Standard auf 2 setzen wenn keine Portionsinfo gefunden wurde
-        setOriginalServings(2)
-        setServings(2)
-        setServingsInput("2")
+        // Solo establecer por defecto si es la primera vez
+        if (originalServings === 2 && servings === 2) {
+          setOriginalServings(2)
+          setServings(2)
+          setServingsInput("2")
+        } else {
+          // Mantener las porciones ajustadas por el usuario
+          setOriginalServings(2)
+        }
       }
 
       setProgress(1)
@@ -256,8 +316,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
   }
 
   const handleManualRecalculation = async () => {
-    if (!analysis || servings === originalServings) return
-    await handleServingsRecalculation(servings)
+    setShowServingsModal(true)
   }
 
   const handleServingsRecalculation = async (newServings: number) => {
@@ -273,6 +332,8 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
 
       setAnalysis(result.analysis)
       setOriginalServings(newServings)
+      setServings(newServings)
+      setServingsInput(newServings.toString())
 
       // Erfolg-Toast anzeigen
       toast({
@@ -383,7 +444,7 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
               <Button
                 variant="outline"
                 onClick={() => {
-                  setCurrentView('library')
+                  changeView('library')
                   handleNewRecipe()
                 }}
                 className="bg-white/50 dark:bg-gray-800/50 border-gray-200/50 dark:border-gray-700/50"
@@ -550,21 +611,12 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
                         </span>
                         <Button
                           onClick={handleManualRecalculation}
-                          disabled={recalculatingServings || servings === originalServings}
+                          disabled={recalculatingServings}
                           size="sm"
                           className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {recalculatingServings ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
-                              Wird berechnet...
-                            </>
-                          ) : (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-1" />
-                              Berechnen
-                            </>
-                          )}
+                          <Users className="h-4 w-4 mr-1" />
+                          Ajustar porciones
                         </Button>
                       </div>
                     </div>
@@ -581,7 +633,15 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
                         </div>
                       )}
                       <div className="h-full max-h-[calc(100vh-120px)] sm:max-h-[calc(100vh-180px)] lg:max-h-[calc(100vh-250px)] overflow-y-auto p-3 sm:p-4 lg:p-6 pb-8 sm:pb-12 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-                        <RecipeAnalyzer recipe={analysis} recipeId={currentRecipeId || undefined} originalImage={image || undefined} />
+                        <RecipeAnalyzer
+                          recipe={analysis}
+                          recipeId={currentRecipeId || undefined}
+                          originalImage={image || undefined}
+                          onServingsClick={() => setShowServingsModal(true)}
+                          currentServings={servings}
+                          originalServings={originalServings}
+                          onRecipeUpdate={handleRecipeUpdate}
+                        />
                       </div>
                     </div>
                   </div>
@@ -612,16 +672,18 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
     <div>
       {currentView === 'home' ? (
         <HomeDashboard
-          onStartDigitalization={() => setCurrentView('library')}
+          onStartDigitalization={() => changeView('library')}
           handleLogout={handleLogout}
+          onOpenArchive={() => changeView('archive')}
+          onOpenUsers={() => changeView('users')}
         />
-      ) : currentView === 'library' ? (
-        <RecipeLibrary
-          onSelectItem={(item) => {
+      ) : currentView === 'archive' ? (
+        <RecipeArchivePage
+          onSelectRecipe={(item) => {
             setImage(item.image)
             setAnalysis(item.analysis)
             setCurrentRecipeId(item.recipeId || null)
-            setCurrentView('analyze')
+            changeView('analyze')
 
             // Extract servings from analysis if available
             const servingsMatch = item.analysis.match(/serves?\s+(\d+)/i) ||
@@ -639,7 +701,38 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
               setServingsInput("2")
             }
           }}
-          onCreateNew={() => setCurrentView('analyze')}
+          onBack={goBack}
+        />
+      ) : currentView === 'users' ? (
+        <UserPage
+          onBack={goBack}
+          onOpenArchive={() => changeView('archive')}
+        />
+      ) : currentView === 'library' ? (
+        <RecipeLibrary
+          onSelectItem={(item) => {
+            setImage(item.image)
+            setAnalysis(item.analysis)
+            setCurrentRecipeId(item.recipeId || null)
+            changeView('analyze')
+
+            // Extract servings from analysis if available
+            const servingsMatch = item.analysis.match(/serves?\s+(\d+)/i) ||
+                                  item.analysis.match(/für\s+(\d+)\s+person/i) ||
+                                  item.analysis.match(/(\d+)\s+portion/i)
+
+            if (servingsMatch && servingsMatch[1]) {
+              const extractedServings = parseInt(servingsMatch[1], 10)
+              setOriginalServings(extractedServings)
+              setServings(extractedServings)
+              setServingsInput(extractedServings.toString())
+            } else {
+              setOriginalServings(2)
+              setServings(2)
+              setServingsInput("2")
+            }
+          }}
+          onCreateNew={() => changeView('analyze')}
           onUploadImage={(file: File, onProgress, onComplete) => {
             resetState()
 
@@ -688,8 +781,8 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
             setPhotoCallback(() => onPhotoTaken)
             handleCameraCapture()
           }}
-          onStartAnalysis={() => setCurrentView('analyze')}
-          onBackToHome={() => setCurrentView('home')}
+          onStartAnalysis={() => changeView('analyze')}
+          onBackToHome={() => changeView('home')}
           handleLogout={handleLogout}
         />
       ) : (
@@ -698,20 +791,15 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
           {/* Header principal */}
           <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b-4 border-blue-500 shadow-lg">
             <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 lg:justify-center lg:relative">
                 <Button
-                  onClick={() => setCurrentView('home')}
+                  onClick={goBack}
                   size="lg"
-                  className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0"
+                  className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0 lg:absolute lg:left-0"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </Button>
 
-                <div className="inline-flex items-center px-3 py-1.5 bg-blue-100/60 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-300/60 dark:border-blue-600/60 rounded-full shadow-lg">
-                  <h1 className="text-base sm:text-lg lg:text-xl font-bold text-blue-800 dark:text-blue-200 truncate">
-                    {analysis ? (getRecipeTitle(analysis).length > 40 ? getRecipeTitle(analysis).substring(0, 40) + '...' : getRecipeTitle(analysis)) : 'Rezept'}
-                  </h1>
-                </div>
               </div>
             </div>
           </div>
@@ -723,6 +811,10 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
                 recipe={analysis}
                 recipeId={currentRecipeId || undefined}
                 originalImage={image || undefined}
+                onServingsClick={() => setShowServingsModal(true)}
+                currentServings={servings}
+                originalServings={originalServings}
+                onRecipeUpdate={handleRecipeUpdate}
               />
             )}
           </div>
@@ -786,6 +878,16 @@ export default function RecipeDigitizer({ handleLogout }: RecipeDigitizerProps) 
           </div>
         </div>
       )}
+
+      {/* Servings Modal */}
+      <ServingsModal
+        isOpen={showServingsModal}
+        onClose={() => setShowServingsModal(false)}
+        currentServings={servings}
+        originalServings={originalServings}
+        onAdjust={handleServingsRecalculation}
+        isLoading={recalculatingServings}
+      />
     </div>
   )
 }

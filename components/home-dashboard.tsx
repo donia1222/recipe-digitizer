@@ -4,14 +4,16 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Camera, Upload, Scan, ChefHat, Brain, Eye, MessageCircle, ArrowRight, Sparkles, Utensils, Bot, Users, Heart, BookOpen, LogOut, Shield } from "lucide-react"
+import { Camera, Upload, Scan, ChefHat, Brain, Eye, MessageCircle, ArrowRight, Sparkles, Utensils, Bot, Users, Heart, BookOpen, LogOut, Shield, Plus, Send } from "lucide-react"
 
 interface HomeDashboardProps {
   onStartDigitalization: () => void
   handleLogout: () => void
+  onOpenArchive: () => void
+  onOpenUsers: () => void
 }
 
-export default function HomeDashboard({ onStartDigitalization, handleLogout }: HomeDashboardProps) {
+export default function HomeDashboard({ onStartDigitalization, handleLogout, onOpenArchive, onOpenUsers }: HomeDashboardProps) {
   const [typedText, setTypedText] = useState("")
   const fullText = "Digitalisieren, erstellen und entdecken Sie Rezepte mit modernster KI-Technologie"
 
@@ -39,7 +41,9 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                 <ChefHat className="h-6 w-6 text-white" />
               </div>
-       
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200">
+                Altersheim Gärbi
+              </h1>
             </div>
 
             <div className="flex items-center gap-3">
@@ -123,7 +127,10 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
         {/* 3 Contenedores principales */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-8">
           {/* Rezept Archiv - PRIMER LUGAR */}
-          <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200/50 dark:border-emerald-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+          <Card
+            className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 border-emerald-200/50 dark:border-emerald-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+            onClick={onOpenArchive}
+          >
             <CardHeader className="pb-4">
               <div className="w-16 h-16 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 mb-4">
                 <BookOpen className="h-8 w-8 text-white" />
@@ -132,34 +139,57 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
                 Rezept Archiv
               </CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
-                Das Archiv der digitalisierten Rezepte durchsuchen und entdecken
+                Ihre digitalisierten Rezepte nach Kategorien organisieren und bearbeiten
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                <BookOpen className="h-4 w-4" />
-                <span>Bald verfügbar</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <BookOpen className="h-4 w-4" />
+                  <span>Rezepte verwalten</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <ChefHat className="h-4 w-4" />
+                  <span>Kategorien erstellen</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Heart className="h-4 w-4" />
+                  <span>Favoriten markieren</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Benutzer Management - SEGUNDO LUGAR */}
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group">
+          <Card
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+            onClick={onOpenUsers}
+          >
             <CardHeader className="pb-4">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-md group-hover:scale-105 transition-transform duration-300 mb-4">
-                <Heart className="h-8 w-8 text-white" />
+                <Users className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                Benutzer
+                Benutzer Profil
               </CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
-                Ihre Rezepte verwalten, neue Rezepte zum Inventar hinzufügen, Zusammenarbeit
+                Eigene Rezepte erstellen, verwalten und zur Sammlung beitragen
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
-                <Heart className="h-4 w-4" />
-                <span>Bald verfügbar</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <Plus className="h-4 w-4" />
+                  <span>Rezepte erstellen</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <BookOpen className="h-4 w-4" />
+                  <span>Eigene Sammlung</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                  <Send className="h-4 w-4" />
+                  <span>Admin Freigabe</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -187,6 +217,21 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        {/* Sección solo para administradores */}
+        <div className="max-w-6xl mx-auto mb-6">
+          <div className="text-center">
+            <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border border-orange-200/50 dark:border-orange-700/50 rounded-full shadow-lg mb-4">
+              <Shield className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
+              <span className="text-sm font-semibold text-orange-700 dark:text-orange-300">
+                Administratorbereich - Nur für Administratoren sichtbar
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-2xl mx-auto">
+              Diese erweiterten Funktionen sind derzeit in der Entwicklung und werden nur Administratoren zur Verfügung gestellt.
+            </p>
+          </div>
         </div>
 
         {/* 3 Contenedores adicionales rectangulares */}
@@ -261,6 +306,7 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout }: H
           </Card>
         </div>
       </div>
+
     </div>
   )
 }
