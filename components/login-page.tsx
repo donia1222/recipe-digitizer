@@ -248,7 +248,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
         {/* Footer */}
         <div className="text-center mt-12">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Rezept Digitalisierung System © 2024
+            Rezept Digitalisierung System © 2025 Lweb Schweiz
           </p>
         </div>
       </div>
