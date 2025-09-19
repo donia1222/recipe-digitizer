@@ -194,7 +194,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
             </Button>
 
             <div className="inline-flex items-center px-3 py-1.5 lg:px-6 lg:py-3 bg-blue-100/60 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-300/60 dark:border-blue-600/60 rounded-full shadow-lg">
-              <h1 className="text-base sm:text-lg lg:text-3xl xl:text-4xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-3">
+              <h1 className="text-base sm:text-lg lg:text-2xl xl:text-3xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-3">
                 <ChefHat className="h-6 w-6 lg:h-8 lg:w-8" />
                 Rezept Archiv
               </h1>

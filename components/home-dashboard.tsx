@@ -41,7 +41,7 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout, onO
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                 <ChefHat className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-800 dark:text-blue-200">
+              <h1 className="text-xl sm:text-2xl lg:text-2xl font-bold text-blue-800 dark:text-blue-200">
                 Altersheim Gärbi
               </h1>
             </div>
