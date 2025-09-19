@@ -204,7 +204,7 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout, onO
                 <Shield className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-               Administrationsbereich
+               Administration
               </CardTitle>
               <CardDescription className="text-gray-600 dark:text-gray-400">
                 Verwalten von Benutzern, Rezepten, Subadministratoren und Systemkonfiguration
@@ -220,7 +220,7 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout, onO
         </div>
 
         {/* Sección solo para administradores */}
-        <div className="max-w-6xl mx-auto mb-6">
+        <div className="max-w-6xl mx-auto mb-6 mt-20">
           <div className="text-center">
             <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-100 to-red-100 dark:from-orange-900/30 dark:to-red-900/30 border border-orange-200/50 dark:border-orange-700/50 rounded-full shadow-lg mb-4">
               <Shield className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
