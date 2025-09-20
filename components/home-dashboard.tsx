@@ -47,7 +47,7 @@ export default function HomeDashboard({ onStartDigitalization, handleLogout, onO
                 </div>
                 <div>
                   <h1 className="text-2xl font-bold text-blue-800">
-                    Gärbi
+                    Büelriet
                   </h1>
                   <p className="text-sm text-blue-600/80">
                     Digitale Rezeptsammlung
