@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerte Recipe Digitizer - Altersheim Gärbi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: white;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 60px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .company-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .company-details {
+            font-size: 14px;
+            opacity: 0.95;
+            line-height: 1.8;
+        }
+
+        .company-details div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Document Title */
+        .document-title {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            border-bottom: 3px solid #4F7B52;
+        }
+
+        .document-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 400;
+        }
+
+        /* Client Info */
+        .client-section {
+            padding: 40px 50px;
+            background: white;
+        }
+
+        .client-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .date-info {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .date-info strong {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            padding: 40px 50px;
+            background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%);
+            border-left: 4px solid #4F7B52;
+            margin: 30px 0;
+        }
+
+        .executive-summary h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #2d4a2f;
+        }
+
+        .executive-summary p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .key-benefits {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .benefit-card h3 {
+            font-size: 16px;
+            color: #4F7B52;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .benefit-card p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* Section */
+        .section {
+            padding: 40px 50px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        /* Features Table */
+        .features-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .features-table thead {
+            background: #4F7B52;
+            color: white;
+        }
+
+        .features-table th {
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .features-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 14px;
+        }
+
+        .features-table tbody tr {
+            background: white;
+            transition: background 0.2s;
+        }
+
+        .features-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .features-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .feature-category {
+            font-weight: 600;
+            color: #2d4a2f;
+            font-size: 15px;
+        }
+
+        .feature-list {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .price {
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+        }
+
+        /* Cost Summary */
+        .cost-summary {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 30px;
+        }
+
+        .cost-summary h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #1a1a1a;
+        }
+
+        .cost-breakdown {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .cost-breakdown:last-child {
+            border-bottom: none;
+            padding-top: 20px;
+            margin-top: 10px;
+            border-top: 2px solid #4F7B52;
+        }
+
+        .cost-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .cost-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .total-cost {
+            font-size: 18px !important;
+            color: #4F7B52 !important;
+            font-weight: 700 !important;
+        }
+
+        /* Timeline */
+        .timeline {
+            padding: 30px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .timeline-marker {
+            width: 40px;
+            height: 40px;
+            background: #4F7B52;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child) .timeline-marker::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: #e0e0e0;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-bottom: 10px;
+        }
+
+        .timeline-content h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Terms */
+        .terms-section {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            margin-top: 40px;
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .term-item h4 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .term-item p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .cta-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .cta-text {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 30px 50px;
+            background: #1a1a1a;
+            color: #999;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .features-table {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Icons */
+        .icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+        }
+
+        .checkmark {
+            color: #4F7B52;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <div class="company-name">Lweb Schweiz</div>
+                <div class="company-details">
+                    <div>📍 9475 Sevelen, Schweiz 🇨🇭</div>
+                    <div>📞 076 560 86 45</div>
+                    <div>✉️ info@lweb.ch</div>
+                    <div>🌐 www.lweb.ch</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="document-title">
+            <h1>Offerte: Recipe Digitizer</h1>
+            <div class="subtitle">Progressive Web Application für digitales Rezeptmanagement</div>
+        </div>
+
+        <!-- Client Information -->
+        <div class="client-section">
+            <div class="client-header">Für</div>
+            <div class="client-name">Altersheim Gärbi</div>
+            <div class="date-info">
+                <div><strong>Offerte Nr.:</strong> 2025-RD-001</div>
+                <div><strong>Datum:</strong> 20. Januar 2025</div>
+                <div><strong>Gültig bis:</strong> 20. Februar 2025</div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary">
+            <h2>Zusammenfassung</h2>
+            <p>
+                Wir freuen uns, Ihnen unsere massgeschneiderte Lösung "Recipe Digitizer" präsentieren zu dürfen -
+                eine moderne Progressive Web Application, die speziell für die Bedürfnisse von Altersheimen entwickelt wurde.
+            </p>
+            <p>
+                Die Anwendung nutzt künstliche Intelligenz (GPT-4.1) zur automatischen Digitalisierung von handgeschriebenen
+                und gedruckten Rezepten und bietet eine umfassende Verwaltungsplattform für Ihr kulinarisches Wissen.
+            </p>
+
+            <div class="key-benefits">
+                <div class="benefit-card">
+                    <h3>⏱️ Zeitersparnis</h3>
+                    <p>2-3 Stunden täglich durch automatische Digitalisierung</p>
+                </div>
+                <div class="benefit-card">
+                    <h3>💰 ROI</h3>
+                    <p>Amortisation in 8-12 Monaten</p>
+                </div>
+                <div class="benefit-card">
+                    <h3>📱 Mobil & Offline</h3>
+                    <p>PWA funktioniert auf allen Geräten, auch offline</p>
+                </div>
+                <div class="benefit-card">
+                    <h3>🤖 KI-gestützt</h3>
+                    <p>Modernste GPT-4.1 Technologie für präzise Erkennung</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features and Pricing -->
+        <div class="section">
+            <h2 class="section-title">Funktionsumfang und Investition</h2>
+
+            <table class="features-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%">Modul</th>
+                        <th style="width: 45%">Funktionen</th>
+                        <th style="width: 25%">Investition (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-category">🔐 Authentifizierung & Rollen</td>
+                        <td class="feature-list">
+                            • 3-Rollen-System (Admin, Mitarbeiter, Gast)<br>
+                            • Sichere Anmeldung mit Passwortschutz<br>
+                            • Persistente Sitzungen<br>
+                            • Rollenbasierte Zugriffskontrolle
+                        </td>
+                        <td class="price">4'750.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">📸 KI-Digitalisierung</td>
+                        <td class="feature-list">
+                            • Kamera-Integration für Direktaufnahmen<br>
+                            • Bildupload mit Vorschau<br>
+                            • Dokumentenscanner-Unterstützung<br>
+                            • GPT-4.1 Analyse und Texterkennung<br>
+                            • Automatische Strukturierung der Rezepte
+                        </td>
+                        <td class="price">9'500.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">📚 Rezeptverwaltung</td>
+                        <td class="feature-list">
+                            • Digitale Bibliothek mit Such- und Filterfunktionen<br>
+                            • Favoriten-System<br>
+                            • Inline-Bearbeitung mit Live-Vorschau<br>
+                            • Mehrere Bilder pro Rezept<br>
+                            • Druck- und Teilen-Funktionen
+                        </td>
+                        <td class="price">6'650.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">🔢 Portionsanpassung</td>
+                        <td class="feature-list">
+                            • Intelligente Portionenerkennung<br>
+                            • KI-gestützte Mengenumrechnung<br>
+                            • Speicherung verschiedener Portionsgrössen<br>
+                            • Ein-Klick-Anpassung
+                        </td>
+                        <td class="price">3'325.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">💬 Kommentarsystem</td>
+                        <td class="feature-list">
+                            • Kommentare pro Rezept<br>
+                            • Like-System<br>
+                            • Rollenbasierte Badges<br>
+                            • Zeitstempel und Verlauf
+                        </td>
+                        <td class="price">2'375.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">👨‍💼 Administrationspanel</td>
+                        <td class="feature-list">
+                            • Dashboard mit Echtzeitstatistiken<br>
+                            • Benutzerverwaltung<br>
+                            • Rezeptfreigabe-Workflow<br>
+                            • Sub-Administrator-System<br>
+                            • Benachrichtigungen
+                        </td>
+                        <td class="price">8'075.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">📱 Progressive Web App</td>
+                        <td class="feature-list">
+                            • Installation auf allen Geräten<br>
+                            • Offline-Funktionalität<br>
+                            • Automatische Updates<br>
+                            • Push-Benachrichtigungen (vorbereitet)
+                        </td>
+                        <td class="price">3'325.–</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Cost Summary -->
+            <div class="cost-summary">
+                <h3>Investitionsübersicht</h3>
+                <div class="cost-breakdown">
+                    <span class="cost-label">Entwicklung Kernfunktionen</span>
+                    <span class="cost-value">CHF 38'000.–</span>
+                </div>
+                <div class="cost-breakdown">
+                    <span class="cost-label">UI/UX Design & Responsive Anpassung</span>
+                    <span class="cost-value">CHF 4'500.–</span>
+                </div>
+                <div class="cost-breakdown">
+                    <span class="cost-label">Testing & Qualitätssicherung</span>
+                    <span class="cost-value">CHF 3'800.–</span>
+                </div>
+                <div class="cost-breakdown">
+                    <span class="cost-label">Deployment & Schulung</span>
+                    <span class="cost-value">CHF 2'200.–</span>
+                </div>
+                <div class="cost-breakdown">
+                    <span class="cost-label">Projektmanagement</span>
+                    <span class="cost-value">CHF 2'900.–</span>
+                </div>
+                <div class="cost-breakdown">
+                    <span class="cost-label total-cost">Gesamtinvestition</span>
+                    <span class="cost-value total-cost">CHF 51'400.–</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Timeline -->
+        <div class="section">
+            <h2 class="section-title">Implementierungszeitplan</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">1</div>
+                    <div class="timeline-content">
+                        <h4>Phase 1: Grundfunktionen (Wochen 1-4)</h4>
+                        <p>Setup, Authentifizierung, grundlegende UI-Komponenten und Datenbankstruktur</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">2</div>
+                    <div class="timeline-content">
+                        <h4>Phase 2: KI-Integration (Wochen 5-8)</h4>
+                        <p>Implementierung der Bilderfassung, GPT-4.1 Integration und Rezeptanalyse</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">3</div>
+                    <div class="timeline-content">
+                        <h4>Phase 3: Verwaltungsfunktionen (Wochen 9-11)</h4>
+                        <p>Administrationspanel, Benutzerverwaltung und Workflow-Implementierung</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">4</div>
+                    <div class="timeline-content">
+                        <h4>Phase 4: PWA & Optimierung (Wochen 12-14)</h4>
+                        <p>Progressive Web App Features, Performance-Optimierung und Testing</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">5</div>
+                    <div class="timeline-content">
+                        <h4>Phase 5: Launch & Schulung (Wochen 15-16)</h4>
+                        <p>Deployment, Mitarbeiterschulung und Go-Live Support</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operating Costs -->
+        <div class="section">
+            <h2 class="section-title">Laufende Kosten</h2>
+
+            <table class="features-table">
+                <thead>
+                    <tr>
+                        <th>Kostenart</th>
+                        <th>Beschreibung</th>
+                        <th>Monatlich (CHF)</th>
+                        <th>Jährlich (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-category">Hosting & Infrastruktur</td>
+                        <td>Vercel Pro Hosting mit europäischen Servern</td>
+                        <td class="price">45.–</td>
+                        <td class="price">540.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">KI-API Nutzung</td>
+                        <td>GPT-4.1 Analysen (ca. 750 Analysen/Monat)</td>
+                        <td class="price">85.–</td>
+                        <td class="price">1'020.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Support & Wartung</td>
+                        <td>Updates, Bugfixes, technischer Support (10h/Monat)</td>
+                        <td class="price">950.–</td>
+                        <td class="price">11'400.–</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="2"><strong>Gesamte laufende Kosten</strong></td>
+                        <td class="price"><strong>1'080.–</strong></td>
+                        <td class="price"><strong>12'960.–</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+            <h2 class="section-title">Konditionen</h2>
+
+            <div class="terms-grid">
+                <div class="term-item">
+                    <h4>💳 Zahlungsbedingungen</h4>
+                    <p>
+                        30% bei Auftragserteilung<br>
+                        40% bei Fertigstellung Phase 2<br>
+                        30% bei Projektabnahme<br>
+                        Zahlungsziel: 30 Tage netto
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>🛡️ Garantie & Support</h4>
+                    <p>
+                        12 Monate Garantie auf alle Funktionen<br>
+                        3 Monate kostenloser Support nach Go-Live<br>
+                        SLA: Reaktionszeit < 4 Stunden (Geschäftszeiten)<br>
+                        Kostenlose Sicherheitsupdates
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>📚 Schulung</h4>
+                    <p>
+                        2 Tage Vor-Ort-Schulung inkludiert<br>
+                        Umfassende Dokumentation<br>
+                        Video-Tutorials für alle Funktionen<br>
+                        Admin-Handbuch
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>🔒 Datenschutz & Sicherheit</h4>
+                    <p>
+                        DSG/DSGVO-konform<br>
+                        Verschlüsselte Datenübertragung<br>
+                        Regelmässige Backups<br>
+                        Schweizer Hosting verfügbar
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROI Section -->
+        <div class="section">
+            <h2 class="section-title">Return on Investment</h2>
+
+            <div style="background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%); padding: 30px; border-radius: 8px;">
+                <h3 style="color: #2d4a2f; margin-bottom: 20px;">Ihre Einsparungen</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;">
+                    <div>
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">2-3h</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Zeitersparnis täglich</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">80%</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Weniger Fehler</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">CHF 22'000</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Jährliche Einsparung</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #4F7B52;">
+                    <strong style="color: #2d4a2f;">Amortisation:</strong>
+                    Bei geschätzten jährlichen Einsparungen von CHF 22'000 amortisiert sich Ihre Investition
+                    in nur <strong>8-12 Monaten</strong>.
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-section">
+            <div class="cta-title">Bereit für die digitale Transformation Ihrer Küche?</div>
+            <div class="cta-text">
+                Lassen Sie uns gemeinsam Ihre Rezeptverwaltung revolutionieren.<br>
+                Kontaktieren Sie uns für eine persönliche Demonstration.
+            </div>
+
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span>📞</span>
+                    <span>076 560 86 45</span>
+                </div>
+                <div class="contact-item">
+                    <span>✉️</span>
+                    <span>info@lweb.ch</span>
+                </div>
+                <div class="contact-item">
+                    <span>🌐</span>
+                    <span>www.lweb.ch</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">Lweb Schweiz</div>
+            <div>© 2025 Lweb Schweiz. Alle Rechte vorbehalten.</div>
+            <div style="margin-top: 10px;">
+                Digitale Lösungen mit Schweizer Qualität und Präzision.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

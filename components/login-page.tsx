@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Shield, Users, UserCheck, ChefHat, Lock, User, Mail } from "lucide-react"
 
 interface LoginPageProps {
-  onLogin: () => void
+  onLogin: (role: 'admin' | 'worker' | 'guest') => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
@@ -32,7 +32,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setTimeout(() => {
       // Username can be empty, only password matters
       if (isPasswordCorrect) {
-        onLogin()
+        onLogin('admin')
       } else {
         alert("Ungültiges Passwort")
       }
@@ -44,7 +44,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setSelectedRole(role)
     if (role === 'worker' || role === 'guest') {
       // Direct access for workers and guests - no login required
-      onLogin()
+      onLogin(role)
     }
   }
 
@@ -193,7 +193,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           {/* Trabajadores */}
           <Card
             className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-
+            onClick={() => handleRoleSelect('worker')}
           >
             <CardHeader className="text-center pb-4">
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mb-4">
@@ -220,7 +220,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           {/* Invitados */}
           <Card
             className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200/50 dark:border-green-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-           
+            onClick={() => handleRoleSelect('guest')}
           >
             <CardHeader className="text-center pb-4">
               <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mb-4">

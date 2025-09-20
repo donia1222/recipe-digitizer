@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerte Recipe Digitizer - Altersheim Gärbi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: white;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 60px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .company-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .company-details {
+            font-size: 14px;
+            opacity: 0.95;
+            line-height: 1.8;
+        }
+
+        .company-details div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .company-details svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+        /* Document Title */
+        .document-title {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            border-bottom: 3px solid #4F7B52;
+        }
+
+        .document-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 400;
+        }
+
+        /* Client Info */
+        .client-section {
+            padding: 40px 50px;
+            background: white;
+        }
+
+        .client-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .date-info {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .date-info strong {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            padding: 40px 50px;
+            background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%);
+            border-left: 4px solid #4F7B52;
+            margin: 30px 0;
+        }
+
+        .executive-summary h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #2d4a2f;
+        }
+
+        .executive-summary p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .highlight-box h3 {
+            color: #4F7B52;
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .highlight-box ul {
+            color: #666;
+            margin-left: 20px;
+        }
+
+        .icon-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            border-radius: 50%;
+        }
+
+        .icon-wrapper svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .icon-wrapper.light {
+            background: linear-gradient(135deg, #e8f4ea 0%, #f0f7f1 100%);
+        }
+
+        .icon-wrapper.light svg {
+            stroke: #4F7B52;
+        }
+
+        .key-benefits {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .benefit-card h3 {
+            font-size: 16px;
+            color: #4F7B52;
+            margin: 15px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .benefit-card p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* Section */
+        .section {
+            padding: 40px 50px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Pricing Options */
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .pricing-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pricing-card.recommended {
+            border-color: #4F7B52;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(79, 123, 82, 0.15);
+        }
+
+        .recommended-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4F7B52;
+            color: white;
+            padding: 4px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .package-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .package-price {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4F7B52;
+            margin: 20px 0;
+        }
+
+        .package-price small {
+            font-size: 16px;
+            font-weight: 400;
+            color: #666;
+        }
+
+        .package-features {
+            text-align: left;
+            margin: 25px 0;
+        }
+
+        .package-features li {
+            list-style: none;
+            padding: 8px 0;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .package-features li:last-child {
+            border-bottom: none;
+        }
+
+        .check {
+            color: #4F7B52;
+            font-weight: bold;
+        }
+
+        .cross {
+            color: #ccc;
+        }
+
+        /* Features Table */
+        .features-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .features-table thead {
+            background: #4F7B52;
+            color: white;
+        }
+
+        .features-table th {
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .features-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 14px;
+        }
+
+        .features-table tbody tr {
+            background: white;
+        }
+
+        .features-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .feature-category {
+            font-weight: 600;
+            color: #2d4a2f;
+            font-size: 15px;
+        }
+
+        .feature-list {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .price {
+            font-weight: 600;
+            color: #1a1a1a;
+            white-space: nowrap;
+        }
+
+        /* Timeline */
+        .timeline {
+            padding: 30px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .timeline-marker {
+            width: 40px;
+            height: 40px;
+            background: #4F7B52;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child) .timeline-marker::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: #e0e0e0;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-bottom: 10px;
+        }
+
+        .timeline-content h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Terms */
+        .terms-section {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            margin-top: 40px;
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .term-item {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .term-item h4 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .term-item p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .term-icon {
+            width: 24px;
+            height: 24px;
+            background: #4F7B52;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .term-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* Demo Section */
+        .demo-section {
+            background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%);
+            padding: 40px 50px;
+        }
+
+        .demo-box {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(79, 123, 82, 0.15);
+            text-align: center;
+        }
+
+        .demo-access {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 500px;
+            margin: 0 auto;
+            color: white;
+        }
+
+        .demo-features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .demo-feature {
+            text-align: center;
+        }
+
+        .demo-feature-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .cta-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .cta-text {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        .contact-item svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 30px 50px;
+            background: #1a1a1a;
+            color: #999;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 768px) {
+            .price-comparison-grid {
+                grid-template-columns: 1fr !important;
+            }
+
+            .savings-display {
+                flex-direction: column !important;
+                gap: 15px !important;
+            }
+
+            .why-choose-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .header, .document-title, .client-section, .executive-summary, .section, .demo-section, .terms-section {
+                padding: 30px 20px;
+            }
+
+            .document-title h1 {
+                font-size: 24px;
+            }
+
+            .subtitle {
+                font-size: 16px;
+            }
+
+            .key-benefits {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-cards {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .pricing-card.recommended {
+                transform: none;
+            }
+
+            .date-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .terms-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .demo-features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 15px;
+            }
+
+            .contact-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .features-table {
+                font-size: 12px;
+                display: block;
+                overflow-x: auto;
+            }
+
+            .timeline-item {
+                gap: 20px;
+            }
+
+            div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .company-name {
+                font-size: 22px;
+            }
+
+            .document-title h1 {
+                font-size: 20px;
+            }
+
+            .section-title {
+                font-size: 20px;
+            }
+
+            .demo-features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .package-price {
+                font-size: 28px;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <div class="company-name">Lweb Schweiz</div>
+                <div class="company-details">
+                    <div>
+                        <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+                        9475 Sevelen, Schweiz
+                    </div>
+                    <div>
+                        <svg viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
+                        076 560 86 45
+                    </div>
+                    <div>
+                        <svg viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                        info@lweb.ch
+                    </div>
+                    <div>
+                        <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clip-rule="evenodd"/></svg>
+                        www.lweb.ch
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="document-title">
+            <h1>Offerte: Recipe Digitizer</h1>
+            <div class="subtitle">Integration und Datenbankanbindung für Ihre bestehende Anwendung</div>
+        </div>
+
+        <!-- Client Information -->
+        <div class="client-section">
+            <div class="client-header">Für</div>
+            <div class="client-name">Altersheim Gärbi</div>
+            <div class="date-info">
+                <div><strong>Offerte Nr.:</strong> 2025-RD-002</div>
+                <div><strong>Datum:</strong> 20. Januar 2025</div>
+                <div><strong>Gültig bis:</strong> 20. Februar 2025</div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary">
+            <h2>Projektzusammenfassung</h2>
+            <p>
+                Ihre Recipe Digitizer Anwendung ist bereits zu <strong>95% fertiggestellt</strong> und funktionsfähig.
+                Was noch fehlt, ist die professionelle Datenbankanbindung und finale Optimierungen für den produktiven Einsatz.
+            </p>
+
+            <div class="highlight-box">
+                <h3>
+                    <div class="icon-wrapper light">
+                        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    Was bereits fertig ist:
+                </h3>
+                <ul>
+                    <li>Komplette Benutzeroberfläche und Design</li>
+                    <li>KI-Integration für Rezeptanalyse (GPT-4.1)</li>
+                    <li>Kamera- und Bildupload-Funktionen</li>
+                    <li>Rezeptverwaltung und Bibliothek</li>
+                    <li>Portionsanpassung mit KI</li>
+                    <li>Kommentarsystem</li>
+                    <li>Administrationspanel</li>
+                    <li>Progressive Web App (PWA) Features</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box" style="border: 2px solid #4F7B52;">
+                <h3>
+                    <div class="icon-wrapper">
+                        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </div>
+                    Was noch zu tun ist:
+                </h3>
+                <ul>
+                    <li>Datenbankanbindung (PostgreSQL/MySQL)</li>
+                    <li>API-Endpoints für Multi-User-Betrieb</li>
+                    <li>Deployment und Hosting-Setup</li>
+                    <li>Performance-Optimierung</li>
+                    <li>Schulung und Dokumentation</li>
+                </ul>
+            </div>
+
+            <div class="key-benefits">
+                <div class="benefit-card">
+                    <div class="icon-wrapper light">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    </div>
+                    <h3>Zeitersparnis</h3>
+                    <p>2-3 Stunden täglich durch automatische Digitalisierung</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon-wrapper light">
+                        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    </div>
+                    <h3>ROI</h3>
+                    <p>Amortisation in 8-12 Monaten</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon-wrapper light">
+                        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+                    </div>
+                    <h3>Mobil & Offline</h3>
+                    <p>PWA funktioniert auf allen Geräten, auch offline</p>
+                </div>
+                <div class="benefit-card">
+                    <div class="icon-wrapper light">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    </div>
+                    <h3>KI-gestützt</h3>
+                    <p>Modernste GPT-4.1 Technologie für präzise Erkennung</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Options -->
+        <div class="section">
+            <h2 class="section-title">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </div>
+                Investitionsoptionen
+            </h2>
+
+            <div class="pricing-cards">
+                <!-- Basic Package -->
+                <div class="pricing-card">
+                    <div class="package-name">Basic</div>
+                    <div class="package-price">
+                        CHF 6'000
+                        <br><small>Minimale Integration</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> Einfache Datenbankanbindung</li>
+                        <li><span class="check">✓</span> Basis-API Endpoints</li>
+                        <li><span class="check">✓</span> Deployment auf Ihrem Server</li>
+                        <li><span class="check">✓</span> 30 Tage Support</li>
+                        <li><span class="cross">✗</span> Backup-System</li>
+                        <li><span class="cross">✗</span> Performance-Optimierung</li>
+                        <li><span class="cross">✗</span> Schulung vor Ort</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 30-45 Tage
+                    </div>
+                </div>
+
+                <!-- Standard Package (Recommended) -->
+                <div class="pricing-card recommended">
+                    <div class="recommended-badge">EMPFOHLEN</div>
+                    <div class="package-name">Standard</div>
+                    <div class="package-price">
+                        CHF 8'500
+                        <br><small>Komplettlösung</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> PostgreSQL Datenbankanbindung</li>
+                        <li><span class="check">✓</span> Vollständige API Integration</li>
+                        <li><span class="check">✓</span> Cloud-Deployment (Vercel/AWS)</li>
+                        <li><span class="check">✓</span> Automatisches Backup-System</li>
+                        <li><span class="check">✓</span> Performance-Optimierung</li>
+                        <li><span class="check">✓</span> 90 Tage Support</li>
+                        <li><span class="check">✓</span> 1 Tag Schulung (remote)</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 45-60 Tage
+                    </div>
+                </div>
+
+                <!-- Premium Package -->
+                <div class="pricing-card">
+                    <div class="package-name">Premium</div>
+                    <div class="package-price">
+                        CHF 12'000
+                        <br><small>Enterprise-Lösung</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> Alles aus Standard-Paket</li>
+                        <li><span class="check">✓</span> Multi-Tenant Architektur</li>
+                        <li><span class="check">✓</span> SSO Integration</li>
+                        <li><span class="check">✓</span> Custom Branding</li>
+                        <li><span class="check">✓</span> 6 Monate Support</li>
+                        <li><span class="check">✓</span> 2 Tage Schulung vor Ort</li>
+                        <li><span class="check">✓</span> SLA Garantie</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 60-90 Tage
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operating Costs -->
+        <div class="section">
+            <h2 class="section-title">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 8l-4 4-4-4"/><path d="M12 16V12"/></svg>
+                </div>
+                Laufende Kosten nach Implementierung
+            </h2>
+
+            <table class="features-table">
+                <thead>
+                    <tr>
+                        <th>Kostenart</th>
+                        <th>Beschreibung</th>
+                        <th>Monatlich (CHF)</th>
+                        <th>Jährlich (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-category">Hosting & Datenbank</td>
+                        <td>Vercel + PostgreSQL Cloud</td>
+                        <td class="price">20.–</td>
+                        <td class="price">240.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">KI-API Kosten</td>
+                        <td>GPT-4.1 Analysen (500 Analysen/Monat)</td>
+                        <td class="price">25.–</td>
+                        <td class="price">300.–</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="2"><strong>Gesamte laufende Kosten</strong></td>
+                        <td class="price"><strong>45.–</strong></td>
+                        <td class="price"><strong>540.–</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Demo Section -->
+        <div class="demo-section">
+            <h2 class="section-title">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </div>
+                Testen Sie die App jetzt!
+            </h2>
+
+            <div class="demo-box">
+                <div class="icon-wrapper" style="margin: 0 auto 20px auto; width: 60px; height: 60px;">
+                    <svg viewBox="0 0 24 24" style="width: 32px; height: 32px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="white" fill="white" stroke-width="2"/></svg>
+                </div>
+                <h3 style="color: #2d4a2f; font-size: 24px; margin-bottom: 20px;">Live-Demo verfügbar</h3>
+                <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+                    Überzeugen Sie sich selbst von der Funktionalität der Recipe Digitizer App.<br>
+                    Die Anwendung ist zu 95% fertig und voll funktionsfähig!
+                </p>
+
+                <!-- Demo Access Box -->
+                <div class="demo-access">
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Demo-Zugang</div>
+
+                    <!-- Demo Link -->
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">Demo-Link:</div>
+                        <a href="https://garbi.lweb.ch" style="color: #8FE88F; font-size: 18px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                            <svg style="width: 20px; height: 20px;" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/><path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/></svg>
+                            garbi.lweb.ch
+                        </a>
+                    </div>
+
+                    <!-- Login Credentials -->
+                    <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
+                        <div style="font-size: 14px; opacity: 0.9; margin-bottom: 15px;">Anmeldedaten für Admin-Zugang:</div>
+                        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                <span style="font-size: 14px; opacity: 0.8;">Rolle:</span>
+                                <strong style="font-size: 15px;">Administrator auswählen</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                <span style="font-size: 14px; opacity: 0.8;">Name:</span>
+                                <strong style="font-size: 15px;">Leer lassen (nicht ausfüllen)</strong>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                <span style="font-size: 14px; opacity: 0.8;">Passwort:</span>
+                                <strong style="font-size: 15px; font-family: monospace;">sevelen9475</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features to Test -->
+                <div style="margin-top: 40px;">
+                    <h4 style="color: #2d4a2f; margin-bottom: 20px;">Was Sie in der Demo testen können:</h4>
+                    <div class="demo-features-grid">
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </div>
+                            <div class="demo-feature-text">Rezept-Digitalisierung<br>mit KI-Analyse</div>
+                        </div>
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                            </div>
+                            <div class="demo-feature-text">Rezeptbibliothek<br>durchsuchen</div>
+                        </div>
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><line x1="5" y1="9" x2="19" y2="9"/><line x1="5" y1="15" x2="19" y2="15"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                            </div>
+                            <div class="demo-feature-text">Portionen<br>anpassen</div>
+                        </div>
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                            </div>
+                            <div class="demo-feature-text">Kommentare<br>hinzufügen</div>
+                        </div>
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </div>
+                            <div class="demo-feature-text">Admin-Panel<br>erkunden</div>
+                        </div>
+                        <div class="demo-feature">
+                            <div class="icon-wrapper light" style="margin: 0 auto;">
+                                <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="18" x2="15" y2="18"/></svg>
+                            </div>
+                            <div class="demo-feature-text">PWA auf Handy<br>installieren</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Comparison Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><circle cx="9" cy="9" r="7"/><circle cx="15" cy="15" r="7"/></svg>
+                </div>
+                Preisvergleich: Freelancer vs. Agentur
+            </h2>
+
+            <div style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 30px;">
+                <h3 style="color: #1a1a1a; margin-bottom: 25px; font-size: 20px;">Für das gleiche Projekt würden Sie zahlen:</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;" class="price-comparison-grid">
+                    <!-- Lweb Freelance Price -->
+                    <div style="background: linear-gradient(135deg, #e8f4ea 0%, #f0f7f1 100%); padding: 25px; border-radius: 10px; border: 2px solid #4F7B52;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div class="icon-wrapper" style="width: 35px; height: 35px; margin: 0;">
+                                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px;"><circle cx="12" cy="11" r="3"/><path d="M12 2v9m0 4v9m0-5l-3 3m6 0l-3-3"/></svg>
+                            </div>
+                            <h4 style="color: #2d4a2f; font-size: 18px; margin: 0;">Lweb Schweiz<br><small style="font-size: 14px; color: #666;">(Freelancer)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #4F7B52; margin: 15px 0;">CHF 8'500</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>✓ Direkter Kontakt</li>
+                            <li>✓ Flexible Anpassungen</li>
+                            <li>✓ Schnelle Umsetzung</li>
+                            <li>✓ Persönlicher Support</li>
+                            <li>✓ 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 89/h</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Other Freelancer Price -->
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border: 2px solid #e0e0e0;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 35px; height: 35px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; stroke: #666; fill: none; stroke-width: 2;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            </div>
+                            <h4 style="color: #1a1a1a; font-size: 18px; margin: 0;">Andere Freelancer<br><small style="font-size: 14px; color: #666;">(Schweiz)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #666; margin: 15px 0;">CHF 11'400</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>• Variable Qualität</li>
+                            <li>• Oft Verzögerungen</li>
+                            <li>• Weniger Garantie</li>
+                            <li>• Basis-Support</li>
+                            <li>• 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 120/h</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Agency Price -->
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border: 2px solid #e0e0e0;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <div style="width: 35px; height: 35px; background: #e0e0e0; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; stroke: #666; fill: none; stroke-width: 2;"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-3"/><rect x="9" y="9" width="4" height="4"/><rect x="9" y="14" width="4" height="4"/><rect x="16" y="14" width="2" height="2"/></svg>
+                            </div>
+                            <h4 style="color: #1a1a1a; font-size: 18px; margin: 0;">Web-Agentur<br><small style="font-size: 14px; color: #666;">(Schweiz)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #666; margin: 15px 0;">CHF 18'500</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>• Hohe Overhead-Kosten</li>
+                            <li>• Längere Prozesse</li>
+                            <li>• Weniger flexibel</li>
+                            <li>• Team-Koordination</li>
+                            <li>• 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 195/h</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Highlight -->
+                <div style="background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; text-align: center;">
+                    <div style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">Sie sparen mit Lweb Schweiz:</div>
+                    <div style="display: flex; justify-content: center; gap: 40px; margin-top: 15px;" class="savings-display">
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700;">CHF 2'900</div>
+                            <div style="font-size: 14px; opacity: 0.9;">vs. andere Freelancer</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700;">CHF 10'000</div>
+                            <div style="font-size: 14px; opacity: 0.9;">vs. Web-Agentur</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why Choose Us -->
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 12px;">
+                <h3 style="color: #1a1a1a; margin-bottom: 20px; font-size: 20px;">Warum Lweb Schweiz die beste Wahl ist:</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;" class="why-choose-grid">
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Faire Preise</strong><br>
+                            <span style="color: #666; font-size: 14px;">CHF 89/h statt marktübliche CHF 120-195/h</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Schweizer Qualität</strong><br>
+                            <span style="color: #666; font-size: 14px;">Lokale Expertise und Verständnis für Ihre Bedürfnisse</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Schnelle Lieferung</strong><br>
+                            <span style="color: #666; font-size: 14px;">45-60 Tage statt 3-4 Monate bei Agenturen</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Direkter Ansprechpartner</strong><br>
+                            <span style="color: #666; font-size: 14px;">Kein Projektmanager dazwischen, direkte Kommunikation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+            <h2 class="section-title">
+                <div class="icon-wrapper">
+                    <svg viewBox="0 0 24 24"><path d="M9 11H3v2h6v-2zm0-4H3v2h6V7zm0 8H3v2h6v-2zm12-8h-6v2h6V7zm0 4h-6v2h6v-2zm0 4h-6v2h6v-2z"/></svg>
+                </div>
+                Konditionen
+            </h2>
+
+            <div class="terms-grid">
+                <div class="term-item">
+                    <h4>
+                        <div class="term-icon">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        </div>
+                        Zahlungsbedingungen
+                    </h4>
+                    <p>
+                        100% bei Projektabnahme<br>
+                        Keine Anzahlung erforderlich<br>
+                        Zahlung erst nach erfolgreicher Fertigstellung<br>
+                        Zahlungsziel: 30 Tage netto
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>
+                        <div class="term-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        Garantie
+                    </h4>
+                    <p>
+                        90 Tage Bugfix-Garantie<br>
+                        Kostenlose Sicherheitsupdates (3 Monate)<br>
+                        Support per E-Mail/Telefon<br>
+                        Reaktionszeit: < 24 Stunden
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>
+                        <div class="term-icon">
+                            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        </div>
+                        Übergabe
+                    </h4>
+                    <p>
+                        Vollständiger Quellcode<br>
+                        Technische Dokumentation<br>
+                        Deployment-Anleitung<br>
+                        1 Tag Remote-Schulung (Standard-Paket)
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>
+                        <div class="term-icon">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="10" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        </div>
+                        Datenschutz
+                    </h4>
+                    <p>
+                        DSG/DSGVO-konform<br>
+                        Verschlüsselte Datenübertragung<br>
+                        Schweizer oder EU Hosting<br>
+                        Backup-Strategie implementiert
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-section">
+            <div class="cta-title">Lassen Sie uns Ihr Projekt gemeinsam finalisieren!</div>
+            <div class="cta-text">
+                Mit nur CHF 8'500 machen wir aus Ihrer fast fertigen App eine professionelle,<br>
+                produktionsreife Lösung mit Datenbankanbindung und Cloud-Hosting.
+            </div>
+
+            <div class="contact-info">
+                <div class="contact-item">
+                    <svg viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/></svg>
+                    <span>076 560 86 45</span>
+                </div>
+                <div class="contact-item">
+                    <svg viewBox="0 0 20 20"><path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/><path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/></svg>
+                    <span>info@lweb.ch</span>
+                </div>
+                <div class="contact-item">
+                    <svg viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.083 9h1.946c.089-1.546.383-2.97.837-4.118A6.004 6.004 0 004.083 9zM10 2a8 8 0 100 16 8 8 0 000-16zm0 2c-.076 0-.232.032-.465.262-.238.234-.497.623-.737 1.182-.389.907-.673 2.142-.766 3.556h3.936c-.093-1.414-.377-2.649-.766-3.556-.24-.56-.5-.948-.737-1.182C10.232 4.032 10.076 4 10 4zm3.971 5c-.089-1.546-.383-2.97-.837-4.118A6.004 6.004 0 0115.917 9h-1.946zm-2.003 2H8.032c.093 1.414.377 2.649.766 3.556.24.56.5.948.737 1.182.233.23.389.262.465.262.076 0 .232-.032.465-.262.238-.234.498-.623.737-1.182.389-.907.673-2.142.766-3.556zm1.166 4.118c.454-1.147.748-2.572.837-4.118h1.946a6.004 6.004 0 01-2.783 4.118zm-6.268 0C6.412 13.97 6.118 12.546 6.03 11H4.083a6.004 6.004 0 002.783 4.118z" clip-rule="evenodd"/></svg>
+                    <span>www.lweb.ch</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">Lweb Schweiz</div>
+            <div>© 2025 Lweb Schweiz. Alle Rechte vorbehalten.</div>
+            <div style="margin-top: 10px;">
+                Ihr Partner für professionelle Web-Lösungen.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

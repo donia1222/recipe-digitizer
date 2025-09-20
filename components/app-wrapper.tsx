@@ -7,27 +7,34 @@ import RecipeDigitizer from "@/recipe-digitizer"
 
 export default function AppWrapper() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userRole, setUserRole] = useState<'admin' | 'worker' | 'guest' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   // Check for existing session on component mount
   useEffect(() => {
     const savedAuth = localStorage.getItem("recipe-auth")
-    if (savedAuth === "granted") {
+    const savedRole = localStorage.getItem("user-role") as 'admin' | 'worker' | 'guest' | null
+    if (savedAuth === "granted" && savedRole) {
       setIsAuthenticated(true)
+      setUserRole(savedRole)
     }
     setIsLoading(false)
   }, [])
 
-  const handleLogin = () => {
+  const handleLogin = (role: 'admin' | 'worker' | 'guest') => {
     setIsAuthenticated(true)
-    // Save authentication state to localStorage
+    setUserRole(role)
+    // Save authentication state and role to localStorage
     localStorage.setItem("recipe-auth", "granted")
+    localStorage.setItem("user-role", role)
   }
 
   const handleLogout = () => {
     setIsAuthenticated(false)
-    // Remove authentication state from localStorage
+    setUserRole(null)
+    // Remove authentication state and role from localStorage
     localStorage.removeItem("recipe-auth")
+    localStorage.removeItem("user-role")
   }
 
   // Show loading state while checking authentication
@@ -46,5 +53,5 @@ export default function AppWrapper() {
     return <LoginPage onLogin={handleLogin} />
   }
 
-  return <RecipeDigitizer handleLogout={handleLogout} />
+  return <RecipeDigitizer handleLogout={handleLogout} userRole={userRole} />
 }

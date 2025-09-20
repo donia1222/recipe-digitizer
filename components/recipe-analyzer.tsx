@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
+import RecipeComments from "./recipe-comments"
 
 interface RecipeAnalyzerProps {
   recipe: string
@@ -590,6 +591,11 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           <Edit className="h-4 w-4 mr-2" />
           Rezept bearbeiten
         </Button>
+      </div>
+
+      {/* Recipe Comments Section */}
+      <div className="mt-8">
+        <RecipeComments recipeId={recipeId} />
       </div>
 
       {/* Image Gallery Modal */}

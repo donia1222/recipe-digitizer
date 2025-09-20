@@ -1,10 +1,11 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Shield, Users, ChefHat, Bell, Trash2, Eye, CheckCircle, XCircle, Clock, AlertTriangle } from "lucide-react"
+import { ArrowLeft, Shield, Users, ChefHat, Bell, Trash2, Eye, CheckCircle, XCircle, Clock, AlertTriangle, Brain, Sparkles, MessageCircle, Bot, Utensils } from "lucide-react"
 import RecipeManagement from "./recipe-management"
 import UserManagement from "./user-management"
 import SubAdminManagement from "./sub-admin-management"
@@ -37,11 +38,13 @@ interface SubAdmin {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter()
   const [currentView, setCurrentView] = useState<'dashboard' | 'recipes' | 'users' | 'subadmins' | 'pending'>('dashboard')
   const [pendingRecipes, setPendingRecipes] = useState<PendingRecipe[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([])
   const [notifications, setNotifications] = useState(0)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   useEffect(() => {
     // Simular datos iniciales
@@ -110,8 +113,21 @@ export default function AdminDashboard() {
     setNotifications(pendingRecipes.filter(r => r.status === 'pending').length)
   }, [])
 
-  const handleBackToMain = () => {
-    window.location.href = '/'
+  const handleBackToMain = async () => {
+    if (isNavigating) return // Prevent multiple clicks
+
+    setIsNavigating(true)
+    try {
+      // Use router.push for proper Next.js navigation with proper error handling
+      await router.push('/')
+    } catch (error) {
+      console.error('Navigation error:', error)
+      // Fallback to window.location if router fails
+      window.location.href = '/'
+    } finally {
+      // Reset navigation state after a delay (in case of error)
+      setTimeout(() => setIsNavigating(false), 2000)
+    }
   }
 
   const StatCard = ({ title, value, description, icon: Icon, color, onClick }: {
@@ -243,6 +259,89 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Sección de funciones de IA para administradores */}
+      <Card className="bg-white/70 backdrop-blur-md border-gray-200/50 shadow-xl">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+       
+          </div>
+          <CardTitle className="text-gray-800">KI-Funktionen</CardTitle>
+ 
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Crear recetas con IA */}
+            <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200/50 shadow-md hover:shadow-lg transition-all duration-300 group">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-bold text-gray-900">
+                      Rezepte mit KI erstellen
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-purple-600 mt-1">
+                      <Sparkles className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                  Lassen Sie unsere KI neue, kreative Rezepte für Sie entwickeln
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Analizar plato */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50 shadow-md hover:shadow-lg transition-all duration-300 group">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300">
+                    <Utensils className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-bold text-gray-900">
+                      Gericht Analysieren
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-green-600 mt-1">
+                      <Utensils className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                  Fotografieren Sie ein Gericht und erhalten Sie das passende Rezept
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            {/* Bot experto */}
+            <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200/50 shadow-md hover:shadow-lg transition-all duration-300 group">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-300">
+                    <MessageCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-bold text-gray-900">
+                      Koch-Experte Chat
+                    </CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-orange-600 mt-1">
+                      <Bot className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600 line-clamp-2">
+                  Stellen Sie Fragen an unseren KI-Koch-Experten
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 
@@ -255,12 +354,13 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <Button
                 onClick={handleBackToMain}
+                disabled={isNavigating}
                 variant="outline"
                 size="sm"
-                className="bg-blue-50/80 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-full w-10 h-10 p-0"
+                className="bg-blue-50/80 border-blue-200 text-blue-600 hover:bg-blue-100 rounded-full w-10 h-10 p-0 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Zurück zur Startseite"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className={`h-4 w-4 ${isNavigating ? 'animate-pulse' : ''}`} />
               </Button>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center">

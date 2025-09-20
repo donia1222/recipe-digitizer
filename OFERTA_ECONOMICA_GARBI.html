@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offerte Recipe Digitizer - Altersheim Gärbi</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: white;
+        }
+
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 60px 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -100px;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .company-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        .company-details {
+            font-size: 14px;
+            opacity: 0.95;
+            line-height: 1.8;
+        }
+
+        .company-details div {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Document Title */
+        .document-title {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            border-bottom: 3px solid #4F7B52;
+        }
+
+        .document-title h1 {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 400;
+        }
+
+        /* Client Info */
+        .client-section {
+            padding: 40px 50px;
+            background: white;
+        }
+
+        .client-header {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-name {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+        }
+
+        .date-info {
+            display: flex;
+            gap: 40px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .date-info strong {
+            color: #1a1a1a;
+            font-weight: 500;
+        }
+
+        /* Executive Summary */
+        .executive-summary {
+            padding: 40px 50px;
+            background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%);
+            border-left: 4px solid #4F7B52;
+            margin: 30px 0;
+        }
+
+        .executive-summary h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #2d4a2f;
+        }
+
+        .executive-summary p {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .highlight-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .highlight-box h3 {
+            color: #4F7B52;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .key-benefits {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .benefit-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .benefit-card h3 {
+            font-size: 16px;
+            color: #4F7B52;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .benefit-card p {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* Section */
+        .section {
+            padding: 40px 50px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        /* Pricing Options */
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin: 30px 0;
+        }
+
+        .pricing-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pricing-card.recommended {
+            border-color: #4F7B52;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(79, 123, 82, 0.15);
+        }
+
+        .recommended-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4F7B52;
+            color: white;
+            padding: 4px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .package-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .package-price {
+            font-size: 36px;
+            font-weight: 700;
+            color: #4F7B52;
+            margin: 20px 0;
+        }
+
+        .package-price small {
+            font-size: 16px;
+            font-weight: 400;
+            color: #666;
+        }
+
+        .package-features {
+            text-align: left;
+            margin: 25px 0;
+        }
+
+        .package-features li {
+            list-style: none;
+            padding: 8px 0;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .package-features li:last-child {
+            border-bottom: none;
+        }
+
+        .check {
+            color: #4F7B52;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .cross {
+            color: #ccc;
+            margin-right: 8px;
+        }
+
+        /* Features Table */
+        .features-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .features-table thead {
+            background: #4F7B52;
+            color: white;
+        }
+
+        .features-table th {
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .features-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e8e8e8;
+            font-size: 14px;
+        }
+
+        .features-table tbody tr {
+            background: white;
+        }
+
+        .features-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .feature-category {
+            font-weight: 600;
+            color: #2d4a2f;
+            font-size: 15px;
+        }
+
+        .feature-list {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Timeline */
+        .timeline {
+            padding: 30px 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .timeline-marker {
+            width: 40px;
+            height: 40px;
+            background: #4F7B52;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child) .timeline-marker::after {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 40px;
+            background: #e0e0e0;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding-bottom: 10px;
+        }
+
+        .timeline-content h4 {
+            font-size: 16px;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Terms */
+        .terms-section {
+            background: #f8f9fa;
+            padding: 40px 50px;
+            margin-top: 40px;
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .term-item h4 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .term-item p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%);
+            color: white;
+            padding: 50px;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .cta-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .cta-text {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 30px 50px;
+            background: #1a1a1a;
+            color: #999;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .footer-logo {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .container {
+                max-width: 100%;
+            }
+
+            .section {
+                page-break-inside: avoid;
+            }
+
+            .pricing-cards {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <div class="company-name">Lweb Schweiz</div>
+                <div class="company-details">
+                    <div>📍 9475 Sevelen, Schweiz 🇨🇭</div>
+                    <div>📞 076 560 86 45</div>
+                    <div>✉️ info@lweb.ch</div>
+                    <div>🌐 www.lweb.ch</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document Title -->
+        <div class="document-title">
+            <h1>Offerte: Recipe Digitizer</h1>
+            <div class="subtitle">Integration und Datenbankanbindung für Ihre bestehende Anwendung</div>
+        </div>
+
+        <!-- Client Information -->
+        <div class="client-section">
+            <div class="client-header">Für</div>
+            <div class="client-name">Altersheim Gärbi</div>
+            <div class="date-info">
+                <div><strong>Offerte Nr.:</strong> 2025-RD-002</div>
+                <div><strong>Datum:</strong> 20. Januar 2025</div>
+                <div><strong>Gültig bis:</strong> 20. Februar 2025</div>
+            </div>
+        </div>
+
+        <!-- Executive Summary -->
+        <div class="executive-summary">
+            <h2>Projektzusammenfassung</h2>
+            <p>
+                Ihre Recipe Digitizer Anwendung ist bereits zu <strong>95% fertiggestellt</strong> und funktionsfähig.
+                Was noch fehlt, ist die professionelle Datenbankanbindung und finale Optimierungen für den produktiven Einsatz.
+            </p>
+
+            <div class="highlight-box">
+                <h3>✅ Was bereits fertig ist:</h3>
+                <ul style="color: #666; margin-left: 20px;">
+                    <li>Komplette Benutzeroberfläche und Design</li>
+                    <li>KI-Integration für Rezeptanalyse (GPT-4.1)</li>
+                    <li>Kamera- und Bildupload-Funktionen</li>
+                    <li>Rezeptverwaltung und Bibliothek</li>
+                    <li>Portionsanpassung mit KI</li>
+                    <li>Kommentarsystem</li>
+                    <li>Administrationspanel</li>
+                    <li>Progressive Web App (PWA) Features</li>
+                </ul>
+            </div>
+
+            <div class="highlight-box" style="border: 2px solid #4F7B52;">
+                <h3>🔧 Was noch zu tun ist:</h3>
+                <ul style="color: #666; margin-left: 20px;">
+                    <li>Datenbankanbindung (PostgreSQL/MySQL)</li>
+                    <li>API-Endpoints für Multi-User-Betrieb</li>
+                    <li>Deployment und Hosting-Setup</li>
+                    <li>Performance-Optimierung</li>
+                    <li>Schulung und Dokumentation</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Pricing Options -->
+        <div class="section">
+            <h2 class="section-title">Investitionsoptionen</h2>
+
+            <div class="pricing-cards">
+                <!-- Basic Package -->
+                <div class="pricing-card">
+                    <div class="package-name">Basic</div>
+                    <div class="package-price">
+                        CHF 6'000
+                        <br><small>Minimale Integration</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> Einfache Datenbankanbindung</li>
+                        <li><span class="check">✓</span> Basis-API Endpoints</li>
+                        <li><span class="check">✓</span> Deployment auf Ihrem Server</li>
+                        <li><span class="check">✓</span> 30 Tage Support</li>
+                        <li><span class="cross">✗</span> Backup-System</li>
+                        <li><span class="cross">✗</span> Performance-Optimierung</li>
+                        <li><span class="cross">✗</span> Schulung vor Ort</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 30-45 Tage
+                    </div>
+                </div>
+
+                <!-- Standard Package (Recommended) -->
+                <div class="pricing-card recommended">
+                    <div class="recommended-badge">EMPFOHLEN</div>
+                    <div class="package-name">Standard</div>
+                    <div class="package-price">
+                        CHF 8'500
+                        <br><small>Komplettlösung</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> PostgreSQL Datenbankanbindung</li>
+                        <li><span class="check">✓</span> Vollständige API Integration</li>
+                        <li><span class="check">✓</span> Cloud-Deployment (Vercel/AWS)</li>
+                        <li><span class="check">✓</span> Automatisches Backup-System</li>
+                        <li><span class="check">✓</span> Performance-Optimierung</li>
+                        <li><span class="check">✓</span> 90 Tage Support</li>
+                        <li><span class="check">✓</span> 1 Tag Schulung (remote)</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 45-60 Tage
+                    </div>
+                </div>
+
+                <!-- Premium Package -->
+                <div class="pricing-card">
+                    <div class="package-name">Premium</div>
+                    <div class="package-price">
+                        CHF 12'000
+                        <br><small>Enterprise-Lösung</small>
+                    </div>
+                    <ul class="package-features">
+                        <li><span class="check">✓</span> Alles aus Standard-Paket</li>
+                        <li><span class="check">✓</span> Multi-Tenant Architektur</li>
+                        <li><span class="check">✓</span> SSO Integration</li>
+                        <li><span class="check">✓</span> Custom Branding</li>
+                        <li><span class="check">✓</span> 6 Monate Support</li>
+                        <li><span class="check">✓</span> 2 Tage Schulung vor Ort</li>
+                        <li><span class="check">✓</span> SLA Garantie</li>
+                    </ul>
+                    <div style="font-size: 14px; color: #666; margin-top: 20px;">
+                        <strong>Lieferzeit:</strong> 60-90 Tage
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Work Breakdown -->
+        <div class="section">
+            <h2 class="section-title">Detaillierte Arbeitsaufschlüsselung (Standard-Paket)</h2>
+
+            <table class="features-table">
+                <thead>
+                    <tr>
+                        <th style="width: 35%">Arbeitspaket</th>
+                        <th style="width: 50%">Beschreibung</th>
+                        <th style="width: 15%">Aufwand</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-category">Datenbankdesign & Setup</td>
+                        <td class="feature-list">
+                            • Erstellung des Datenbankschemas<br>
+                            • Tabellen für Benutzer, Rezepte, Kommentare<br>
+                            • Indizierung und Optimierung<br>
+                            • Migration der localStorage Daten
+                        </td>
+                        <td>15 Stunden</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Backend API Entwicklung</td>
+                        <td class="feature-list">
+                            • RESTful API mit Next.js API Routes<br>
+                            • CRUD Operations für alle Entitäten<br>
+                            • JWT Authentication<br>
+                            • Rate Limiting und Security
+                        </td>
+                        <td>25 Stunden</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Frontend Integration</td>
+                        <td class="feature-list">
+                            • Anbindung aller Komponenten an API<br>
+                            • State Management mit Context/Zustand<br>
+                            • Error Handling und Loading States<br>
+                            • Offline-Sync Mechanismus
+                        </td>
+                        <td>20 Stunden</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Deployment & DevOps</td>
+                        <td class="feature-list">
+                            • Setup Produktionsumgebung<br>
+                            • CI/CD Pipeline<br>
+                            • SSL Zertifikate<br>
+                            • Monitoring und Logging
+                        </td>
+                        <td>10 Stunden</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Testing & Optimierung</td>
+                        <td class="feature-list">
+                            • Integrationstests<br>
+                            • Performance-Optimierung<br>
+                            • Security Audit<br>
+                            • Bug Fixes
+                        </td>
+                        <td>15 Stunden</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">Dokumentation & Schulung</td>
+                        <td class="feature-list">
+                            • Technische Dokumentation<br>
+                            • Benutzerhandbuch<br>
+                            • Video-Tutorials<br>
+                            • Remote-Schulung (1 Tag)
+                        </td>
+                        <td>10 Stunden</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="2"><strong>Gesamtaufwand</strong></td>
+                        <td><strong>95 Stunden</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section">
+            <h2 class="section-title">Projektzeitplan (Standard-Paket)</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">1</div>
+                    <div class="timeline-content">
+                        <h4>Woche 1-2: Analyse & Setup</h4>
+                        <p>Code-Review, Datenbankdesign, Entwicklungsumgebung einrichten</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">2</div>
+                    <div class="timeline-content">
+                        <h4>Woche 3-5: Backend-Entwicklung</h4>
+                        <p>API-Entwicklung, Datenbankanbindung, Authentication</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">3</div>
+                    <div class="timeline-content">
+                        <h4>Woche 6-7: Frontend-Integration</h4>
+                        <p>Anbindung aller Komponenten, State Management</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">4</div>
+                    <div class="timeline-content">
+                        <h4>Woche 8: Testing & Deployment</h4>
+                        <p>Vollständiges Testing, Go-Live, Schulung</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operating Costs -->
+        <div class="section">
+            <h2 class="section-title">Laufende Kosten nach Implementierung</h2>
+
+            <table class="features-table">
+                <thead>
+                    <tr>
+                        <th>Kostenart</th>
+                        <th>Beschreibung</th>
+                        <th>Monatlich (CHF)</th>
+                        <th>Jährlich (CHF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="feature-category">Hosting & Datenbank</td>
+                        <td>Vercel + PostgreSQL Cloud</td>
+                        <td class="price">20.–</td>
+                        <td class="price">240.–</td>
+                    </tr>
+                    <tr>
+                        <td class="feature-category">KI-API Kosten</td>
+                        <td>GPT-4.1 Analysen (500 Analysen/Monat)</td>
+                        <td class="price">25.–</td>
+                        <td class="price">300.–</td>
+                    </tr>
+                    <tr style="background: #f8f9fa;">
+                        <td colspan="2"><strong>Gesamte laufende Kosten</strong></td>
+                        <td class="price"><strong>45.–</strong></td>
+                        <td class="price"><strong>540.–</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="terms-section">
+            <h2 class="section-title">Konditionen</h2>
+
+            <div class="terms-grid">
+                <div class="term-item">
+                    <h4>💳 Zahlungsbedingungen</h4>
+                    <p>
+                        40% bei Auftragserteilung<br>
+                        40% bei Fertigstellung Backend<br>
+                        20% bei Projektabnahme<br>
+                        Zahlungsziel: 30 Tage netto
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>🛡️ Garantie</h4>
+                    <p>
+                        90 Tage Bugfix-Garantie<br>
+                        Kostenlose Sicherheitsupdates (3 Monate)<br>
+                        Support per E-Mail/Telefon<br>
+                        Reaktionszeit: < 24 Stunden
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>📚 Übergabe</h4>
+                    <p>
+                        Vollständiger Quellcode<br>
+                        Technische Dokumentation<br>
+                        Deployment-Anleitung<br>
+                        1 Tag Remote-Schulung (Standard-Paket)
+                    </p>
+                </div>
+                <div class="term-item">
+                    <h4>🔒 Datenschutz</h4>
+                    <p>
+                        DSG/DSGVO-konform<br>
+                        Verschlüsselte Datenübertragung<br>
+                        Schweizer oder EU Hosting<br>
+                        Backup-Strategie implementiert
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ROI Section -->
+        <div class="section">
+            <h2 class="section-title">Ihre Vorteile auf einen Blick</h2>
+
+            <div style="background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%); padding: 30px; border-radius: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">95%</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Bereits fertiggestellt</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">45-60</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Tage bis Go-Live</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 28px; font-weight: 700; color: #4F7B52;">CHF 8'500</div>
+                        <div style="font-size: 14px; color: #666; margin-top: 5px;">Faire Investition</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px;">
+                    <strong style="color: #2d4a2f; font-size: 16px;">Warum diese Lösung ideal ist:</strong>
+                    <ul style="margin-top: 15px; color: #666; line-height: 1.8;">
+                        <li>✓ Ihre bestehende Anwendung wird professionell finalisiert</li>
+                        <li>✓ Moderne Datenbankanbindung für echten Multi-User-Betrieb</li>
+                        <li>✓ Skalierbar für zukünftiges Wachstum</li>
+                        <li>✓ Professionelles Hosting und Backup</li>
+                        <li>✓ Langfristig wartbar und erweiterbar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Comparison Section -->
+        <div class="section">
+            <h2 class="section-title">Preisvergleich: Freelancer vs. Agentur</h2>
+
+            <div style="background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 30px;">
+                <h3 style="color: #1a1a1a; margin-bottom: 25px; font-size: 20px;">Für das gleiche Projekt würden Sie zahlen:</h3>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;">
+                    <!-- Lweb Freelance Price -->
+                    <div style="background: linear-gradient(135deg, #e8f4ea 0%, #f0f7f1 100%); padding: 25px; border-radius: 10px; border: 2px solid #4F7B52;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 24px;">🎯</span>
+                            <h4 style="color: #2d4a2f; font-size: 18px; margin: 0;">Lweb Schweiz<br><small style="font-size: 14px; color: #666;">(Freelancer)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #4F7B52; margin: 15px 0;">CHF 8'500</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>✓ Direkter Kontakt</li>
+                            <li>✓ Flexible Anpassungen</li>
+                            <li>✓ Schnelle Umsetzung</li>
+                            <li>✓ Persönlicher Support</li>
+                            <li>✓ 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 89/h</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Other Freelancer Price -->
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border: 2px solid #e0e0e0;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 24px;">👨‍💻</span>
+                            <h4 style="color: #1a1a1a; font-size: 18px; margin: 0;">Andere Freelancer<br><small style="font-size: 14px; color: #666;">(Schweiz)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #666; margin: 15px 0;">CHF 11'400</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>• Variable Qualität</li>
+                            <li>• Oft Verzögerungen</li>
+                            <li>• Weniger Garantie</li>
+                            <li>• Basis-Support</li>
+                            <li>• 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 120/h</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- Agency Price -->
+                    <div style="background: #f8f9fa; padding: 25px; border-radius: 10px; border: 2px solid #e0e0e0;">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                            <span style="font-size: 24px;">🏢</span>
+                            <h4 style="color: #1a1a1a; font-size: 18px; margin: 0;">Web-Agentur<br><small style="font-size: 14px; color: #666;">(Schweiz)</small></h4>
+                        </div>
+                        <div style="font-size: 32px; font-weight: 700; color: #666; margin: 15px 0;">CHF 18'500</div>
+                        <ul style="list-style: none; padding: 0; margin: 0; color: #666; font-size: 14px; line-height: 1.8;">
+                            <li>• Hohe Overhead-Kosten</li>
+                            <li>• Längere Prozesse</li>
+                            <li>• Weniger flexibel</li>
+                            <li>• Team-Koordination</li>
+                            <li>• 95 Stunden Arbeit</li>
+                        </ul>
+                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                            <div style="font-size: 14px; color: #666;">Stundensatz: <strong>CHF 195/h</strong></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Savings Highlight -->
+                <div style="background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%); color: white; padding: 20px; border-radius: 10px; margin-top: 30px; text-align: center;">
+                    <div style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">Sie sparen mit Lweb Schweiz:</div>
+                    <div style="display: flex; justify-content: center; gap: 40px; margin-top: 15px;">
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700;">CHF 2'900</div>
+                            <div style="font-size: 14px; opacity: 0.9;">vs. andere Freelancer</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 24px; font-weight: 700;">CHF 10'000</div>
+                            <div style="font-size: 14px; opacity: 0.9;">vs. Web-Agentur</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why Choose Us -->
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 12px;">
+                <h3 style="color: #1a1a1a; margin-bottom: 20px; font-size: 20px;">Warum Lweb Schweiz die beste Wahl ist:</h3>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;">
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Faire Preise</strong><br>
+                            <span style="color: #666; font-size: 14px;">CHF 89/h statt marktübliche CHF 120-195/h</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Schweizer Qualität</strong><br>
+                            <span style="color: #666; font-size: 14px;">Lokale Expertise und Verständnis für Ihre Bedürfnisse</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Schnelle Lieferung</strong><br>
+                            <span style="color: #666; font-size: 14px;">45-60 Tage statt 3-4 Monate bei Agenturen</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px;">
+                        <span style="color: #4F7B52; font-size: 24px;">✓</span>
+                        <div>
+                            <strong style="color: #1a1a1a;">Direkter Ansprechpartner</strong><br>
+                            <span style="color: #666; font-size: 14px;">Kein Projektmanager dazwischen, direkte Kommunikation</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Section -->
+        <div class="section" style="background: linear-gradient(135deg, #f0f7f1 0%, #e8f4ea 100%); margin-top: 0;">
+            <h2 class="section-title" style="border-bottom: 2px solid #4F7B52;">🎮 Testen Sie die App jetzt!</h2>
+
+            <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 20px rgba(79, 123, 82, 0.15); text-align: center;">
+                <div style="font-size: 24px; margin-bottom: 10px;">🚀</div>
+                <h3 style="color: #2d4a2f; font-size: 24px; margin-bottom: 20px;">Live-Demo verfügbar</h3>
+                <p style="color: #666; font-size: 16px; margin-bottom: 30px;">
+                    Überzeugen Sie sich selbst von der Funktionalität der Recipe Digitizer App.<br>
+                    Die Anwendung ist zu 95% fertig und voll funktionsfähig!
+                </p>
+
+                <!-- Demo Access Box -->
+                <div style="background: linear-gradient(135deg, #4F7B52 0%, #3d6141 100%); padding: 30px; border-radius: 10px; max-width: 500px; margin: 0 auto;">
+                    <div style="color: white; margin-bottom: 25px;">
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 20px;">Demo-Zugang</div>
+
+                        <!-- Demo Link -->
+                        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 10px;">Demo-Link:</div>
+                            <a href="https://garbi.lweb.ch" style="color: #8FE88F; font-size: 16px; text-decoration: none; font-weight: 500;">
+                                🔗 garbi.lweb.ch
+                            </a>
+                        </div>
+
+                        <!-- Login Credentials -->
+                        <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px;">
+                            <div style="font-size: 14px; opacity: 0.9; margin-bottom: 15px;">Anmeldedaten für Admin-Zugang:</div>
+                            <div style="display: flex; flex-direction: column; gap: 12px; text-align: left;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                    <span style="font-size: 14px; opacity: 0.8;">Rolle:</span>
+                                    <strong style="font-size: 15px;">Administrator auswählen</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                    <span style="font-size: 14px; opacity: 0.8;">Name:</span>
+                                    <strong style="font-size: 15px;">Leer lassen (nicht ausfüllen)</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 6px;">
+                                    <span style="font-size: 14px; opacity: 0.8;">Passwort:</span>
+                                    <strong style="font-size: 15px; font-family: monospace;">sevelen9475</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="color: #8FE88F; font-size: 14px; margin-top: 20px; opacity: 0.9;">
+                        💡 Tipp: Sie können auch als "Mitarbeiter" oder "Gast" ohne Passwort einloggen,<br>
+                        um die verschiedenen Benutzerrollen zu testen.
+                    </div>
+                </div>
+
+                <!-- Features to Test -->
+                <div style="margin-top: 40px;">
+                    <h4 style="color: #2d4a2f; margin-bottom: 20px;">Was Sie in der Demo testen können:</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 800px; margin: 0 auto;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📸</div>
+                            <div style="font-size: 14px; color: #666;">Rezept-Digitalisierung<br>mit KI-Analyse</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📚</div>
+                            <div style="font-size: 14px; color: #666;">Rezeptbibliothek<br>durchsuchen</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">🔢</div>
+                            <div style="font-size: 14px; color: #666;">Portionen<br>anpassen</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">💬</div>
+                            <div style="font-size: 14px; color: #666;">Kommentare<br>hinzufügen</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">👨‍💼</div>
+                            <div style="font-size: 14px; color: #666;">Admin-Panel<br>erkunden</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📱</div>
+                            <div style="font-size: 14px; color: #666;">PWA auf Handy<br>installieren</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note -->
+                <div style="background: #fff8e1; border-left: 4px solid #ffc107; padding: 20px; margin-top: 30px; border-radius: 6px;">
+                    <strong style="color: #856404;">⚠️ Hinweis zur Demo:</strong>
+                    <p style="color: #856404; font-size: 14px; margin-top: 10px; margin-bottom: 0;">
+                        Diese Demo verwendet localStorage für die Datenspeicherung. Die finale Version wird mit einer
+                        professionellen PostgreSQL-Datenbank für echten Multi-User-Betrieb ausgestattet.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call to Action -->
+        <div class="cta-section">
+            <div class="cta-title">Lassen Sie uns Ihr Projekt gemeinsam finalisieren!</div>
+            <div class="cta-text">
+                Mit nur CHF 8'500 machen wir aus Ihrer fast fertigen App eine professionelle,<br>
+                produktionsreife Lösung mit Datenbankanbindung und Cloud-Hosting.
+            </div>
+
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span>📞</span>
+                    <span>076 560 86 45</span>
+                </div>
+                <div class="contact-item">
+                    <span>✉️</span>
+                    <span>info@lweb.ch</span>
+                </div>
+                <div class="contact-item">
+                    <span>🌐</span>
+                    <span>www.lweb.ch</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-logo">Lweb Schweiz</div>
+            <div>© 2025 Lweb Schweiz. Alle Rechte vorbehalten.</div>
+            <div style="margin-top: 10px;">
+                Ihr Partner für professionelle Web-Lösungen.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

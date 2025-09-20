@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Folder, FolderPlus, Check, X, Star, Calendar, ChefHat,
-  ArrowLeft, Eye, ChevronDown, ChevronRight, Plus
+  ArrowLeft, Eye, ChevronDown, ChevronRight, Plus, Edit3, Trash2
 } from "lucide-react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
@@ -46,6 +46,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [newFolderName, setNewFolderName] = useState("")
   const [creatingSubcategoryFor, setCreatingSubcategoryFor] = useState<string | null>(null)
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
+  const [editingFolder, setEditingFolder] = useState<string | null>(null)
+  const [editFolderName, setEditFolderName] = useState("")
 
   const folderColors = [
     "#ef4444", "#f97316", "#eab308", "#22c55e",
@@ -107,6 +109,39 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     })
   }
 
+  const editFolder = (folderId: string, newName: string) => {
+    if (!newName.trim()) return
+
+    const updatedFolders = folders.map(f =>
+      f.id === folderId ? { ...f, name: newName.trim() } : f
+    )
+    setFolders(updatedFolders)
+    localStorage.setItem("recipeFolders", JSON.stringify(updatedFolders))
+    setEditingFolder(null)
+    setEditFolderName("")
+  }
+
+  const deleteFolder = (folderId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    // First, move all recipes from this folder and its subcategories to uncategorized
+    const allSubfolderIds = getAllSubfolderIds(folderId)
+    const updatedHistory = history.map(item =>
+      allSubfolderIds.includes(item.folderId || '') ? { ...item, folderId: undefined } : item
+    )
+    setHistory(updatedHistory)
+    localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+
+    // Remove the folder and all its subcategories
+    const updatedFolders = folders.filter(f => !allSubfolderIds.includes(f.id))
+    setFolders(updatedFolders)
+    localStorage.setItem("recipeFolders", JSON.stringify(updatedFolders))
+
+    // Reset selected folder if it was deleted
+    if (allSubfolderIds.includes(selectedFolder || '')) {
+      setSelectedFolder(undefined)
+    }
+  }
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -184,20 +219,29 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b-4 border-blue-500 shadow-lg">
         <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-          <div className="flex items-center gap-2 lg:justify-center lg:relative">
-            <Button
-              onClick={onBack}
-              size="lg"
-              className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0 lg:absolute lg:left-0"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                onClick={onBack}
+                size="lg"
+                className="bg-gradient-to-r from-slate-500 to-blue-600 hover:from-slate-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-full w-10 h-10 p-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
 
-            <div className="inline-flex items-center px-3 py-1.5 lg:px-6 lg:py-3 bg-blue-100/60 dark:bg-blue-900/40 backdrop-blur-sm border border-blue-300/60 dark:border-blue-600/60 rounded-full shadow-lg">
-              <h1 className="text-base sm:text-lg lg:text-2xl xl:text-3xl font-bold text-blue-800 dark:text-blue-200 flex items-center gap-3">
-                <ChefHat className="h-6 w-6 lg:h-8 lg:w-8" />
-                Rezept Archiv
-              </h1>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-100/80 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                  <ChefHat className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-blue-800">
+                    Rezept Archiv
+                  </h1>
+                  <p className="text-sm text-blue-600/80">
+                    Alle gespeicherten Rezepte
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -261,50 +305,117 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                     >
                       {/* Main Category */}
                       <div className="flex items-center">
-                        <div
-                          onClick={() => setSelectedFolder(folder.id)}
-                          className={`flex-1 text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group cursor-pointer ${
-                            selectedFolder === folder.id
-                              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                              : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {/* Expand/Collapse Icon */}
-                          {getSubcategories(folder.id).length > 0 && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleFolderExpansion(folder.id)
+                        {editingFolder === folder.id ? (
+                          <div className="flex-1 flex items-center gap-2 p-3 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-gray-300/50">
+                            <div
+                              className="w-4 h-4 rounded"
+                              style={{ backgroundColor: folder.color }}
+                            />
+                            <Input
+                              value={editFolderName}
+                              onChange={(e) => setEditFolderName(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  editFolder(folder.id, editFolderName)
+                                } else if (e.key === 'Escape') {
+                                  setEditingFolder(null)
+                                  setEditFolderName("")
+                                }
                               }}
-                              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => editFolder(folder.id, editFolderName)}
+                              className="h-8 w-8 p-0"
                             >
-                              {expandedFolders.has(folder.id) ?
-                                <ChevronDown className="h-3 w-3" /> :
-                                <ChevronRight className="h-3 w-3" />
-                              }
-                            </button>
-                          )}
-
+                              <Check size={14} />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingFolder(null)
+                                setEditFolderName("")
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <X size={14} />
+                            </Button>
+                          </div>
+                        ) : (
                           <div
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: folder.color }}
-                          />
-                          <span className="flex-1 truncate">{folder.name}</span>
-                          <span className="text-sm bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded-full">
-                            {getAllSubfolderIds(folder.id).reduce((count, id) =>
-                              count + history.filter(item => item.folderId === id).length, 0
+                            onClick={() => setSelectedFolder(folder.id)}
+                            className={`flex-1 text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group cursor-pointer ${
+                              selectedFolder === folder.id
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            }`}
+                          >
+                            {/* Expand/Collapse Icon */}
+                            {getSubcategories(folder.id).length > 0 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleFolderExpansion(folder.id)
+                                }}
+                                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                              >
+                                {expandedFolders.has(folder.id) ?
+                                  <ChevronDown className="h-3 w-3" /> :
+                                  <ChevronRight className="h-3 w-3" />
+                                }
+                              </button>
                             )}
-                          </span>
-                        </div>
+
+                            <div
+                              className="w-4 h-4 rounded"
+                              style={{ backgroundColor: folder.color }}
+                            />
+                            <span className="flex-1 truncate">{folder.name}</span>
+                            <span className="text-sm bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded-full">
+                              {getAllSubfolderIds(folder.id).reduce((count, id) =>
+                                count + history.filter(item => item.folderId === id).length, 0
+                              )}
+                            </span>
+
+                            {/* Edit and Delete buttons for main categories */}
+                            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity ml-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditingFolder(folder.id)
+                                  setEditFolderName(folder.name)
+                                }}
+                                className="h-7 w-7 p-0 bg-white/70 dark:bg-gray-800/70"
+                              >
+                                <Edit3 size={12} />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => deleteFolder(folder.id, e)}
+                                className="h-7 w-7 p-0 bg-white/70 dark:bg-gray-800/70 text-red-500 hover:bg-red-500 hover:text-white"
+                              >
+                                <Trash2 size={12} />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Add Subcategory Button */}
-                        <button
-                          onClick={() => createSubcategory(folder.id)}
-                          className="ml-2 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                          title="Subcategoria añadir"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
+                        {editingFolder !== folder.id && (
+                          <button
+                            onClick={() => createSubcategory(folder.id)}
+                            className="ml-2 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                            title="Subcategoria añadir"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        )}
                       </div>
 
                       {/* Subcategories */}
@@ -317,23 +428,88 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                             exit={{ opacity: 0, height: 0 }}
                             className="ml-6 mt-1"
                           >
-                            <div
-                              onClick={() => setSelectedFolder(subcategory.id)}
-                              className={`w-full text-left p-2 rounded-lg transition-all duration-200 flex items-center gap-3 group cursor-pointer ${
-                                selectedFolder === subcategory.id
-                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                              }`}
-                            >
+                            {editingFolder === subcategory.id ? (
+                              <div className="flex items-center gap-2 p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg border border-gray-300/50">
+                                <div
+                                  className="w-3 h-3 rounded"
+                                  style={{ backgroundColor: subcategory.color }}
+                                />
+                                <Input
+                                  value={editFolderName}
+                                  onChange={(e) => setEditFolderName(e.target.value)}
+                                  className="flex-1 h-7 text-sm"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      editFolder(subcategory.id, editFolderName)
+                                    } else if (e.key === 'Escape') {
+                                      setEditingFolder(null)
+                                      setEditFolderName("")
+                                    }
+                                  }}
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => editFolder(subcategory.id, editFolderName)}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <Check size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setEditingFolder(null)
+                                    setEditFolderName("")
+                                  }}
+                                  className="h-7 w-7 p-0"
+                                >
+                                  <X size={12} />
+                                </Button>
+                              </div>
+                            ) : (
                               <div
-                                className="w-3 h-3 rounded"
-                                style={{ backgroundColor: subcategory.color }}
-                              />
-                              <span className="flex-1 truncate text-sm">{subcategory.name}</span>
-                              <span className="text-xs bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded-full">
-                                {history.filter(item => item.folderId === subcategory.id).length}
-                              </span>
-                            </div>
+                                className={`w-full text-left p-2 rounded-lg transition-all duration-200 flex items-center gap-3 group cursor-pointer ${
+                                  selectedFolder === subcategory.id
+                                    ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                }`}
+                                onClick={() => setSelectedFolder(subcategory.id)}
+                              >
+                                <div
+                                  className="w-3 h-3 rounded"
+                                  style={{ backgroundColor: subcategory.color }}
+                                />
+                                <span className="flex-1 truncate text-sm">{subcategory.name}</span>
+                                <span className="text-xs bg-gray-200 dark:bg-gray-600 px-1.5 py-0.5 rounded-full">
+                                  {history.filter(item => item.folderId === subcategory.id).length}
+                                </span>
+
+                                {/* Edit and Delete buttons for subcategories */}
+                                <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setEditingFolder(subcategory.id)
+                                      setEditFolderName(subcategory.name)
+                                    }}
+                                    className="h-6 w-6 p-0 bg-white/70 dark:bg-gray-800/70"
+                                  >
+                                    <Edit3 size={10} />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={(e) => deleteFolder(subcategory.id, e)}
+                                    className="h-6 w-6 p-0 bg-white/70 dark:bg-gray-800/70 text-red-500 hover:bg-red-500 hover:text-white"
+                                  >
+                                    <Trash2 size={10} />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                       </AnimatePresence>
