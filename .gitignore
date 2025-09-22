@@ -19,6 +19,9 @@ yarn-error.log*
 # env files
 .env*
 
+# PHP config files with credentials
+apis/config.php
+
 # vercel
 .vercel
 
