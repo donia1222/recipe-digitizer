@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   generator: 'v0.dev',
   viewport: 'width=device-width, initial-scale=1',
   manifest: '/manifest.json',
-  themeColor: '#ffffffff',
+  themeColor: '#3B82F6',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -25,10 +25,12 @@ export default function RootLayout({
     <html lang="es">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="theme-color" content= '#ffffffff' />
+        <meta name="theme-color" content="#3B82F6" />
       </head>
       <body className="overflow-x-hidden">
         {children}
