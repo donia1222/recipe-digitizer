@@ -6,16 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, Users, UserCheck, ChefHat, Lock, User, Mail } from "lucide-react"
+import { Shield, Users, UserCheck, ArrowLeft, Lock, User, Eye, EyeOff } from "lucide-react"
 
 interface LoginPageProps {
-  onLogin: (role: 'admin' | 'worker' | 'guest') => void
+  onLogin: (role: "admin" | "worker" | "guest") => void
 }
 
 export default function LoginPage({ onLogin }: LoginPageProps) {
-  const [selectedRole, setSelectedRole] = useState<'admin' | 'worker' | 'guest' | null>(null)
+  const [selectedRole, setSelectedRole] = useState<"admin" | "worker" | "guest" | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
@@ -23,7 +24,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   // Detect mobile keyboard
   useEffect(() => {
     const handleResize = () => {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         const viewportHeight = window.visualViewport?.height || window.innerHeight
         const windowHeight = window.screen.height
         const heightDifference = windowHeight - viewportHeight
@@ -33,9 +34,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
       }
     }
 
-    if (typeof window !== 'undefined' && window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize)
-      return () => window.visualViewport.removeEventListener('resize', handleResize)
+    if (typeof window !== "undefined" && window.visualViewport) {
+      window.visualViewport.addEventListener("resize", handleResize)
+      return () => window.visualViewport?.removeEventListener("resize", handleResize)
     }
   }, [])
 
@@ -53,7 +54,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setTimeout(() => {
       // Username can be empty, only password matters
       if (isPasswordCorrect) {
-        onLogin(selectedRole as 'admin' | 'worker' | 'guest')
+        onLogin(selectedRole as "admin" | "worker" | "guest")
       } else {
         alert("Ungültiges Passwort")
       }
@@ -61,15 +62,15 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     }, 1000)
   }
 
-  const handleRoleSelect = (role: 'admin' | 'worker' | 'guest') => {
+  const handleRoleSelect = (role: "admin" | "worker" | "guest") => {
     setSelectedRole(role)
-    // All roles now require login
   }
 
   const resetSelection = () => {
     setSelectedRole(null)
     setUsername("")
     setPassword("")
+    setShowPassword(false)
   }
 
   // Handle input focus for mobile
@@ -80,8 +81,8 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     if (window.innerWidth <= 768) {
       setTimeout(() => {
         e.target.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
+          behavior: "smooth",
+          block: "center",
         })
       }, 300)
     }
@@ -91,75 +92,84 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     setIsInputFocused(false)
   }
 
-  // Get role-specific styling
-  const getRoleConfig = (role: 'admin' | 'worker' | 'guest') => {
+  const getRoleConfig = (role: "admin" | "worker" | "guest") => {
     switch (role) {
-      case 'admin':
+      case "admin":
         return {
-          bgColor: 'from-red-500 to-rose-500',
-          cardBorder: 'border-red-200/50 dark:border-red-700/50',
-          title: 'Administrator',
-          buttonColor: 'bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600'
+          icon: Shield,
+          title: "Administrator",
+          description: "Vollzugriff auf alle Funktionen und Einstellungen",
+          color: "text-slate-700 dark:text-slate-300",
+          bgColor: "bg-slate-50 dark:bg-slate-800/50",
+          borderColor: "border-slate-200 dark:border-slate-700",
+          buttonColor: "bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900",
         }
-      case 'worker':
+      case "worker":
         return {
-          bgColor: 'from-blue-500 to-indigo-500',
-          cardBorder: 'border-blue-200/50 dark:border-blue-700/50',
-          title: 'Mitarbeiter',
-          buttonColor: 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600'
+          icon: Users,
+          title: "Mitarbeiter",
+          description: "Zugriff auf Rezeptverwaltung und Digitalisierung",
+          color: "text-blue-700 dark:text-blue-300",
+          bgColor: "bg-blue-50 dark:bg-blue-900/20",
+          borderColor: "border-blue-200 dark:border-blue-800",
+          buttonColor: "bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600",
         }
-      case 'guest':
+      case "guest":
         return {
-          bgColor: 'from-green-500 to-emerald-500',
-          cardBorder: 'border-green-200/50 dark:border-green-700/50',
-          title: 'Gast',
-          buttonColor: 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600'
+          icon: UserCheck,
+          title: "Gast",
+          description: "Eingeschränkter Zugriff zum Durchsuchen von Rezepten",
+          color: "text-emerald-700 dark:text-emerald-300",
+          bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
+          borderColor: "border-emerald-200 dark:border-emerald-800",
+          buttonColor: "bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-600",
         }
       default:
         return {
-          bgColor: 'from-gray-500 to-gray-600',
-          cardBorder: 'border-gray-200/50 dark:border-gray-700/50',
-          title: 'Benutzer',
-          buttonColor: 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700'
+          icon: User,
+          title: "Benutzer",
+          description: "",
+          color: "text-gray-700 dark:text-gray-300",
+          bgColor: "bg-gray-50 dark:bg-gray-800/50",
+          borderColor: "border-gray-200 dark:border-gray-700",
+          buttonColor: "bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 dark:text-gray-900",
         }
     }
   }
 
   if (selectedRole) {
     const roleConfig = getRoleConfig(selectedRole)
+    const IconComponent = roleConfig.icon
+
     return (
-      <div className={`min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex justify-center p-4 transition-all duration-300 ${(isInputFocused || keyboardVisible) ? 'items-start pt-8 md:items-center md:pt-4' : 'items-center'}`}>
+      <div
+        className={`min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 flex justify-center p-4 transition-all duration-300 ${isInputFocused || keyboardVisible ? "items-start pt-8 md:items-center md:pt-4" : "items-center"}`}
+      >
         <div className="w-full max-w-md">
-          {/* Header */}
           <div className="text-center mb-8">
-            <div className={`w-20 h-20 bg-gradient-to-r ${roleConfig.bgColor} rounded-full flex items-center justify-center shadow-lg mx-auto mb-4`}>
-              {selectedRole === 'admin' && <Shield className="h-10 w-10 text-white" />}
-              {selectedRole === 'worker' && <Users className="h-10 w-10 text-white" />}
-              {selectedRole === 'guest' && <UserCheck className="h-10 w-10 text-white" />}
+            <div
+              className={`w-16 h-16 ${roleConfig.bgColor} ${roleConfig.borderColor} border-2 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm`}
+            >
+              <IconComponent className={`h-8 w-8 ${roleConfig.color}`} />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {roleConfig.title}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Melden Sie sich mit Ihren Anmeldedaten an
-            </p>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">{roleConfig.title}</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Melden Sie sich mit Ihren Anmeldedaten an</p>
           </div>
 
-          {/* Login Form */}
-          <Card className={`bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl ${roleConfig.cardBorder} shadow-2xl`}>
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-xl text-center text-gray-900 dark:text-white">
+          <Card className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-lg">
+            <CardHeader className="space-y-1 pb-6">
+              <CardTitle className="text-xl font-semibold text-center text-gray-900 dark:text-white">
                 Anmeldung
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Benutzername
                   </Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="username"
                       type="text"
@@ -168,7 +178,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                       onChange={(e) => setUsername(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
-                      className="pl-10 bg-white/70 dark:bg-gray-700/70 border-gray-200 dark:border-gray-600"
+                      className="pl-10 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
                     />
                   </div>
                 </div>
@@ -178,37 +188,43 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     Passwort
                   </Label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
-                      className="pl-10 bg-white/70 dark:bg-gray-700/70 border-gray-200 dark:border-gray-600"
+                      className="pl-10 pr-10 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-3 pt-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={resetSelection}
-                    className="flex-1 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600"
+                    className="flex-1 h-11 bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
                   >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
                     Zurück
                   </Button>
                   <Button
                     type="submit"
                     disabled={isLoading || password.length === 0}
-                    className={`flex-1 text-white shadow-lg transition-all duration-300 ${
-                      isPasswordCorrect
-                        ? "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600"
-                        : roleConfig.buttonColor
+                    className={`flex-1 h-11 text-white font-medium transition-all duration-200 ${
+                      isPasswordCorrect ? "bg-emerald-600 hover:bg-emerald-700" : roleConfig.buttonColor
                     }`}
                   >
                     {isLoading ? "Anmelden..." : "Anmelden"}
@@ -217,117 +233,59 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
               </form>
             </CardContent>
           </Card>
-
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center shadow-xl mx-auto mb-6">
-            <ChefHat className="h-12 w-12 text-white" />
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-            Willkommen
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400">
+        <div className="text-center mb-16">
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4 text-balance">Willkommen</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-pretty">
             Wählen Sie Ihre Rolle, um fortzufahren
           </p>
         </div>
 
-        {/* Role Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Administrator */}
-          <Card
-            className="bg-gradient-to-br from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border-red-200/50 dark:border-red-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-            onClick={() => handleRoleSelect('admin')}
-          >
-            <CardHeader className="text-center pb-4">
-              <div className="w-20 h-20 bg-gradient-to-r from-red-500 to-rose-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mb-4">
-                <Shield className="h-10 w-10 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                Administrator
-              </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
-                Vollzugriff auf alle Funktionen und Einstellungen
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-red-600 dark:text-red-400 mb-4">
-                <Lock className="h-4 w-4" />
-                <span>Anmeldung erforderlich</span>
-              </div>
-              <Button className="w-full bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600 text-white shadow-md">
-                Anmelden
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {(["admin", "worker", "guest"] as const).map((role) => {
+            const config = getRoleConfig(role)
+            const IconComponent = config.icon
 
-          {/* Trabajadores */}
-          <Card
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200/50 dark:border-blue-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-            onClick={() => handleRoleSelect('worker')}
-          >
-            <CardHeader className="text-center pb-4">
-              <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mb-4">
-                <Users className="h-10 w-10 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                Mitarbeiter
-              </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
-                Zugriff auf Rezeptverwaltung und Digitalisierung
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400 mb-4">
-                <Lock className="h-4 w-4" />
-                <span>Anmeldung erforderlich</span>
-              </div>
-              <Button className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-md">
-                Fortfahren
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Invitados */}
-          <Card
-            className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200/50 dark:border-green-700/50 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group"
-            onClick={() => handleRoleSelect('guest')}
-          >
-            <CardHeader className="text-center pb-4">
-              <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mb-4">
-                <UserCheck className="h-10 w-10 text-white" />
-              </div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-                Gast
-              </CardTitle>
-              <CardDescription className="text-gray-600 dark:text-gray-400">
-                Eingeschränkter Zugriff zum Durchsuchen von Rezepten
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="text-center">
-              <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400 mb-4">
-                <Lock className="h-4 w-4" />
-                <span>Anmeldung erforderlich</span>
-              </div>
-              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-md">
-                Als Gast fortfahren
-              </Button>
-            </CardContent>
-          </Card>
+            return (
+              <Card
+                key={role}
+                className={`${config.bgColor} ${config.borderColor} border-2 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group`}
+                onClick={() => handleRoleSelect(role)}
+              >
+                <CardHeader className="text-center pb-4">
+                  <div className="w-16 h-16 bg-white dark:bg-gray-900 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform duration-200 mx-auto mb-4 border border-gray-200 dark:border-gray-700">
+                    <IconComponent className={`h-8 w-8 ${config.color}`} />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">{config.title}</CardTitle>
+                  <CardDescription className="text-sm text-gray-600 dark:text-gray-400 text-pretty">
+                    {config.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <Lock className="h-3 w-3" />
+                    <span>Anmeldung erforderlich</span>
+                  </div>
+                  <Button
+                    className={`w-full h-10 text-white font-medium ${config.buttonColor} transition-colors duration-200`}
+                  >
+                    {role === "guest" ? "Als Gast fortfahren" : "Anmelden"}
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-12">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Rezept Digitalisierung System © 2025 Lweb Schweiz
-          </p>
+        <div className="text-center mt-16">
+          <p className="text-xs text-gray-500 dark:text-gray-400">Rezept Digitalisierung System © 2025 Lweb Schweiz</p>
         </div>
       </div>
     </div>

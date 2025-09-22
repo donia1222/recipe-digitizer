@@ -127,8 +127,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
       setCurrentView('home')
       setPreviousView('home')
     } else if (currentView === 'analyze') {
-      // When going back from analyze view, go to library
-      setCurrentView('library')
+      // When going back from analyze view, return to the previous view (archive or library)
+      setCurrentView(previousView)
       setPreviousView('home')
     } else {
       // Default behavior - use previous view or fall back to home
