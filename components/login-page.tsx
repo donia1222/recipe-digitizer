@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Shield, Users, UserCheck, ArrowLeft, Lock, User, Eye, EyeOff } from "lucide-react"
+import { UserService } from "@/lib/services/userService"
+import { useToast } from "@/components/ui/use-toast"
 
 interface LoginPageProps {
   onLogin: (role: "admin" | "worker" | "guest") => void
@@ -20,6 +22,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isInputFocused, setIsInputFocused] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const { toast } = useToast()
 
   // Detect mobile keyboard
   useEffect(() => {
@@ -46,20 +49,137 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!password) return
+    if (!selectedRole) return
 
     setIsLoading(true)
 
-    // Simulate login verification
-    setTimeout(() => {
-      // Username can be empty, only password matters
-      if (isPasswordCorrect) {
-        onLogin(selectedRole as "admin" | "worker" | "guest")
+    try {
+      if (selectedRole === 'admin') {
+        // Admin login requires username and password
+        if (!username || !password) {
+          toast({
+            title: "Error",
+            description: "Usuario y contraseña requeridos para administrador",
+            variant: "destructive"
+          })
+          setIsLoading(false)
+          return
+        }
+
+        // Try database login
+        const result = await UserService.login(username, password)
+
+        if (result.success && result.user) {
+          // Check if user has admin role or higher privileges
+          if (result.user.role === 'admin') {
+            // Store user info
+            localStorage.setItem('recipe-auth', 'granted')
+            localStorage.setItem('user-role', 'admin')
+            localStorage.setItem('current-user', JSON.stringify(result.user))
+            if (result.token) {
+              localStorage.setItem('auth-token', result.token)
+            }
+            onLogin('admin')
+          } else {
+            toast({
+              title: "Acceso denegado",
+              description: "Este usuario no tiene permisos de administrador",
+              variant: "destructive"
+            })
+          }
+        } else if (username === 'admin' && isPasswordCorrect) {
+          // Fallback to environment variable password for admin only
+          localStorage.setItem('recipe-auth', 'granted')
+          localStorage.setItem('user-role', 'admin')
+          onLogin('admin')
+        } else {
+          toast({
+            title: "Error de autenticación",
+            description: "Usuario o contraseña incorrectos",
+            variant: "destructive"
+          })
+        }
+      } else if (selectedRole === 'worker') {
+        // Worker login requires username and password
+        if (!username || !password) {
+          toast({
+            title: "Error",
+            description: "Usuario y contraseña requeridos para trabajador",
+            variant: "destructive"
+          })
+          setIsLoading(false)
+          return
+        }
+
+        const result = await UserService.login(username, password)
+        if (result.success && result.user) {
+          // Determine effective role for worker view
+          const userRole = result.user.role
+
+          // Admins and workers can use worker view
+          // Guests get limited worker access
+          if (userRole === 'admin' || userRole === 'worker' || userRole === 'guest') {
+            localStorage.setItem('user-role', 'worker')
+            localStorage.setItem('actual-role', userRole) // Store actual role
+            localStorage.setItem('current-user', JSON.stringify(result.user))
+            if (result.token) {
+              localStorage.setItem('auth-token', result.token)
+            }
+            onLogin('worker')
+          } else {
+            toast({
+              title: "Acceso denegado",
+              description: "Usuario no autorizado",
+              variant: "destructive"
+            })
+          }
+        } else {
+          toast({
+            title: "Error de autenticación",
+            description: result.error || "Usuario o contraseña incorrectos",
+            variant: "destructive"
+          })
+        }
       } else {
-        alert("Ungültiges Passwort")
+        // Guest login requires username and password
+        if (!username || !password) {
+          toast({
+            title: "Error",
+            description: "Usuario y contraseña requeridos para invitado",
+            variant: "destructive"
+          })
+          setIsLoading(false)
+          return
+        }
+
+        const result = await UserService.login(username, password)
+        if (result.success && result.user) {
+          // Any authenticated user can login as guest
+          localStorage.setItem('user-role', 'guest')
+          localStorage.setItem('actual-role', result.user.role) // Store actual role
+          localStorage.setItem('current-user', JSON.stringify(result.user))
+          if (result.token) {
+            localStorage.setItem('auth-token', result.token)
+          }
+          onLogin('guest')
+        } else {
+          toast({
+            title: "Error de autenticación",
+            description: result.error || "Usuario o contraseña incorrectos",
+            variant: "destructive"
+          })
+        }
       }
+    } catch (error) {
+      console.error('Login error:', error)
+      toast({
+        title: "Error",
+        description: "Error al iniciar sesión. Intente nuevamente.",
+        variant: "destructive"
+      })
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   const handleRoleSelect = (role: "admin" | "worker" | "guest") => {
@@ -173,12 +293,13 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                     <Input
                       id="username"
                       type="text"
-                      placeholder="Benutzername eingeben (optional)"
+                      placeholder="Benutzername eingeben"
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       onFocus={handleInputFocus}
                       onBlur={handleInputBlur}
                       className="pl-10 h-11 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 focus:border-gray-400 dark:focus:border-gray-500"
+                      required
                     />
                   </div>
                 </div>
@@ -222,9 +343,9 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                   </Button>
                   <Button
                     type="submit"
-                    disabled={isLoading || password.length === 0}
+                    disabled={isLoading || !username || !password}
                     className={`flex-1 h-11 text-white font-medium transition-all duration-200 ${
-                      isPasswordCorrect ? "bg-emerald-600 hover:bg-emerald-700" : roleConfig.buttonColor
+                      roleConfig.buttonColor
                     }`}
                   >
                     {isLoading ? "Anmelden..." : "Anmelden"}

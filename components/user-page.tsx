@@ -26,6 +26,7 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
+import { RecipeService } from "@/lib/services/recipeService"
 
 interface UserRecipe {
   id: string
@@ -350,7 +351,7 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
     setActiveTab("overview") // Return to dashboard after creating/editing recipe
   }
 
-  const simulateApproval = (recipe: UserRecipe) => {
+  const simulateApproval = async (recipe: UserRecipe) => {
     console.log("simulateApproval called for recipe:", recipe.title) // Debug log
 
     // Update recipe status to approved
@@ -370,7 +371,23 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
         isFavorite: false,
       }
 
-      // Aggressive approach: always start with limited history
+      // Save to database
+      try {
+        console.log("💾 Saving manual recipe to database...")
+        await RecipeService.create({
+          recipeId: recipe.id,
+          title: recipe.title,
+          analysis: formatRecipeForArchive(recipe),
+          image: recipe.image || "",
+          date: new Date().toISOString(),
+          isFavorite: false
+        })
+        console.log("✅ Recipe saved to database successfully")
+      } catch (dbError) {
+        console.error("❌ Failed to save to database:", dbError)
+      }
+
+      // Also save to localStorage for offline access
       const existingHistory = JSON.parse(localStorage.getItem("recipeHistory") || "[]")
 
       // Always keep only the last 5 items plus the new one

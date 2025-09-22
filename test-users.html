@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Users API</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+        input { padding: 5px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Users API Connection</h1>
+
+    <div class="test">
+        <h2>1. Test GET Users</h2>
+        <button onclick="testGetUsers()">Test GET Users</button>
+        <pre id="get-result"></pre>
+    </div>
+
+    <div class="test">
+        <h2>2. Test Create User</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Password">
+        <select id="role">
+            <option value="guest">Guest</option>
+            <option value="worker">Worker</option>
+            <option value="admin">Admin</option>
+        </select>
+        <br>
+        <button onclick="testCreateUser()">Create User</button>
+        <pre id="create-result"></pre>
+    </div>
+
+    <div class="test">
+        <h2>3. Test Login</h2>
+        <input type="text" id="login-username" placeholder="Username">
+        <input type="password" id="login-password" placeholder="Password">
+        <br>
+        <button onclick="testLogin()">Test Login</button>
+        <pre id="login-result"></pre>
+    </div>
+
+    <div class="test">
+        <h2>4. Test Direct Database</h2>
+        <button onclick="testDirectDB()">Test Direct DB Connection</button>
+        <pre id="db-result"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://web.lweb.ch/recipedigitalizer/apis';
+
+        async function testGetUsers() {
+            const resultEl = document.getElementById('get-result');
+            resultEl.textContent = 'Loading...';
+
+            try {
+                console.log('🔵 Testing GET users...');
+                const response = await fetch(`${API_BASE}/users.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.parentElement.classList.add(data.success ? 'success' : 'error');
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        async function testCreateUser() {
+            const resultEl = document.getElementById('create-result');
+            resultEl.textContent = 'Loading...';
+
+            const userData = {
+                username: document.getElementById('username').value || 'test_' + Date.now(),
+                email: document.getElementById('email').value || `test_${Date.now()}@example.com`,
+                password: document.getElementById('password').value || 'test123',
+                role: document.getElementById('role').value,
+                status: 'active'
+            };
+
+            try {
+                console.log('🔵 Testing CREATE user...');
+                console.log('User data:', userData);
+
+                const response = await fetch(`${API_BASE}/users.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.parentElement.classList.add(data.success ? 'success' : 'error');
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        async function testLogin() {
+            const resultEl = document.getElementById('login-result');
+            resultEl.textContent = 'Loading...';
+
+            const loginData = {
+                username: document.getElementById('login-username').value || 'admin',
+                password: document.getElementById('login-password').value || 'sevelen9475'
+            };
+
+            try {
+                console.log('🔵 Testing LOGIN...');
+                console.log('Login data:', loginData);
+
+                const response = await fetch(`${API_BASE}/auth-simple.php?action=login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.parentElement.classList.add(data.success ? 'success' : 'error');
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        async function testDirectDB() {
+            const resultEl = document.getElementById('db-result');
+            resultEl.textContent = 'Testing direct database connection...';
+
+            // This will test if the PHP can connect and query the database
+            try {
+                const response = await fetch(`${API_BASE}/test-db.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                const text = await response.text();
+                resultEl.textContent = text;
+
+                if (response.ok) {
+                    resultEl.parentElement.classList.add('success');
+                } else {
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            console.log('🚀 Users API Test Page loaded');
+            console.log('API Base:', API_BASE);
+        });
+    </script>
+</body>
+</html>

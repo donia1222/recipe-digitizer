@@ -187,9 +187,50 @@ recipe-digitizer-main/
 
 ## 💾 Almacenamiento y Datos
 
-### localStorage como Base de Datos
+### Capa de Abstracción de Servicios (NUEVA - Preparada para Migración)
+
+La aplicación ahora cuenta con una **capa de servicios completa** que abstrae todo el acceso a datos, facilitando la futura migración a base de datos:
+
+#### Servicios Implementados
+
+1. **RecipeService** (`lib/services/recipeService.ts`)
+   - CRUD completo de recetas
+   - Búsqueda y filtrado
+   - Gestión de favoritos
+   - Aprobación/rechazo de recetas
+   - Gestión de imágenes adicionales
+   - Control de porciones
+
+2. **UserService** (`lib/services/userService.ts`)
+   - Gestión completa de usuarios
+   - Control de roles y permisos
+   - Estadísticas de usuarios
+   - Estado activo/inactivo
+   - Contador de recetas creadas
+
+3. **CommentService** (`lib/services/commentService.ts`)
+   - CRUD de comentarios por receta
+   - Sistema de likes
+   - Estadísticas de comentarios
+   - Búsqueda por usuario
+
+4. **AuthService** (`lib/services/authService.ts`)
+   - Autenticación multi-rol
+   - Control de sesiones
+   - Verificación de permisos
+   - Renovación automática de sesión
+
+#### Ventajas de la Nueva Arquitectura
+
+✅ **Migración Simplificada**: Solo necesitas modificar los servicios, no los componentes
+✅ **Código Preparado**: Todos los métodos ya tienen comentarios indicando el futuro endpoint API
+✅ **Sin Cambios en UI**: Los componentes no necesitarán modificaciones al migrar
+✅ **Consistencia**: Un único punto de acceso a datos
+✅ **Testing Facilitado**: Puedes mockear servicios fácilmente
+
+### localStorage como Base de Datos (Actual)
 ```javascript
-// Estructura de almacenamiento
+// Estructura de almacenamiento actual
 {
   'recipeHistory': HistoryItem[],        // Historial de recetas
   'recipe-servings': string,             // Porciones actuales
@@ -197,7 +238,10 @@ recipe-digitizer-main/
   'recipe-images-${id}': string[],       // Imágenes adicionales
   'recipe-auth': 'granted' | null,       // Estado de autenticación
   'user-role': Role | null,              // Rol del usuario
-  'recipe-comments-${id}': Comment[]     // Comentarios por receta
+  'recipe-comments-${id}': Comment[],    // Comentarios por receta
+  'app-users': User[],                   // Usuarios del sistema
+  'current-user': string,                // ID del usuario actual
+  'auth-session': string                 // Timestamp de sesión
 }
 ```
 
@@ -305,11 +349,146 @@ Biblioteca → Búsqueda/Navegación →
 Vista receta → Acciones (comentar, ajustar, etc.)
 ```
 
+## 🔄 Guía de Migración a Base de Datos (Hostpoint)
+
+### Pasos para Migrar a BD en Hostpoint
+
+#### 1. Configurar Base de Datos MySQL/PostgreSQL
+```bash
+# Variables de entorno necesarias (.env.local)
+DATABASE_URL="mysql://usuario:contraseña@mysql.hostpoint.ch:3306/nombre_bd"
+NEXT_PUBLIC_RECIPE="Andrea1606"  # Contraseña admin actual
+```
+
+#### 2. Instalar Dependencias para BD
+```bash
+npm install prisma @prisma/client
+# o
+npm install drizzle-orm mysql2
+```
+
+#### 3. Crear Schema de Base de Datos
+```sql
+-- Tablas principales necesarias
+CREATE TABLE users (
+  id VARCHAR(36) PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255),
+  role ENUM('admin', 'worker', 'guest') DEFAULT 'guest',
+  avatar VARCHAR(50),
+  active BOOLEAN DEFAULT true,
+  last_active DATETIME,
+  recipes_created INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE recipes (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(500),
+  analysis TEXT,
+  image_url VARCHAR(500), -- URL en lugar de base64
+  user_id VARCHAR(36),
+  status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  servings INT,
+  original_servings INT,
+  is_favorite BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE comments (
+  id VARCHAR(36) PRIMARY KEY,
+  recipe_id INT,
+  user_id VARCHAR(36),
+  content TEXT,
+  likes INT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE recipe_images (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  recipe_id INT,
+  image_url VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (recipe_id) REFERENCES recipes(id)
+);
+```
+
+#### 4. Modificar Servicios (Ya Preparados!)
+
+Solo necesitas actualizar la implementación interna de cada método en los servicios:
+
+```typescript
+// Ejemplo: lib/services/recipeService.ts
+static async getAll(): Promise<Recipe[]> {
+  // ACTUAL (localStorage):
+  // const stored = localStorage.getItem(this.STORAGE_KEY);
+  // return stored ? JSON.parse(stored) : [];
+
+  // NUEVO (con BD):
+  const response = await fetch('/api/recipes');
+  return response.json();
+}
+```
+
+#### 5. Crear API Routes en Next.js
+
+```typescript
+// app/api/recipes/route.ts
+import { NextResponse } from 'next/server';
+import { db } from '@/lib/db'; // Tu conexión a BD
+
+export async function GET() {
+  const recipes = await db.query('SELECT * FROM recipes');
+  return NextResponse.json(recipes);
+}
+
+export async function POST(request: Request) {
+  const data = await request.json();
+  const result = await db.insert('recipes', data);
+  return NextResponse.json(result);
+}
+```
+
+#### 6. Migrar Imágenes a CDN
+
+En lugar de guardar base64:
+1. Subir imágenes a Hostpoint Storage o Cloudinary
+2. Guardar solo URLs en la BD
+3. Modificar `RecipeService.create()` para subir imagen primero
+
+#### 7. Deploy en Hostpoint
+
+```bash
+# Build de producción
+npm run build
+
+# Subir via FTP o Git
+# Configurar Node.js en panel Hostpoint
+# Usar PM2 para mantener app activa
+pm2 start npm --name "recipe-app" -- start
+```
+
+### Tiempo Estimado de Migración
+
+- **Sin refactorización de componentes**: 3-5 días (gracias a la capa de servicios)
+- **Con sistema de auth completo**: +2 días
+- **Con CDN para imágenes**: +1-2 días
+- **Testing y debugging**: +2-3 días
+
+**Total**: ~1-2 semanas para migración completa
+
 ## 🚀 Despliegue y Configuración
 
 ### Variables de Entorno Requeridas
 ```bash
 NEXT_PUBLIC_RECIPE=        # Contraseña de administrador
+# Futuras (para BD):
+DATABASE_URL=              # Conexión a base de datos
+JWT_SECRET=                # Secret para tokens JWT
+CLOUDINARY_URL=            # Para CDN de imágenes (opcional)
 ```
 
 ### Comandos de Desarrollo

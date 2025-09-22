@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API Connection</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .test { margin: 20px 0; padding: 10px; border: 1px solid #ccc; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Connection</h1>
+
+    <div class="test">
+        <h2>1. Test GET Recipes</h2>
+        <button onclick="testGetRecipes()">Test GET</button>
+        <pre id="get-result"></pre>
+    </div>
+
+    <div class="test">
+        <h2>2. Test POST Recipe</h2>
+        <button onclick="testPostRecipe()">Test POST</button>
+        <pre id="post-result"></pre>
+    </div>
+
+    <div class="test">
+        <h2>3. Test Auth Verify</h2>
+        <button onclick="testAuthVerify()">Test Auth</button>
+        <pre id="auth-result"></pre>
+    </div>
+
+    <script>
+        const API_BASE = 'https://web.lweb.ch/recipedigitalizer/apis';
+
+        async function testGetRecipes() {
+            const resultEl = document.getElementById('get-result');
+            resultEl.textContent = 'Loading...';
+
+            try {
+                console.log('🔵 Testing GET recipes...');
+                const response = await fetch(`${API_BASE}/recipes-simple.php`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.parentElement.classList.add('success');
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        async function testPostRecipe() {
+            const resultEl = document.getElementById('post-result');
+            resultEl.textContent = 'Loading...';
+
+            const testData = {
+                title: 'Test Recipe ' + Date.now(),
+                analysis: 'Test analysis text',
+                image: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+                user_id: 'admin-001',
+                status: 'approved'
+            };
+
+            try {
+                console.log('🔵 Testing POST recipe...');
+                console.log('Payload:', testData);
+
+                const response = await fetch(`${API_BASE}/recipes-simple.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    if (data.success) {
+                        resultEl.parentElement.classList.add('success');
+                    } else {
+                        resultEl.parentElement.classList.add('error');
+                    }
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+
+        async function testAuthVerify() {
+            const resultEl = document.getElementById('auth-result');
+            resultEl.textContent = 'Loading...';
+
+            try {
+                console.log('🔵 Testing auth verify...');
+                const response = await fetch(`${API_BASE}/auth-simple.php?action=verify`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                    }
+                });
+
+                console.log('Response status:', response.status);
+                const text = await response.text();
+                console.log('Response text:', text);
+
+                try {
+                    const data = JSON.parse(text);
+                    resultEl.textContent = JSON.stringify(data, null, 2);
+                    resultEl.parentElement.classList.add('success');
+                } catch (e) {
+                    resultEl.textContent = 'Response (not JSON):\n' + text;
+                    resultEl.parentElement.classList.add('error');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultEl.textContent = `Error: ${error.message}\n\nCheck browser console for details`;
+                resultEl.parentElement.classList.add('error');
+            }
+        }
+    </script>
+</body>
+</html>

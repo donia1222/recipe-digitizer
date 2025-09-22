@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,8 @@ import UserManagement from "./user-management"
 import SubAdminManagement from "./sub-admin-management"
 import PendingRecipes from "./pending-recipes"
 import type { PendingRecipe, User, SubAdmin } from "@/types" // Declare types
+import { UserService } from "@/lib/services/userService"
+import { RecipeService } from "@/lib/services/recipeService"
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -36,6 +38,81 @@ export default function AdminDashboard() {
   const [subAdmins, setSubAdmins] = useState<SubAdmin[]>([])
   const [notifications, setNotifications] = useState(0)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [totalRecipes, setTotalRecipes] = useState(0)
+
+  // Load users and data from database on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true)
+      try {
+        // Load users from database
+        const usersFromDB = await UserService.getAllUsers()
+        console.log('👥 Usuarios cargados desde BD:', usersFromDB)
+
+        // Transform users to match the UI interface
+        const transformedUsers = usersFromDB.map(user => ({
+          id: user.id ? user.id.toString() : `user_${Date.now()}`,
+          name: user.name || user.username || 'Sin nombre',
+          email: user.email,
+          role: user.role as 'admin' | 'user' | 'worker' | 'guest',
+          status: (user.active === 1 || user.active === true || user.status === 'active') ? 'active' : 'inactive' as 'active' | 'inactive',
+          lastLogin: user.last_active || user.last_login || new Date().toISOString().split('T')[0],
+          recipesCount: user.recipes_created || 0,
+          joinDate: user.created_at ? user.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+        }))
+
+        setUsers(transformedUsers)
+
+        // Load sub-admins from database
+        const subAdminsFromDB = await UserService.getAllSubAdmins()
+        console.log('🛡️ Sub-admins cargados desde BD:', subAdminsFromDB)
+
+        // Transform sub-admins to match UI interface
+        const transformedSubAdmins = subAdminsFromDB.map(subAdmin => ({
+          id: subAdmin.id?.toString() || subAdmin.sub_admin_id,
+          name: subAdmin.name,
+          email: subAdmin.email,
+          permissions: subAdmin.permissions,
+          createdDate: subAdmin.created_at ? subAdmin.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          status: subAdmin.status as 'active' | 'inactive',
+          lastLogin: new Date().toISOString().split('T')[0]
+        }))
+
+        setSubAdmins(transformedSubAdmins)
+
+        // Load recipes and counts
+        const recipesFromDB = await RecipeService.getAll()
+        const pendingCount = recipesFromDB.filter((r: any) => r.status === 'pending').length
+        const approvedCount = recipesFromDB.filter((r: any) => r.status === 'approved').length
+        setNotifications(pendingCount)
+        setTotalRecipes(approvedCount)
+
+        // Set pending recipes for the component
+        const pendingRecipesList = recipesFromDB
+          .filter((r: any) => r.status === 'pending')
+          .map((r: any) => ({
+            id: r.id,
+            title: r.title || 'Sin título',
+            author: r.user_id || 'Desconocido',
+            user: r.user_id || 'Desconocido',
+            date: r.created_at || new Date().toISOString(),
+            submittedAt: r.created_at || new Date().toISOString(),
+            status: 'pending' as const,
+            image: r.image || r.image_base64 || '',
+            analysis: r.analysis || ''
+          }))
+        setPendingRecipes(pendingRecipesList)
+
+      } catch (error) {
+        console.error('Error loading data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadData()
+  }, [])
 
   const handleBackToMain = () => {
     setIsNavigating(true)
@@ -99,7 +176,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="Gesamte Rezepte"
-          value="127"
+          value={totalRecipes}
           description="Genehmigte Rezepte"
           icon={ChefHat}
           color="bg-green-500"

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
+import { RecipeService } from "@/lib/services/recipeService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, Star, Calendar, ChefHat, Search, Grid3x3, List, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, BookOpen, Home, LogOut, ArrowLeft, Shield } from "lucide-react"
@@ -45,11 +46,33 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
     loadData()
   }, [])
 
-  const loadData = () => {
-    const savedHistory = localStorage.getItem("recipeHistory")
+  const loadData = async () => {
+    try {
+      // Cargar recetas desde la BD
+      console.log('📚 Cargando recetas desde la BD...');
+      const recipesFromDB = await RecipeService.getAll();
+      console.log('📚 Recetas desde BD:', recipesFromDB);
 
-    if (savedHistory) {
-      setHistory(JSON.parse(savedHistory))
+      // Por ahora también cargar de localStorage para compatibilidad
+      const savedHistory = localStorage.getItem("recipeHistory")
+      const localRecipes = savedHistory ? JSON.parse(savedHistory) : [];
+
+      // Combinar recetas de BD y localStorage (evitar duplicados)
+      const combinedRecipes = [...recipesFromDB];
+      localRecipes.forEach((localRecipe: any) => {
+        if (!combinedRecipes.find(r => r.id === localRecipe.id)) {
+          combinedRecipes.push(localRecipe);
+        }
+      });
+
+      setHistory(combinedRecipes);
+    } catch (error) {
+      console.error('Error cargando recetas:', error);
+      // Fallback a localStorage si hay error
+      const savedHistory = localStorage.getItem("recipeHistory")
+      if (savedHistory) {
+        setHistory(JSON.parse(savedHistory))
+      }
     }
   }
 
@@ -87,7 +110,17 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
   }
 
   const formatDate = (dateString: string) => {
+    if (!dateString) {
+      return 'Datum unbekannt'
+    }
+
     const date = new Date(dateString)
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+      return 'Datum unbekannt'
+    }
+
     return new Intl.DateTimeFormat('de-DE', {
       day: '2-digit',
       month: '2-digit',

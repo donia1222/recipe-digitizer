@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, UserPlus, Edit, Trash2, Users, Mail, Calendar, MoreHorizontal, Eye, Ban, CheckCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { UserService } from "@/lib/services/userService"
+import { useToast } from "@/components/ui/use-toast"
 
 interface User {
   id: string
@@ -40,6 +42,8 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
     role: 'user' as User['role'],
     password: ''
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,48 +53,151 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
     return matchesSearch && matchesRole && matchesStatus
   })
 
-  const handleAddUser = () => {
+  const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) return
 
-    const user: User = {
-      id: Date.now().toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: 'active',
-      lastLogin: new Date().toISOString().split('T')[0],
-      recipesCount: 0,
-      joinDate: new Date().toISOString().split('T')[0]
-    }
+    setIsLoading(true)
+    try {
+      // Create user in database
+      const createdUser = await UserService.createUser({
+        name: newUser.name,
+        email: newUser.email,
+        password: newUser.password,
+        role: newUser.role === 'admin' ? 'admin' : newUser.role === 'worker' ? 'worker' : 'guest',
+        status: 'active',
+        created_at: new Date().toISOString()
+      })
 
-    setUsers([...users, user])
-    setNewUser({ name: '', email: '', role: 'user', password: '' })
-    setIsAddUserOpen(false)
+      // Add to local state
+      const user: User = {
+        id: createdUser.id?.toString() || Date.now().toString(),
+        name: createdUser.name || createdUser.username || newUser.name,
+        email: createdUser.email,
+        role: createdUser.role as User['role'],
+        status: createdUser.active ? 'active' : 'inactive',
+        lastLogin: new Date().toISOString().split('T')[0],
+        recipesCount: 0,
+        joinDate: new Date().toISOString().split('T')[0]
+      }
+
+      setUsers([...users, user])
+      setNewUser({ name: '', email: '', role: 'user', password: '' })
+      setIsAddUserOpen(false)
+
+      toast({
+        title: "Usuario creado",
+        description: `${newUser.name} ha sido añadido exitosamente.`,
+      })
+    } catch (error) {
+      console.error('Error creating user:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo crear el usuario. Intente nuevamente.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleEditUser = () => {
+  const handleEditUser = async () => {
     if (!selectedUser) return
 
-    setUsers(users.map(user =>
-      user.id === selectedUser.id ? selectedUser : user
-    ))
-    setIsEditUserOpen(false)
-    setSelectedUser(null)
-  }
+    setIsLoading(true)
+    try {
+      // Update user in database
+      await UserService.updateUser(parseInt(selectedUser.id) || selectedUser.id as any, {
+        name: selectedUser.name,
+        email: selectedUser.email,
+        role: selectedUser.role === 'admin' ? 'admin' : selectedUser.role === 'worker' ? 'worker' : 'guest',
+        status: selectedUser.status
+      })
 
-  const handleDeleteUser = (id: string) => {
-    const user = users.find(u => u.id === id)
-    if (user && window.confirm(`¿Estás seguro de que quieres eliminar al usuario "${user.name}"?`)) {
-      setUsers(users.filter(u => u.id !== id))
+      // Update local state
+      setUsers(users.map(user =>
+        user.id === selectedUser.id ? selectedUser : user
+      ))
+      setIsEditUserOpen(false)
+      setSelectedUser(null)
+
+      toast({
+        title: "Usuario actualizado",
+        description: "Los cambios han sido guardados exitosamente.",
+      })
+    } catch (error) {
+      console.error('Error updating user:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el usuario.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const handleToggleStatus = (id: string) => {
-    setUsers(users.map(user =>
-      user.id === id
-        ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' }
-        : user
-    ))
+  const handleDeleteUser = async (id: string) => {
+    const user = users.find(u => u.id === id)
+    if (user && window.confirm(`¿Estás seguro de que quieres eliminar al usuario "${user.name}"?`)) {
+      setIsLoading(true)
+      try {
+        // Delete from database
+        await UserService.deleteUser(parseInt(id) || id)
+
+        // Remove from local state
+        setUsers(users.filter(u => u.id !== id))
+
+        toast({
+          title: "Usuario eliminado",
+          description: "El usuario ha sido eliminado exitosamente.",
+        })
+      } catch (error) {
+        console.error('Error deleting user:', error)
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el usuario.",
+          variant: "destructive"
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleToggleStatus = async (id: string) => {
+    const userToUpdate = users.find(u => u.id === id)
+    if (!userToUpdate) return
+
+    const newStatus = userToUpdate.status === 'active' ? 'inactive' : 'active'
+
+    setIsLoading(true)
+    try {
+      // Update in database
+      await UserService.updateUser(parseInt(id) || id, {
+        status: newStatus
+      })
+
+      // Update local state
+      setUsers(users.map(user =>
+        user.id === id
+          ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' }
+          : user
+      ))
+
+      toast({
+        title: "Estado actualizado",
+        description: `Usuario ${newStatus === 'active' ? 'activado' : 'desactivado'} exitosamente.`,
+      })
+    } catch (error) {
+      console.error('Error toggling user status:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado del usuario.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const getRoleColor = (role: string) => {

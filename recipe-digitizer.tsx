@@ -19,6 +19,7 @@ import RecipeArchivePage from "@/components/recipe-archive-page"
 import UserPage from "@/components/user-page"
 import { analyzeRecipeImage, recalculateServings } from "@/lib/actions"
 import ServingsModal from "@/components/servings-modal"
+import { RecipeService } from "@/lib/services/recipeService"
 
 interface RecipeDigitizerProps {
   handleLogout: () => void
@@ -274,7 +275,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
       setAnalysis(result.analysis)
 
       // Im Verlauf speichern
-      saveToHistory(imageData, result.analysis)
+      await saveToHistory(imageData, result.analysis)
       
       // Cambiar a vista de análisis si estamos en la biblioteca
       if (currentView === 'library') {
@@ -372,7 +373,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
     }
   }
 
-  const saveToHistory = (imageData: string, analysisText: string) => {
+  const saveToHistory = async (imageData: string, analysisText: string) => {
     const recipeId = `recipe-${Date.now()}`
     const extractRecipeTitle = (analysis: string) => {
       const firstLine = analysis.split('\n')[0]
@@ -391,19 +392,27 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
     }
 
     try {
+      console.log('🟢 Guardando receta en BD...');
+
+      // Usar RecipeService para guardar en la BD
+      const createdRecipe = await RecipeService.create(historyItem);
+      console.log('✅ Receta guardada en BD:', createdRecipe);
+
+      // También guardar en localStorage por compatibilidad temporal
       const existingHistory = localStorage.getItem("recipeHistory")
       const history = existingHistory ? JSON.parse(existingHistory) : []
-
-      // Agrega el nuevo item al inicio del array
       const updatedHistory = [historyItem, ...history]
-
-      // Limita el historial a un máximo de 10 elementos
       const limitedHistory = updatedHistory.slice(0, 10)
-
       localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+
       setCurrentRecipeId(recipeId)
     } catch (error) {
-      console.error("Fehler beim Speichern des Verlaufs:", error)
+      console.error("❌ Error al guardar receta:", error)
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la receta",
+        variant: "destructive"
+      })
     }
   }
 

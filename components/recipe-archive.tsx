@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { RecipeService } from "@/lib/services/recipeService"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -55,15 +56,43 @@ const RecipeArchive: React.FC<RecipeArchiveProps> = ({ isOpen, onClose, onSelect
     "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"
   ]
 
-  // Load history and folders from localStorage
+  // Load history and folders from database and localStorage
   useEffect(() => {
     if (isOpen) {
-      const savedHistory = localStorage.getItem("recipeHistory")
-      const savedFolders = localStorage.getItem("recipeFolders")
+      const loadData = async () => {
+        try {
+          // Cargar recetas desde la BD
+          console.log('📚 Cargando recetas desde la BD...');
+          const recipesFromDB = await RecipeService.getAll();
+          console.log('📚 Recetas desde BD:', recipesFromDB);
 
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory))
-      }
+          // Por ahora también cargar de localStorage para compatibilidad
+          const savedHistory = localStorage.getItem("recipeHistory")
+          const localRecipes = savedHistory ? JSON.parse(savedHistory) : [];
+
+          // Combinar recetas de BD y localStorage (evitar duplicados)
+          const combinedRecipes = [...recipesFromDB];
+          localRecipes.forEach((localRecipe: any) => {
+            if (!combinedRecipes.find(r => r.id === localRecipe.id)) {
+              combinedRecipes.push(localRecipe);
+            }
+          });
+
+          setHistory(combinedRecipes);
+        } catch (error) {
+          console.error('Error cargando recetas:', error);
+          // Fallback a localStorage si hay error
+          const savedHistory = localStorage.getItem("recipeHistory")
+          if (savedHistory) {
+            setHistory(JSON.parse(savedHistory))
+          }
+        }
+      };
+
+      loadData();
+
+      // Cargar carpetas (todavía desde localStorage)
+      const savedFolders = localStorage.getItem("recipeFolders")
       if (savedFolders) {
         setFolders(JSON.parse(savedFolders))
       }

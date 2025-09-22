@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Search, UserPlus, Edit, Trash2, Shield, Mail, Calendar, MoreHorizontal, Ban, CheckCircle, Key, Users } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { UserService } from "@/lib/services/userService"
+import { useToast } from "@/components/ui/use-toast"
 
 interface SubAdmin {
   id: string
@@ -46,31 +48,66 @@ export default function SubAdminManagement({ subAdmins, setSubAdmins }: SubAdmin
     password: '',
     permissions: [] as string[]
   })
+  const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   const filteredSubAdmins = subAdmins.filter(subAdmin =>
     subAdmin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     subAdmin.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleAddSubAdmin = () => {
+  const handleAddSubAdmin = async () => {
     if (!newSubAdmin.name || !newSubAdmin.email || !newSubAdmin.password || newSubAdmin.permissions.length === 0) {
-      alert('Por favor completa todos los campos y selecciona al menos un permiso')
+      toast({
+        title: "Error",
+        description: "Por favor completa todos los campos y selecciona al menos un permiso",
+        variant: "destructive"
+      })
       return
     }
 
-    const subAdmin: SubAdmin = {
-      id: Date.now().toString(),
-      name: newSubAdmin.name,
-      email: newSubAdmin.email,
-      permissions: newSubAdmin.permissions,
-      createdDate: new Date().toISOString().split('T')[0],
-      status: 'active',
-      lastLogin: new Date().toISOString().split('T')[0]
-    }
+    setIsLoading(true)
+    try {
+      // Create sub-admin in database
+      const createdSubAdmin = await UserService.createSubAdmin({
+        sub_admin_id: `sub_admin_${Date.now()}`,
+        name: newSubAdmin.name,
+        email: newSubAdmin.email,
+        password: newSubAdmin.password,
+        permissions: newSubAdmin.permissions,
+        status: 'active',
+        created_by: 'admin'
+      })
 
-    setSubAdmins([...subAdmins, subAdmin])
-    setNewSubAdmin({ name: '', email: '', password: '', permissions: [] })
-    setIsAddSubAdminOpen(false)
+      // Add to local state
+      const subAdmin: SubAdmin = {
+        id: createdSubAdmin.id?.toString() || Date.now().toString(),
+        name: createdSubAdmin.name,
+        email: createdSubAdmin.email,
+        permissions: createdSubAdmin.permissions,
+        createdDate: new Date().toISOString().split('T')[0],
+        status: 'active',
+        lastLogin: new Date().toISOString().split('T')[0]
+      }
+
+      setSubAdmins([...subAdmins, subAdmin])
+      setNewSubAdmin({ name: '', email: '', password: '', permissions: [] })
+      setIsAddSubAdminOpen(false)
+
+      toast({
+        title: "Sub-Administrador creado",
+        description: `${newSubAdmin.name} ha sido añadido exitosamente.`,
+      })
+    } catch (error) {
+      console.error('Error creating sub-admin:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo crear el sub-administrador.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEditSubAdmin = () => {
