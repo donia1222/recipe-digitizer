@@ -85,7 +85,7 @@ export default function HomeDashboard({
       <div className="container mx-auto px-4 sm:px-6 pt-24 pb-12">
         <div className="text-center mb-12">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Willkommen bei Büelriet</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-600 mb-4">Willkommen bei Büelriet</h2>
             <p className="text-lg text-gray-600 min-h-[2rem]">
               {typedText}
               <span className="animate-pulse">|</span>
