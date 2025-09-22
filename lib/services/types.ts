@@ -14,6 +14,7 @@ export interface Recipe {
   originalServings?: number;
   additionalImages?: string[];
   status?: 'pending' | 'approved' | 'rejected';
+  user_id?: string;
 }
 
 export interface Comment {

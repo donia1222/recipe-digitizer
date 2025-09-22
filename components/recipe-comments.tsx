@@ -35,7 +35,7 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
     },
     {
       id: "2",
-      author: "Andrea Salvador",
+      author: "Maria Koch",
       role: "worker",
       content: "Als Köchin kann ich bestätigen, dass dieses Rezept wirklich hervorragend ist! Ein kleiner Tipp: Wenn ihr die Zwiebeln etwas länger anbratet, bekommt ihr noch mehr Geschmack. Großartige Arbeit bei der Digitalisierung!",
       date: "vor 45 Minuten",

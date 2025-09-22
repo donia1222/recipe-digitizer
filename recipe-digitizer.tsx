@@ -28,6 +28,7 @@ interface RecipeDigitizerProps {
 
 export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigitizerProps) {
   const [image, setImage] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
   const [analysis, setAnalysis] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
   const [recalculatingServings, setRecalculatingServings] = useState<boolean>(false)
@@ -64,6 +65,19 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
+
+  // Load current user from localStorage
+  useEffect(() => {
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      try {
+        const user = JSON.parse(currentUserStr);
+        setCurrentUser({ id: user.id, name: user.name });
+      } catch (error) {
+        console.error('Error loading current user:', error);
+      }
+    }
+  }, []);
   const [photoCallback, setPhotoCallback] = useState<((imageData: string) => void) | null>(null)
 
   // Save servings to localStorage whenever they change
@@ -389,6 +403,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
       title: extractRecipeTitle(analysisText),
       isFavorite: false,
       folderId: undefined,
+      user_id: currentUser?.id || 'admin-001', // Add user_id
     }
 
     try {

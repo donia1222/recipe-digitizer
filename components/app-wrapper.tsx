@@ -12,13 +12,34 @@ export default function AppWrapper() {
 
   // Check for existing session on component mount
   useEffect(() => {
-    const savedAuth = localStorage.getItem("recipe-auth")
-    const savedRole = localStorage.getItem("user-role") as 'admin' | 'worker' | 'guest' | null
-    if (savedAuth === "granted" && savedRole) {
-      setIsAuthenticated(true)
-      setUserRole(savedRole)
+    const checkAuthStatus = async () => {
+      const savedAuth = localStorage.getItem("recipe-auth")
+      const savedRole = localStorage.getItem("user-role") as 'admin' | 'worker' | 'guest' | null
+      const authToken = localStorage.getItem("auth-token")
+
+      if (savedAuth === "granted" && savedRole) {
+        // If we have an auth token, try to refresh user data from server
+        if (authToken) {
+          try {
+            const { UserService } = await import("@/lib/services/userService")
+            const result = await UserService.getCurrentUserFromServer()
+            if (result.success && result.user) {
+              console.log("✅ User data refreshed from server:", result.user.name)
+            } else {
+              console.log("ℹ️ Using cached user data")
+            }
+          } catch (error) {
+            console.log("ℹ️ Could not refresh user data, using cached")
+          }
+        }
+
+        setIsAuthenticated(true)
+        setUserRole(savedRole)
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    checkAuthStatus()
   }, [])
 
   const handleLogin = (role: 'admin' | 'worker' | 'guest') => {

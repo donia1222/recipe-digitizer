@@ -1,6 +1,23 @@
 import { Recipe } from './types';
 import { API_CONFIG, getApiUrl, getApiHeaders } from './api-config';
 
+// Helper function to get current user from localStorage
+function getCurrentUser(): { id: string; name: string } | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      const user = JSON.parse(currentUserStr);
+      return { id: user.id, name: user.name };
+    }
+  } catch (error) {
+    console.error('Error getting current user:', error);
+  }
+
+  return null;
+}
+
 /**
  * Servicio de Recetas
  * Usa APIs de producción o localStorage según configuración
@@ -10,6 +27,41 @@ export class RecipeService {
   private static SERVINGS_KEY = 'recipe-servings';
   private static ORIGINAL_SERVINGS_KEY = 'recipe-original-servings';
   private static IMAGES_KEY_PREFIX = 'recipe-images-';
+
+  /**
+   * Obtener recetas por usuario
+   */
+  static async getByUser(userId: string): Promise<Recipe[]> {
+    try {
+      // Usar API en producción
+      if (API_CONFIG.USE_PRODUCTION) {
+        const timestamp = Date.now();
+        const url = getApiUrl(`${API_CONFIG.PRODUCTION.ENDPOINTS.RECIPES}?user_id=${userId}&_t=${timestamp}`);
+        console.log("🌐 Calling API:", url);
+        console.log("🔍 User ID parameter:", userId);
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: getApiHeaders()
+        });
+
+        if (!response.ok) {
+          throw new Error('Error fetching user recipes');
+        }
+
+        const data = await response.json();
+        console.log("📡 Server response:", data);
+        console.log("🔍 Debug info from server:", data.debug);
+        return data.data || [];
+      }
+
+      // Fallback a localStorage para desarrollo
+      return this.getFromLocalStorage().filter(recipe => recipe.user_id === userId);
+    } catch (error) {
+      console.error('Error fetching user recipes:', error);
+      return [];
+    }
+  }
 
   /**
    * Obtener todas las recetas
@@ -63,9 +115,13 @@ export class RecipeService {
         const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.RECIPES);
         console.log('🔵 POST to:', url);
 
+        // Use user_id from recipe if provided, otherwise get from localStorage
+        const currentUser = getCurrentUser();
+        const userId = recipe.user_id || currentUser?.id || 'admin-001';
+
         const payload = {
           ...recipe,
-          user_id: 'admin-001',
+          user_id: userId,
           status: 'approved'
         };
         console.log('🔵 Payload:', payload);

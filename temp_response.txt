@@ -1,0 +1,1 @@
+{"success":false,"authenticated":false,"message":"No hay sesi\u00f3n activa"}

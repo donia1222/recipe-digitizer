@@ -240,6 +240,46 @@ export class UserService {
   }
 
   // Authentication
+  /**
+   * Get current user from server using token
+   */
+  static async getCurrentUserFromServer(): Promise<{success: boolean, user?: User, error?: string}> {
+    if (!API_CONFIG.USE_PRODUCTION) {
+      return { success: false, error: 'Only available in production' };
+    }
+
+    try {
+      const token = localStorage.getItem('auth-token');
+      if (!token) {
+        return { success: false, error: 'No token found' };
+      }
+
+      const response = await fetch(getApiUrl(`${API_CONFIG.PRODUCTION.ENDPOINTS.AUTH}?action=verify`), {
+        method: 'GET',
+        headers: {
+          ...getApiHeaders(),
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        return { success: false, error: 'Invalid token' };
+      }
+
+      const data = await response.json();
+      if (data.success && data.user) {
+        // Update localStorage with fresh data
+        localStorage.setItem('current-user', JSON.stringify(data.user));
+        return { success: true, user: data.user };
+      }
+
+      return { success: false, error: data.error || 'Invalid response' };
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
   static async login(username: string, password: string): Promise<{success: boolean, user?: User, token?: string, error?: string}> {
     if (!API_CONFIG.USE_PRODUCTION) {
       // Mock authentication for development

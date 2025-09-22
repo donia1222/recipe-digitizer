@@ -67,6 +67,7 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<UserRecipe | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
   const hasInitializedRef = useRef(false)
 
   // Emergency localStorage cleanup function
@@ -141,92 +142,72 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
     image: "",
   })
 
-  // Load user recipes and notifications from localStorage
+  // Load user recipes from DATABASE (not localStorage)
   useEffect(() => {
-    if (!hasInitializedRef.current) {
+    const loadUserRecipes = async () => {
+      if (!currentUser?.id) return;
+
       try {
-        // Run emergency cleanup first
-        cleanupLocalStorage()
+        console.log("🔵 Loading recipes from database for user:", currentUser.id);
+        console.log("🔵 Current user full object:", currentUser);
+        const dbRecipes = await RecipeService.getByUser(currentUser.id);
+        console.log("📚 Recipes from database:", dbRecipes);
+        console.log("📚 Number of recipes found:", dbRecipes.length);
 
-        const savedRecipes = localStorage.getItem("userRecipes")
-        const savedNotifications = localStorage.getItem("userNotifications")
+        // FILTRAR MANUALMENTE EN EL FRONTEND (porque PHP no filtra bien)
+        console.log("🔧 FILTRADO MANUAL: Total recetas recibidas:", dbRecipes.length);
+        const filteredRecipes = dbRecipes.filter((recipe: any) => {
+          console.log("🔍 Checking recipe:", recipe.id, "user_id:", recipe.user_id, "vs current:", currentUser.id);
+          return recipe.user_id === currentUser.id;
+        });
+        console.log("✅ FILTRADO MANUAL: Recetas del usuario:", filteredRecipes.length);
 
-        if (savedRecipes) {
-          try {
-            const recipes = JSON.parse(savedRecipes)
-            // Add createdBy field to existing recipes if missing
-            const updatedRecipes = recipes.map((recipe: any) => ({
-              ...recipe,
-              createdBy: recipe.createdBy || "Andrea Salvador",
-            }))
-            console.log("Loaded recipes:", updatedRecipes) // Debug log
-            setUserRecipes(updatedRecipes)
-          } catch (error) {
-            console.error("Error loading recipes:", error)
-            localStorage.removeItem("userRecipes")
-            setUserRecipes([])
-          }
-        } else {
-          setUserRecipes([])
-        }
+        // Convert database recipes to UserRecipe format
+        const userRecipes = filteredRecipes.map((recipe: any) => {
+          return {
+            id: recipe.id.toString(),
+            title: recipe.title || "Sin título",
+            description: recipe.analysis || "",
+            ingredients: [],
+            preparation: recipe.analysis || "",
+            estimatedTime: "30 min",
+            servings: recipe.servings || 2,
+            image: recipe.image || "",
+            status: recipe.status || "approved",
+            createdAt: recipe.date || new Date().toISOString(),
+            createdBy: currentUser.name
+          };
+        });
 
-        if (savedNotifications) {
-          try {
-            const notifications = JSON.parse(savedNotifications)
-            // Keep only last 10 notifications
-            const limitedNotifications = notifications.slice(-10)
-            setNotifications(limitedNotifications)
-          } catch (error) {
-            console.error("Error loading notifications:", error)
-            localStorage.removeItem("userNotifications")
-            setNotifications([])
-          }
-        } else {
-          setNotifications([])
-        }
-
-        hasInitializedRef.current = true
+        setUserRecipes(userRecipes);
+        console.log("✅ User recipes loaded:", userRecipes.length);
       } catch (error) {
-        console.error("Error during initialization:", error)
-        hasInitializedRef.current = true
+        console.error("❌ Error loading recipes from database:", error);
+        setUserRecipes([]);
       }
+    };
+
+    if (currentUser) {
+      loadUserRecipes();
+    }
+  }, [currentUser])
+
+  // Load current user from localStorage (updated from database)
+  useEffect(() => {
+    try {
+      const currentUserStr = localStorage.getItem('current-user')
+      if (currentUserStr) {
+        const user = JSON.parse(currentUserStr)
+        setCurrentUser({ id: user.id, name: user.name })
+        console.log("✅ Current user loaded:", user.name, "ID:", user.id)
+        console.log("🔍 Full user object:", user)
+      }
+    } catch (error) {
+      console.error("Error loading current user:", error)
+      setCurrentUser(null)
     }
   }, [])
 
-  // Save to localStorage when data changes (only after initialization)
-  useEffect(() => {
-    if (hasInitializedRef.current) {
-      try {
-        // Always limit to max 3 recipes to prevent quota issues
-        const limitedRecipes = userRecipes.slice(-3)
-
-        if (limitedRecipes.length !== userRecipes.length) {
-          console.warn("🔧 Limiting user recipes to last 3 to prevent quota issues")
-          setUserRecipes(limitedRecipes)
-          return
-        }
-
-        console.log("💾 Saving recipes to localStorage:", limitedRecipes)
-        localStorage.setItem("userRecipes", JSON.stringify(limitedRecipes))
-      } catch (error) {
-        console.error("❌ Error saving recipes to localStorage:", error)
-        // Emergency: run cleanup and save only the most recent recipe
-        if (error instanceof Error && error.name === "QuotaExceededError") {
-          console.warn("🚨 Emergency cleanup needed")
-          cleanupLocalStorage()
-
-          try {
-            const mostRecent = userRecipes.slice(-1)
-            localStorage.setItem("userRecipes", JSON.stringify(mostRecent))
-            setUserRecipes(mostRecent)
-            console.log("✅ Saved only most recent recipe after cleanup")
-          } catch (emergencyError) {
-            console.error("❌ Emergency save failed completely:", emergencyError)
-          }
-        }
-      }
-    }
-  }, [userRecipes])
 
   useEffect(() => {
     if (hasInitializedRef.current) {
@@ -292,7 +273,7 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
     })
   }
 
-  const submitRecipe = () => {
+  const submitRecipe = async () => {
     console.log("submitRecipe called with formData:", formData) // Debug log
     if (!formData.title || !formData.preparation || formData.ingredients.filter((i) => i.trim()).length === 0) {
       console.log("Form validation failed") // Debug log
@@ -314,7 +295,41 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
       }
 
       console.log("Updating existing recipe:", updatedRecipe) // Debug log
-      setUserRecipes((prev) => prev.map((r) => (r.id === editingRecipe.id ? updatedRecipe : r)))
+
+      // Update in database
+      try {
+        console.log("💾 Updating recipe in database...");
+        await RecipeService.update(parseInt(editingRecipe.id), {
+          title: updatedRecipe.title,
+          analysis: formatRecipeForArchive(updatedRecipe),
+          servings: updatedRecipe.servings,
+          image: updatedRecipe.image
+        });
+        console.log("✅ Recipe updated in database successfully");
+
+        // Reload recipes from database
+        if (currentUser?.id) {
+          const dbRecipes = await RecipeService.getByUser(currentUser.id);
+          const userRecipes = dbRecipes.map((recipe: any) => ({
+            id: recipe.id.toString(),
+            title: recipe.title || "Sin título",
+            description: recipe.analysis || "",
+            ingredients: [],
+            preparation: recipe.analysis || "",
+            estimatedTime: "30 min",
+            servings: recipe.servings || 2,
+            image: recipe.image || "",
+            status: recipe.status || "approved",
+            createdAt: recipe.date || new Date().toISOString(),
+            createdBy: currentUser.name
+          }));
+          setUserRecipes(userRecipes);
+          console.log("🔄 Recipes reloaded after update");
+        }
+      } catch (dbError) {
+        console.error("❌ Failed to update recipe in database:", dbError);
+      }
+
       setEditingRecipe(null)
     } else {
       // Create new recipe
@@ -329,15 +344,11 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
         image: formData.image,
         status: "pending",
         createdAt: new Date().toISOString(),
-        createdBy: "Andrea Salvador",
+        createdBy: currentUser?.name || "Usuario",
       }
 
       console.log("Creating new recipe:", newRecipe) // Debug log
-      setUserRecipes((prev) => {
-        const updated = [...prev, newRecipe]
-        console.log("Updated recipes array:", updated) // Debug log
-        return updated
-      })
+      // Recipe will be added to state when we reload from database after saving
 
       // Simulate admin approval after 3 seconds only for new recipes
       setTimeout(() => {
@@ -380,9 +391,30 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
           analysis: formatRecipeForArchive(recipe),
           image: recipe.image || "",
           date: new Date().toISOString(),
-          isFavorite: false
+          isFavorite: false,
+          user_id: currentUser?.id || 'admin-001'
         })
         console.log("✅ Recipe saved to database successfully")
+
+        // Reload recipes from database
+        if (currentUser?.id) {
+          const dbRecipes = await RecipeService.getByUser(currentUser.id);
+          const userRecipes = dbRecipes.map((recipe: any) => ({
+            id: recipe.id.toString(),
+            title: recipe.title || "Sin título",
+            description: recipe.analysis || "",
+            ingredients: [],
+            preparation: recipe.analysis || "",
+            estimatedTime: "30 min",
+            servings: recipe.servings || 2,
+            image: recipe.image || "",
+            status: recipe.status || "approved",
+            createdAt: recipe.date || new Date().toISOString(),
+            createdBy: currentUser.name
+          }));
+          setUserRecipes(userRecipes);
+          console.log("🔄 Recipes reloaded from database");
+        }
       } catch (dbError) {
         console.error("❌ Failed to save to database:", dbError)
       }
@@ -444,7 +476,7 @@ ${recipe.preparation}
 
 ${recipe.estimatedTime ? `Zubereitungszeit: ${recipe.estimatedTime}\n` : ""}Portionen: ${recipe.servings}
 
-Erstellt von: ${recipe.createdBy || "Andrea Salvador"}
+Erstellt von: ${recipe.createdBy || currentUser?.name || "Usuario"}
 Erstellt am: ${formatDate(recipe.createdAt)}`
   }
 
@@ -514,8 +546,34 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
     setActiveTab("create")
   }
 
-  const deleteRecipe = (recipeId: string) => {
-    setUserRecipes((prev) => prev.filter((r) => r.id !== recipeId))
+  const deleteRecipe = async (recipeId: string) => {
+    try {
+      console.log("🗑️ Deleting recipe from database:", recipeId);
+      await RecipeService.delete(parseInt(recipeId));
+      console.log("✅ Recipe deleted from database");
+
+      // Reload recipes from database
+      if (currentUser?.id) {
+        const dbRecipes = await RecipeService.getByUser(currentUser.id);
+        const userRecipes = dbRecipes.map((recipe: any) => ({
+          id: recipe.id.toString(),
+          title: recipe.title || "Sin título",
+          description: recipe.analysis || "",
+          ingredients: [],
+          preparation: recipe.analysis || "",
+          estimatedTime: "30 min",
+          servings: recipe.servings || 2,
+          image: recipe.image || "",
+          status: recipe.status || "approved",
+          createdAt: recipe.date || new Date().toISOString(),
+          createdBy: currentUser.name
+        }));
+        setUserRecipes(userRecipes);
+        console.log("🔄 Recipes reloaded after deletion");
+      }
+    } catch (error) {
+      console.error("❌ Failed to delete recipe:", error);
+    }
     setShowDeleteModal(null)
   }
 
@@ -524,14 +582,58 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
     resetForm()
   }
 
-  const resubmitToAdmin = (recipeId: string) => {
-    setUserRecipes((prev) => prev.map((r) => (r.id === recipeId ? { ...r, status: "pending" as const } : r)))
+  const resubmitToAdmin = async (recipeId: string) => {
+    try {
+      console.log("🔄 Resubmitting recipe to admin:", recipeId);
+      await RecipeService.update(parseInt(recipeId), { status: "pending" });
+
+      // Reload recipes from database
+      if (currentUser?.id) {
+        const dbRecipes = await RecipeService.getByUser(currentUser.id);
+        const userRecipes = dbRecipes.map((recipe: any) => ({
+          id: recipe.id.toString(),
+          title: recipe.title || "Sin título",
+          description: recipe.analysis || "",
+          ingredients: [],
+          preparation: recipe.analysis || "",
+          estimatedTime: "30 min",
+          servings: recipe.servings || 2,
+          image: recipe.image || "",
+          status: recipe.status || "approved",
+          createdAt: recipe.date || new Date().toISOString(),
+          createdBy: currentUser.name
+        }));
+        setUserRecipes(userRecipes);
+        console.log("🔄 Recipes reloaded after resubmit");
+      }
+    } catch (error) {
+      console.error("❌ Failed to resubmit recipe:", error);
+    }
 
     // Simulate admin approval after 3 seconds
-    setTimeout(() => {
-      const recipe = userRecipes.find((r) => r.id === recipeId)
-      if (recipe) {
-        simulateApproval({ ...recipe, status: "pending" })
+    setTimeout(async () => {
+      try {
+        await RecipeService.update(parseInt(recipeId), { status: "approved" });
+        // Reload again after approval
+        if (currentUser?.id) {
+          const dbRecipes = await RecipeService.getByUser(currentUser.id);
+          const userRecipes = dbRecipes.map((recipe: any) => ({
+            id: recipe.id.toString(),
+            title: recipe.title || "Sin título",
+            description: recipe.analysis || "",
+            ingredients: [],
+            preparation: recipe.analysis || "",
+            estimatedTime: "30 min",
+            servings: recipe.servings || 2,
+            image: recipe.image || "",
+            status: recipe.status || "approved",
+            createdAt: recipe.date || new Date().toISOString(),
+            createdBy: currentUser.name
+          }));
+          setUserRecipes(userRecipes);
+        }
+      } catch (error) {
+        console.error("❌ Failed to approve recipe:", error);
       }
     }, 3000)
   }
@@ -557,7 +659,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
 
             {/* User info and Notifications */}
             <div className="flex items-center gap-3">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Andrea Salvador</div>
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || "Usuario"}</div>
 
               <Button
                 onClick={onLogout}
@@ -800,7 +902,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                                   {formatDate(recipe.createdAt)}
                                 </p>
                                 <p className="text-xs text-blue-600 dark:text-blue-400">
-                                  Por: {recipe.createdBy || "Andrea Salvador"}
+                                  Por: {recipe.createdBy || currentUser?.name || "Usuario"}
                                 </p>
                               </div>
                               {getStatusBadge(recipe.status)}
@@ -1074,7 +1176,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                                 </div>
                                 <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
                                   <ChefHat className="h-3 w-3" />
-                                  Creado por: {recipe.createdBy || "Andrea Salvador"}
+                                  Creado por: {recipe.createdBy || currentUser?.name || "Usuario"}
                                 </div>
                               </div>
 

@@ -1,0 +1,35 @@
+# CONFIGURACIÓN DE BASE DE DATOS - HOSTPOINT
+# =============================================
+# IMPORTANTE:
+# 1. Copia este archivo como ".config" (sin .example)
+# 2. Rellena con tus credenciales reales de Hostpoint
+# 3. NO subas el archivo .config al repositorio
+
+# Base de Datos MySQL
+DB_HOST=tu_host_mysql.mysql.db.internal
+DB_NAME=tu_nombre_base_datos
+DB_USER=tu_usuario_mysql
+DB_PASS=tu_password_mysql
+DB_CHARSET=utf8mb4
+
+# Configuración de Seguridad
+JWT_SECRET=genera_una_clave_aleatoria_larga_y_segura_aqui
+ADMIN_PASSWORD=tu_password_admin
+
+# Configuración de CORS
+ALLOWED_ORIGIN=*
+ALLOWED_METHODS=GET, POST, PUT, DELETE, OPTIONS
+ALLOWED_HEADERS=Content-Type, Authorization, X-Requested-With
+
+# Configuración de Uploads
+UPLOAD_URL=https://tu-dominio.com/recipedigitalizer/uploads/
+MAX_FILE_SIZE=5242880
+ALLOWED_EXTENSIONS=jpg,jpeg,png,gif,webp
+
+# Configuración de API
+API_VERSION=v1
+ITEMS_PER_PAGE=12
+DEBUG_MODE=false
+
+# Zona Horaria
+TIMEZONE=Europe/Zurich

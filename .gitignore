@@ -18,9 +18,17 @@ yarn-error.log*
 
 # env files
 .env*
+.env.ftp
 
 # PHP config files with credentials
+apis/.config
 apis/config.php
+apis/config.example.php
+
+# Deployment scripts with credentials
+*.sh
+deploy*
+update*
 
 # vercel
 .vercel
