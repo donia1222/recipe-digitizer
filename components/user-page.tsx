@@ -642,15 +642,15 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                 className={`flex-1 ${activeTab === "create" ? "bg-blue-500 text-white" : ""}`}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Rezept erstellen
+                
               </Button>
               <Button
                 onClick={() => setActiveTab("history")}
                 variant={activeTab === "history" ? "default" : "ghost"}
                 className={`flex-1 ${activeTab === "history" ? "bg-blue-500 text-white" : ""}`}
               >
-                <BookOpen className="h-4 w-4 mr-2" />
-                Meine Rezepte
+                <BookOpen className="h-4 w-4 mr-2 c" />
+                
               </Button>
             </div>
           </div>

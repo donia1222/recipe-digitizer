@@ -124,7 +124,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Benutzerverwaltung
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
@@ -136,7 +136,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
               <UserPlus className="h-4 w-4 mr-2" />
-              Benutzer hinzufügen
+    
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -184,8 +184,8 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="user">Benutzer</SelectItem>
-                    <SelectItem value="worker">Trabajador</SelectItem>
-                    <SelectItem value="guest">Invitado</SelectItem>
+                    <SelectItem value="worker">Mitarbeiter</SelectItem>
+                    <SelectItem value="guest">Gast</SelectItem>
                     <SelectItem value="admin">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
@@ -217,7 +217,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
               />
             </div>
 
-            <Select value={filterRole} onValueChange={setFilterRole}>
+            <Select value={filterRole} onValueChange={(value) => setFilterRole(value as "admin" | "worker" | "guest" | "all" | "user")}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
@@ -230,7 +230,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
               </SelectContent>
             </Select>
 
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as "all" | "active" | "inactive")}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>

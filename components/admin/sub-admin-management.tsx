@@ -128,7 +128,7 @@ export default function SubAdminManagement({ subAdmins, setSubAdmins }: SubAdmin
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h2 className="text-1xl font-bold text-gray-900 dark:text-white mb-2">
             Sub-Administrator-Verwaltung
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
@@ -140,7 +140,7 @@ export default function SubAdminManagement({ subAdmins, setSubAdmins }: SubAdmin
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white">
               <UserPlus className="h-4 w-4 mr-2" />
-              Sub-Admin hinzufügen
+             
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
