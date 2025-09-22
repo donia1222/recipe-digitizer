@@ -143,7 +143,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
     return (
       <div
-        className={`min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 flex justify-center p-4 transition-all duration-300 ${isInputFocused || keyboardVisible ? "items-start pt-8 md:items-center md:pt-4" : "items-center"}`}
+        className={`min-h-screen  flex justify-center p-4 transition-all duration-300 ${isInputFocused || keyboardVisible ? "items-start pt-8 md:items-center md:pt-4" : "items-center"}`}
       >
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
@@ -239,10 +239,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen  flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4 text-balance">Willkommen</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4 text-balance mt-14">Willkommen</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-pretty">
             Wählen Sie Ihre Rolle, um fortzufahren
           </p>
