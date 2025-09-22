@@ -242,7 +242,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
     <div className="min-h-screen  flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-600 dark:text-white mb-4 text-balance mt-14">Willkommen</h1>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-600 dark:text-white mb-4 text-balance mt-10">Willkommen</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-pretty">
             Wählen Sie Ihre Rolle, um fortzufahren
           </p>
