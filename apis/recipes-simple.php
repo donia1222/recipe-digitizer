@@ -40,7 +40,12 @@ switch ($method) {
 
             // Si se proporciona ID, obtener receta específica
             if ($id) {
-                $stmt = $pdo->prepare("SELECT * FROM recipes WHERE id = ?");
+                $stmt = $pdo->prepare("
+                    SELECT r.*, c.name as category_name, c.color as category_color
+                    FROM recipes r
+                    LEFT JOIN recipe_categories c ON r.category_id = c.id
+                    WHERE r.id = ?
+                ");
                 $stmt->execute([$id]);
                 $recipe = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -85,12 +90,23 @@ switch ($method) {
                 error_log("DEBUG: Filtering by user_id: " . $user_id);
                 error_log("DEBUG: Available user_ids: " . json_encode($all_user_ids));
 
-                $stmt = $pdo->prepare("SELECT * FROM recipes WHERE user_id = ? ORDER BY created_at DESC");
+                $stmt = $pdo->prepare("
+                    SELECT r.*, c.name as category_name, c.color as category_color
+                    FROM recipes r
+                    LEFT JOIN recipe_categories c ON r.category_id = c.id
+                    WHERE r.user_id = ?
+                    ORDER BY r.created_at DESC
+                ");
                 $stmt->execute([$user_id]);
             } else {
                 // Devolver todas las recetas
                 error_log("DEBUG: No user_id provided, returning all recipes");
-                $stmt = $pdo->query("SELECT * FROM recipes ORDER BY created_at DESC");
+                $stmt = $pdo->query("
+                    SELECT r.*, c.name as category_name, c.color as category_color
+                    FROM recipes r
+                    LEFT JOIN recipe_categories c ON r.category_id = c.id
+                    ORDER BY r.created_at DESC
+                ");
             }
 
             $recipes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -196,10 +212,10 @@ switch ($method) {
             // Insertar receta
             $sql = "INSERT INTO recipes (
                         recipe_id, title, analysis, image_base64, image_url,
-                        user_id, status, created_at
+                        user_id, status, category_id, created_at
                     ) VALUES (
                         :recipe_id, :title, :analysis, :image, :image_url,
-                        :user_id, :status, NOW()
+                        :user_id, :status, :category_id, NOW()
                     )";
 
             $stmt = $pdo->prepare($sql);
@@ -210,7 +226,8 @@ switch ($method) {
                 ':image' => $data['image'] ?? '',
                 ':image_url' => $imageUrl,
                 ':user_id' => $data['user_id'] ?? 'admin-001',
-                ':status' => $data['status'] ?? 'approved'
+                ':status' => $data['status'] ?? 'approved',
+                ':category_id' => $data['category_id'] ?? null
             ]);
 
             $newId = $pdo->lastInsertId();
@@ -371,6 +388,11 @@ switch ($method) {
             if (isset($data['is_favorite'])) {
                 $updateFields[] = 'is_favorite = :is_favorite';
                 $params[':is_favorite'] = $data['is_favorite'] ? 1 : 0;
+            }
+
+            if (isset($data['category_id'])) {
+                $updateFields[] = 'category_id = :category_id';
+                $params[':category_id'] = $data['category_id'];
             }
 
             // Siempre actualizar updated_at

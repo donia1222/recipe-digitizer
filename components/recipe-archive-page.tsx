@@ -87,7 +87,14 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           }
         });
 
-        setHistory(combinedRecipes);
+        // IMPORTANTE: Sincronizar category_id de BD con folderId de frontend
+        const syncedRecipes = combinedRecipes.map((recipe: any) => ({
+          ...recipe,
+          folderId: recipe.category_id || recipe.folderId // Usar category_id de BD si existe
+        }));
+
+        console.log('🔄 Recipes synced with categories:', syncedRecipes);
+        setHistory(syncedRecipes);
       } catch (error) {
         console.error('Error cargando recetas:', error);
         // Fallback a localStorage si hay error
@@ -98,15 +105,111 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       }
   };
 
+  // Load categories from database and sync with localStorage
+  const loadCategories = async () => {
+    try {
+      console.log('📁 Cargando categorías desde la BD...');
+      // Agregar timestamp para evitar caché
+      const timestamp = Date.now();
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php?_t=${timestamp}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📁 Response data:', data);
+
+      if (data.success && data.data) {
+        console.log('📁 Categorías desde BD:', data.data);
+
+        // Convertir formato de BD a formato del frontend
+        const dbCategories = data.data.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          color: cat.color,
+          createdAt: cat.created_at,
+          parentId: cat.parent_id,
+          isSubcategory: !!cat.parent_id
+        }));
+
+        console.log('📁 Categorías convertidas para frontend:', dbCategories);
+        console.log('📁 Current folders state before update:', folders);
+
+        setFolders(dbCategories);
+
+        // También guardar en localStorage para compatibilidad
+        localStorage.setItem("recipeFolders", JSON.stringify(dbCategories));
+        console.log('📁 Categorías guardadas en localStorage');
+
+        // Log después del setState para verificar (esto no es el problema real)
+        setTimeout(() => {
+          console.log('📁 Folders state after setState (esto es stale, ignóralo):', folders);
+        }, 100);
+      } else {
+        console.error('❌ Error en response de categorías:', data);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando categorías:', error);
+      console.error('❌ Detalles del error:', error instanceof Error ? error.message : 'Unknown error');
+
+      // Fallback a localStorage si hay error
+      const savedFolders = localStorage.getItem("recipeFolders")
+      if (savedFolders) {
+        console.log('📁 Usando categorías desde localStorage como fallback');
+        setFolders(JSON.parse(savedFolders))
+      } else {
+        // Si no hay localStorage, usar categorías por defecto
+        console.log('📁 Usando categorías por defecto');
+        const defaultCategories = [
+          {
+            id: 'cat-appetizers',
+            name: 'Aperitivos',
+            color: '#ef4444',
+            createdAt: new Date().toISOString(),
+            parentId: undefined,
+            isSubcategory: false
+          },
+          {
+            id: 'cat-main',
+            name: 'Platos Principales',
+            color: '#22c55e',
+            createdAt: new Date().toISOString(),
+            parentId: undefined,
+            isSubcategory: false
+          },
+          {
+            id: 'cat-desserts',
+            name: 'Postres',
+            color: '#8b5cf6',
+            createdAt: new Date().toISOString(),
+            parentId: undefined,
+            isSubcategory: false
+          },
+          {
+            id: 'cat-beverages',
+            name: 'Bebidas',
+            color: '#06b6d4',
+            createdAt: new Date().toISOString(),
+            parentId: undefined,
+            isSubcategory: false
+          }
+        ];
+        setFolders(defaultCategories);
+        localStorage.setItem("recipeFolders", JSON.stringify(defaultCategories));
+      }
+    }
+  };
+
   useEffect(() => {
     loadData();
-
-    // Cargar carpetas (todavía desde localStorage)
-    const savedFolders = localStorage.getItem("recipeFolders")
-    if (savedFolders) {
-      setFolders(JSON.parse(savedFolders))
-    }
+    loadCategories();
   }, [])
+
+  // Debug: Monitor folders state changes
+  useEffect(() => {
+    console.log('📁 FOLDERS STATE CHANGED:', folders.length, folders.map(f => f.name));
+  }, [folders])
 
   // Escuchar eventos de actualización y eliminación de recetas
   useEffect(() => {
@@ -129,9 +232,70 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     };
   }, [])
 
-  const createFolder = () => {
+  const createFolder = async () => {
     if (!newFolderName.trim()) return
 
+    try {
+      // Obtener usuario actual
+      const currentUserStr = localStorage.getItem('current-user');
+      let currentUserId = null;
+      if (currentUserStr) {
+        try {
+          const currentUser = JSON.parse(currentUserStr);
+          currentUserId = currentUser.id;
+        } catch (error) {
+          console.error('Error parsing current user:', error);
+        }
+      }
+
+      // Crear categoría en la base de datos
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newFolderName.trim(),
+          color: folderColors[Math.floor(Math.random() * folderColors.length)],
+          parent_id: creatingSubcategoryFor || null,
+          user_id: currentUserId,
+          display_order: folders.length + 1
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ Categoría creada en BD:', data);
+
+        // Recargar categorías desde la BD para obtener la nueva
+        console.log('🔄 Recargando categorías después de crear...');
+        await loadCategories();
+
+        setNewFolderName("")
+        setIsCreatingFolder(false)
+        setCreatingSubcategoryFor(null)
+
+        // Auto-expand parent folder when creating subcategory
+        if (creatingSubcategoryFor) {
+          setExpandedFolders((prev) => new Set([...prev, creatingSubcategoryFor]))
+        }
+
+        console.log('✅ Nueva categoría agregada al frontend');
+      } else {
+        console.error('❌ Error creating category:', data.error);
+        // Fallback a localStorage si falla la BD
+        createFolderLocalStorage();
+      }
+    } catch (error) {
+      console.error('❌ Error creating category:', error);
+      // Fallback a localStorage si hay error de red
+      createFolderLocalStorage();
+    }
+  }
+
+  // Función fallback para localStorage
+  const createFolderLocalStorage = () => {
     const newFolder: RecipeFolder = {
       id: `folder-${Date.now()}`,
       name: newFolderName.trim(),
@@ -211,10 +375,58 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
   }
 
-  const moveToFolder = (recipeId: number, folderId: string | undefined) => {
-    const updatedHistory = history.map((item) => (item.id === recipeId ? { ...item, folderId } : item))
-    setHistory(updatedHistory)
-    localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+  const moveToFolder = async (recipeId: number, categoryId: string | undefined) => {
+    try {
+      console.log('📁 Moviendo receta a categoría:', { recipeId, categoryId });
+
+      // Buscar el ID numérico de la base de datos para esta receta
+      const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
+      const searchData = await searchResponse.json();
+
+      let numericId = null;
+      if (searchData.success && searchData.data) {
+        const recipe = searchData.data.find((r: any) => r.id === recipeId);
+        if (recipe) {
+          numericId = recipe.id;
+          console.log('🔍 Found numeric ID for recipe:', { recipeId, numericId });
+        }
+      }
+
+      if (numericId) {
+        // Actualizar en la base de datos
+        const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${numericId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            category_id: categoryId
+          })
+        });
+
+        if (response.ok) {
+          console.log('✅ Categoría actualizada en BD');
+
+          // Recargar datos desde BD para sincronizar
+          await loadData();
+        } else {
+          console.error('❌ Error updating category in DB');
+        }
+      } else {
+        // Si no encontramos el ID numérico, actualizar solo localmente
+        const updatedHistory = history.map((item) => (item.id === recipeId ? { ...item, folderId: categoryId } : item))
+        setHistory(updatedHistory)
+        localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+      }
+
+    } catch (error) {
+      console.error('❌ Error moving recipe to category:', error);
+
+      // Fallback a solo localStorage si hay error
+      const updatedHistory = history.map((item) => (item.id === recipeId ? { ...item, folderId: categoryId } : item))
+      setHistory(updatedHistory)
+      localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+    }
   }
 
   const extractRecipeTitle = (analysis: string) => {
@@ -469,7 +681,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               )}
 
               {/* Folders */}
-              <ScrollArea className="max-h-64">
+              <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                 <AnimatePresence>
                   {getMainCategories().map((folder) => (
                     <motion.div
@@ -689,7 +901,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                     </motion.div>
                   ))}
                 </AnimatePresence>
-              </ScrollArea>
+              </div>
 
               {/* Create new folder */}
               {isCreatingFolder ? (
