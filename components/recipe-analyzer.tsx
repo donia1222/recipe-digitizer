@@ -24,6 +24,7 @@ interface RecipeAnalyzerProps {
   onRecipeUpdate?: (newRecipe: string) => void
   userId?: string
   createdAt?: string
+  approvalMessage?: string | null
 }
 
 const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
@@ -36,6 +37,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   onRecipeUpdate,
   userId,
   createdAt,
+  approvalMessage,
 }) => {
   const sections = recipe.split("\n\n")
   const [recipeImages, setRecipeImages] = useState<string[]>([])
@@ -1055,8 +1057,20 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         )
       )}
 
+      {/* Mensaje temporal de aprobación - antes de comentarios */}
+      {approvalMessage && (
+        <div className="mt-8 mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <p className="text-green-800 dark:text-green-200 font-medium text-sm">
+              {approvalMessage}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Recipe Comments Section */}
-      <div className="mt-12">
+      <div className="mt-6">
         <RecipeComments recipeId={recipeId} />
       </div>
 

@@ -35,6 +35,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
   const [selectedRecipeUserId, setSelectedRecipeUserId] = useState<string | null>(null)
   const [selectedRecipeCreatedAt, setSelectedRecipeCreatedAt] = useState<string | null>(null)
   const [progress, setProgress] = useState<number>(0)
+  const [approvalMessage, setApprovalMessage] = useState<string | null>(null)
   const [servings, setServings] = useState<number>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('recipe-servings')
@@ -139,6 +140,12 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
 
   // Function to go back to previous view
   const goBack = () => {
+    // Limpiar mensaje de aprobación al salir de vista analyze
+    if (currentView === 'analyze') {
+      console.log('🧹 Limpiando mensaje de aprobación al salir');
+      setApprovalMessage(null)
+    }
+
     // Ensure we always go back to home screen when coming from archive or users page
     if (currentView === 'archive' || currentView === 'users') {
       setCurrentView('home')
@@ -307,10 +314,10 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
       // Im Verlauf speichern
       await saveToHistory(imageData, result.analysis)
       
-      // Cambiar a vista de análisis si estamos en la biblioteca
-      if (currentView === 'library') {
-        changeView('analyze')
-      }
+      // NO cambiar a vista de análisis - las recetas van a pendientes y no deben mostrarse hasta aprobar
+      // if (currentView === 'library') {
+      //   changeView('analyze')
+      // }
 
       // Versuchen die ursprünglichen Portionen aus dem Rezept zu extrahieren
       const servingsMatch =
@@ -343,12 +350,23 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
 
       setProgress(1)
 
-      // Erfolg-Toast anzeigen
-      toast({
-        title: "Rezept digitalisiert",
-        description: "Rezept erfolgreich digitalisiert",
-        variant: "default",
-      })
+      console.log('🎯 Análisis completado. CurrentView:', currentView, 'UserRole:', userRole);
+
+      // Cambiar a vista de análisis si estamos en la biblioteca (RESTAURADO)
+      if (currentView === 'library') {
+        changeView('analyze')
+        console.log('📱 Cambiando a vista analyze');
+      }
+
+      // Mostrar mensaje al final de la receta (permanece hasta salir)
+      setTimeout(() => {
+        console.log('📝 Mostrando mensaje permanente para rol:', userRole);
+        if (userRole === 'admin') {
+          setApprovalMessage("✅ Rezept erstellt. Sie müssen es in Ihrem Administrationspanel genehmigen.")
+        } else {
+          setApprovalMessage("✅ Rezept an Administrator gesendet. Nach Genehmigung erscheint es im Archiv.")
+        }
+      }, 1000) // Aparecer 1 segundo después de mostrar la receta
     } catch (error) {
       console.error("Fehler beim Analysieren des Bildes:", error)
       setAnalysis("Fehler beim Analysieren des Bildes. Bitte versuchen Sie es erneut.")
@@ -429,12 +447,35 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
       const createdRecipe = await RecipeService.create(historyItem);
       console.log('✅ Receta guardada en BD:', createdRecipe);
 
-      // También guardar en localStorage por compatibilidad temporal
-      const existingHistory = localStorage.getItem("recipeHistory")
-      const history = existingHistory ? JSON.parse(existingHistory) : []
-      const updatedHistory = [historyItem, ...history]
-      const limitedHistory = updatedHistory.slice(0, 10)
-      localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+      // Limpiar localStorage si está lleno y intentar de nuevo
+      try {
+        // Guardar en localStorage SIN la imagen (solo metadatos)
+        const historyItemForStorage = {
+          ...historyItem,
+          image: '', // NO guardar la imagen base64 en localStorage
+          recipeId: recipeId // Solo guardar el ID para poder cargar desde BD
+        }
+
+        const existingHistory = localStorage.getItem("recipeHistory")
+        const history = existingHistory ? JSON.parse(existingHistory) : []
+        const updatedHistory = [historyItemForStorage, ...history]
+        const limitedHistory = updatedHistory.slice(0, 5) // Reducir a 5 elementos
+        localStorage.setItem("recipeHistory", JSON.stringify(limitedHistory))
+      } catch (storageError) {
+        console.log('🧹 localStorage lleno, limpiando...');
+        // Si falla, limpiar completamente y intentar de nuevo
+        localStorage.removeItem("recipeHistory")
+        const newHistory = [{
+          id: Date.now(),
+          recipeId: recipeId,
+          image: '',
+          analysis: analysis.substring(0, 100) + '...', // Solo primeros 100 chars
+          date: new Date().toISOString(),
+          title: analysis.split('\n')[0] || 'Nueva receta'
+        }]
+        localStorage.setItem("recipeHistory", JSON.stringify(newHistory))
+        console.log('✅ localStorage limpiado y reiniciado');
+      }
 
       setCurrentRecipeId(recipeId)
     } catch (error) {
@@ -644,6 +685,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
                 onRecipeUpdate={handleRecipeUpdate}
                 userId={selectedRecipeUserId || (currentRecipeId ? undefined : currentUser?.id)}
                 createdAt={selectedRecipeCreatedAt || new Date().toISOString()}
+                approvalMessage={approvalMessage}
               />
             )}
           </div>
