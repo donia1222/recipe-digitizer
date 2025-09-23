@@ -386,6 +386,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         console.log('✅ Category updated in database successfully');
         // Reload categories first, then data
         await loadCategories();
+        // Small delay to ensure state updates
+        await new Promise(resolve => setTimeout(resolve, 100));
         await loadData();
       } else {
         const errorText = await response.text();
@@ -446,7 +448,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       if (response.ok) {
         await response.json();
         console.log('✅ Category deleted from database successfully');
-        // Reload data from database to ensure sync
+        // Reload categories first, then data
+        await loadCategories();
+        // Small delay to ensure state updates
+        await new Promise(resolve => setTimeout(resolve, 100));
         await loadData();
       } else {
         const errorText = await response.text();
@@ -722,8 +727,12 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
   const getSubcategories = (parentId: string) => {
     const subcats = folders.filter((folder) => folder.parentId === parentId);
-    console.log(`🔍 getSubcategories("${parentId}"):`, subcats.map(s => s.name));
-    return subcats;
+    // Remove duplicates by name to handle database duplicates
+    const uniqueSubcats = subcats.filter((folder, index, arr) =>
+      arr.findIndex(f => f.name === folder.name) === index
+    );
+    console.log(`🔍 getSubcategories("${parentId}"):`, uniqueSubcats.map(s => s.name));
+    return uniqueSubcats;
   }
 
   const getMainCategories = () => {
@@ -894,6 +903,20 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                 : "hover:bg-gray-50 text-gray-700 border-transparent hover:border-gray-200"
                             }`}
                           >
+                            {/* Add Subcategory Button */}
+                            {editingFolder !== folder.id && userRole === 'admin' && !isCreatingFolder && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  createSubcategory(folder.id)
+                                }}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                                title="Add Subcategory"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                            )}
+
                             {/* Expand/Collapse Icon */}
                             {getSubcategories(folder.id).length > 0 && (
                               <button
@@ -948,16 +971,6 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           </div>
                         )}
 
-                        {/* Add Subcategory Button */}
-                        {editingFolder !== folder.id && userRole === 'admin' && (
-                          <button
-                            onClick={() => createSubcategory(folder.id)}
-                            className="ml-2 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                            title="Add Subcategory"
-                          >
-                            <Plus className="h-3 w-3" />
-                          </button>
-                        )}
                       </div>
 
                       {/* Subcategories */}
