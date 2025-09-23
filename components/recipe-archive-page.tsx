@@ -317,6 +317,43 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
+  // Check if user can edit a specific recipe (same logic as recipe-analyzer.tsx)
+  const canUserEditRecipe = (recipeUserId?: string): boolean => {
+    try {
+      const role = localStorage.getItem('user-role')
+      const currentUserStr = localStorage.getItem('current-user')
+
+      if (!role) return false
+
+      let currentUser = null
+      if (currentUserStr) {
+        try {
+          currentUser = JSON.parse(currentUserStr)
+        } catch (error) {
+          console.error('Error parsing current user:', error)
+          return false
+        }
+      }
+
+      // Determine if user can edit this recipe
+      if (role === 'admin') {
+        // Admin can edit any recipe
+        return true
+      } else if (role === 'worker' && currentUser?.id && recipeUserId) {
+        // Worker can only edit their own recipes
+        return currentUser.id === recipeUserId
+      } else if (role === 'guest') {
+        // Guest cannot edit any recipe
+        return false
+      }
+
+      return false
+    } catch (error) {
+      console.error('Error checking permissions:', error)
+      return false
+    }
+  }
+
   const getSubcategories = (parentId: string) => {
     return folders.filter((folder) => folder.parentId === parentId)
   }
@@ -793,30 +830,32 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           <span>Von {getUserName(item.user_id)} • {formatDate(item.date)}</span>
                         </div>
 
-                        {/* Category dropdown */}
-                        <div className="mb-4">
-                          <select
-                            value={item.folderId || ""}
-                            onChange={(e) => {
-                              e.stopPropagation()
-                              moveToFolder(item.id, e.target.value || undefined)
-                            }}
-                            className="w-full text-xs p-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 cursor-pointer hover:bg-gray-100"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <option value="">📂 Uncategorized</option>
-                            {getMainCategories().flatMap((folder) => [
-                              <option key={folder.id} value={folder.id}>
-                                📁 {folder.name}
-                              </option>,
-                              ...getSubcategories(folder.id).map((subcategory) => (
-                                <option key={subcategory.id} value={subcategory.id}>
-                                  &nbsp;&nbsp;&nbsp;&nbsp;📂 {subcategory.name}
-                                </option>
-                              )),
-                            ])}
-                          </select>
-                        </div>
+                        {/* Category dropdown - Only show if user can edit this recipe */}
+                        {canUserEditRecipe(item.user_id) && (
+                          <div className="mb-4">
+                            <select
+                              value={item.folderId || ""}
+                              onChange={(e) => {
+                                e.stopPropagation()
+                                moveToFolder(item.id, e.target.value || undefined)
+                              }}
+                              className="w-full text-xs p-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 cursor-pointer hover:bg-gray-100"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <option value="">📂 Uncategorized</option>
+                              {getMainCategories().flatMap((folder) => [
+                                <option key={folder.id} value={folder.id}>
+                                  📁 {folder.name}
+                                </option>,
+                                ...getSubcategories(folder.id).map((subcategory) => (
+                                  <option key={subcategory.id} value={subcategory.id}>
+                                    &nbsp;&nbsp;&nbsp;&nbsp;📂 {subcategory.name}
+                                  </option>
+                                )),
+                              ])}
+                            </select>
+                          </div>
+                        )}
 
                         <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button
