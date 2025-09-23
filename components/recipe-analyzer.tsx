@@ -192,7 +192,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
     const file = event.target.files?.[0]
     if (file) {
       const reader = new FileReader()
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         const imageData = e.target?.result as string
         const updatedImages = [...recipeImages, imageData]
         setRecipeImages(updatedImages)
@@ -202,17 +202,73 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
         }
 
-        toast({
-          title: "Bild hinzugefügt",
-          description: "Das Bild wurde lokal mit dem Rezept gespeichert.",
-        })
+        // Sync with database directly
+        if (recipeId) {
+          try {
+            console.log('🖼️ Syncing additional images to database:', { recipeId, imagesCount: updatedImages.length });
+
+            // Primero necesitamos obtener el ID numérico de la base de datos
+            // buscando por recipe_id (string) para obtener el id (number)
+            const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
+            const searchData = await searchResponse.json();
+
+            let numericId = null;
+            if (searchData.success && searchData.data) {
+              const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
+              if (recipe) {
+                numericId = recipe.id;
+                console.log('🔍 Found numeric ID for recipe:', { recipeId, numericId });
+              }
+            }
+
+            if (!numericId) {
+              console.error('❌ No se pudo encontrar el ID numérico para:', recipeId);
+              throw new Error('No se pudo encontrar la receta en la base de datos');
+            }
+
+            const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${numericId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                additional_images: updatedImages
+              })
+            });
+
+            if (!response.ok) {
+              console.error('❌ Failed to sync additional images to database');
+              throw new Error('Failed to sync additional images');
+            }
+
+            const data = await response.json();
+            console.log('✅ Additional images synced to database:', data);
+
+            toast({
+              title: "Bild hinzugefügt",
+              description: "Das Bild wurde erfolgreich gespeichert.",
+            })
+          } catch (error) {
+            console.error('❌ Error syncing additional images:', error);
+            toast({
+              title: "Warnung",
+              description: "Das Bild wurde lokal gespeichert, aber die Synchronisation mit der Datenbank ist fehlgeschlagen.",
+              variant: "destructive"
+            })
+          }
+        } else {
+          toast({
+            title: "Bild hinzugefügt",
+            description: "Das Bild wurde lokal mit dem Rezept gespeichert.",
+          })
+        }
       }
       reader.readAsDataURL(file)
     }
     setShowImageModal(false)
   }
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
     const updatedImages = recipeImages.filter((_, i) => i !== index)
     setRecipeImages(updatedImages)
 
@@ -221,10 +277,65 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
     }
 
-    toast({
-      title: "Bild entfernt",
-      description: "Das Bild wurde aus dem Rezept entfernt.",
-    })
+    // Sync with database directly
+    if (recipeId) {
+      try {
+        console.log('🗑️ Syncing image deletion to database:', { recipeId, remainingImages: updatedImages.length });
+
+        // Primero necesitamos obtener el ID numérico de la base de datos
+        const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
+        const searchData = await searchResponse.json();
+
+        let numericId = null;
+        if (searchData.success && searchData.data) {
+          const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
+          if (recipe) {
+            numericId = recipe.id;
+            console.log('🔍 Found numeric ID for recipe deletion:', { recipeId, numericId });
+          }
+        }
+
+        if (!numericId) {
+          console.error('❌ No se pudo encontrar el ID numérico para eliminar:', recipeId);
+          throw new Error('No se pudo encontrar la receta en la base de datos');
+        }
+
+        const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${numericId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            additional_images: updatedImages
+          })
+        });
+
+        if (!response.ok) {
+          console.error('❌ Failed to sync image deletion to database');
+          throw new Error('Failed to sync image deletion');
+        }
+
+        const data = await response.json();
+        console.log('✅ Image deletion synced to database:', data);
+
+        toast({
+          title: "Bild entfernt",
+          description: "Das Bild wurde erfolgreich entfernt und aus der Datenbank gelöscht.",
+        })
+      } catch (error) {
+        console.error('❌ Error syncing image deletion:', error);
+        toast({
+          title: "Bild entfernt",
+          description: "Das Bild wurde lokal entfernt, aber die Synchronisation mit der Datenbank ist fehlgeschlagen.",
+          variant: "destructive"
+        })
+      }
+    } else {
+      toast({
+        title: "Bild entfernt",
+        description: "Das Bild wurde aus dem Rezept entfernt.",
+      })
+    }
   }
 
   const handleShare = async () => {
@@ -655,17 +766,18 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-3 sm:justify-between border-b border-gray-200 pb-4">
         <div className="flex flex-wrap gap-2">
-          <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors duration-200"
-              >
-                <ImagePlus className="h-4 w-4" />
-                <span>Bild hinzufügen</span>
-              </Button>
-            </DialogTrigger>
+          {canEditRecipe && (
+            <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors duration-200"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  <span>Bild hinzufügen</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-white border border-gray-200">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-gray-900">
@@ -689,7 +801,8 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
                 <p className="text-sm text-gray-600">Bilder werden lokal mit dem Rezept gespeichert.</p>
               </div>
             </DialogContent>
-          </Dialog>
+            </Dialog>
+          )}
         </div>
 
         <div className="overflow-x-auto mt-2 sm:mt-0">
@@ -766,7 +879,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
                       </div>
                     )}
                   </div>
-                  {index > 0 || !originalImage ? (
+                  {canEditRecipe && (index > 0 || !originalImage) ? (
                     <button
                       onClick={(e) => {
                         e.stopPropagation()

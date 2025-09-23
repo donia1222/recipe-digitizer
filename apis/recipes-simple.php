@@ -28,13 +28,53 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
-        // Listar recetas (filtrar por user_id si se proporciona)
+        // Obtener receta específica por ID o listar recetas
         try {
+            $id = $_GET['id'] ?? null;
             $user_id = $_GET['user_id'] ?? null;
 
             // Debug: Log what we received
+            error_log("DEBUG: Received id parameter: " . ($id ?? "NULL"));
             error_log("DEBUG: Received user_id parameter: " . ($user_id ?? "NULL"));
             error_log("DEBUG: All GET parameters: " . json_encode($_GET));
+
+            // Si se proporciona ID, obtener receta específica
+            if ($id) {
+                $stmt = $pdo->prepare("SELECT * FROM recipes WHERE id = ?");
+                $stmt->execute([$id]);
+                $recipe = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                if (!$recipe) {
+                    echo json_encode(['success' => false, 'error' => 'Receta no encontrada']);
+                    exit;
+                }
+
+                // Procesar imagen principal
+                if (!empty($recipe['image_url'])) {
+                    $recipe['image'] = $recipe['image_url'];
+                } else if (!empty($recipe['image_base64'])) {
+                    $recipe['image'] = $recipe['image_base64'];
+                } else {
+                    $recipe['image'] = '';
+                }
+
+                // Cargar imágenes adicionales
+                $additionalImagesStmt = $pdo->prepare("SELECT * FROM recipe_images WHERE recipe_id = ? ORDER BY display_order");
+                $additionalImagesStmt->execute([$recipe['id']]);
+                $additionalImages = $additionalImagesStmt->fetchAll(PDO::FETCH_ASSOC);
+                $recipe['additional_images'] = $additionalImages;
+
+                // Asegurar que date no sea null
+                if (empty($recipe['date'])) {
+                    $recipe['date'] = $recipe['created_at'] ?? date('Y-m-d H:i:s');
+                }
+
+                echo json_encode([
+                    'success' => true,
+                    'data' => $recipe
+                ]);
+                exit;
+            }
 
             if ($user_id) {
                 // Debug: Ver todos los user_ids disponibles
@@ -68,6 +108,12 @@ switch ($method) {
                 } else {
                     $recipe['image'] = '';
                 }
+
+                // Cargar imágenes adicionales
+                $additionalImagesStmt = $pdo->prepare("SELECT * FROM recipe_images WHERE recipe_id = ? ORDER BY display_order");
+                $additionalImagesStmt->execute([$recipe['id']]);
+                $additionalImages = $additionalImagesStmt->fetchAll(PDO::FETCH_ASSOC);
+                $recipe['additional_images'] = $additionalImages;
 
                 // Asegurar que date no sea null
                 if (empty($recipe['date'])) {
@@ -169,6 +215,60 @@ switch ($method) {
 
             $newId = $pdo->lastInsertId();
 
+            // Procesar imágenes adicionales si existen
+            if (!empty($data['additional_images']) && is_array($data['additional_images'])) {
+                $displayOrder = 0;
+                foreach ($data['additional_images'] as $additionalImage) {
+                    $additionalImageUrl = '';
+
+                    // Procesar imagen adicional
+                    if (!empty($additionalImage) && strpos($additionalImage, 'data:image') === 0) {
+                        try {
+                            // Extraer tipo de imagen
+                            preg_match('/data:image\/(\w+);base64,/', $additionalImage, $matches);
+                            $imageType = $matches[1] ?? 'jpg';
+
+                            // Crear nombre de archivo único para imagen adicional
+                            $additionalFilename = $recipeId . '_additional_' . $displayOrder . '.' . $imageType;
+                            $additionalUploadPath = __DIR__ . '/uploads/' . $additionalFilename;
+
+                            // Extraer y decodificar base64
+                            $base64 = preg_replace('/^data:image\/\w+;base64,/', '', $additionalImage);
+                            $decodedImage = base64_decode($base64);
+
+                            // Guardar archivo
+                            if (file_put_contents($additionalUploadPath, $decodedImage)) {
+                                $additionalImageUrl = 'https://web.lweb.ch/recipedigitalizer/apis/uploads/' . $additionalFilename;
+                                error_log('Additional image saved to: ' . $additionalUploadPath);
+                            }
+                        } catch (Exception $e) {
+                            error_log('Error saving additional image: ' . $e->getMessage());
+                        }
+                    }
+
+                    // Insertar imagen adicional en recipe_images
+                    if (!empty($additionalImageUrl)) {
+                        try {
+                            $additionalImageStmt = $pdo->prepare("
+                                INSERT INTO recipe_images (recipe_id, image_url, image_base64, display_order)
+                                VALUES (?, ?, ?, ?)
+                            ");
+                            $additionalImageStmt->execute([
+                                $newId,
+                                $additionalImageUrl,
+                                $additionalImage,
+                                $displayOrder
+                            ]);
+                            error_log('Additional image record created for recipe ID: ' . $newId);
+                        } catch (Exception $e) {
+                            error_log('Error inserting additional image record: ' . $e->getMessage());
+                        }
+                    }
+
+                    $displayOrder++;
+                }
+            }
+
             echo json_encode([
                 'success' => true,
                 'message' => 'Receta creada exitosamente',
@@ -197,6 +297,11 @@ switch ($method) {
         }
 
         try {
+            // Primero eliminar imágenes adicionales asociadas
+            $deleteImagesStmt = $pdo->prepare("DELETE FROM recipe_images WHERE recipe_id = ?");
+            $deleteImagesStmt->execute([$id]);
+
+            // Luego eliminar la receta principal
             $stmt = $pdo->prepare("DELETE FROM recipes WHERE id = :id");
             $stmt->execute([':id' => $id]);
 
@@ -280,6 +385,76 @@ switch ($method) {
             $sql = "UPDATE recipes SET " . implode(', ', $updateFields) . " WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
+
+            // Procesar imágenes adicionales si se proporcionan
+            if (isset($data['additional_images'])) {
+                // Primero eliminar imágenes adicionales existentes
+                $deleteImagesStmt = $pdo->prepare("DELETE FROM recipe_images WHERE recipe_id = ?");
+                $deleteImagesStmt->execute([$id]);
+
+                // Agregar nuevas imágenes adicionales
+                if (is_array($data['additional_images'])) {
+                    $displayOrder = 0;
+                    foreach ($data['additional_images'] as $additionalImage) {
+                        $additionalImageUrl = '';
+
+                        // Procesar imagen adicional
+                        if (!empty($additionalImage) && strpos($additionalImage, 'data:image') === 0) {
+                            try {
+                                // Extraer tipo de imagen
+                                preg_match('/data:image\/(\w+);base64,/', $additionalImage, $matches);
+                                $imageType = $matches[1] ?? 'jpg';
+
+                                // Crear nombre de archivo único para imagen adicional
+                                $recipeId = $existingRecipe['recipe_id'] ?? 'recipe_' . $id;
+                                $additionalFilename = $recipeId . '_additional_' . $displayOrder . '_' . time() . '.' . $imageType;
+                                $additionalUploadPath = __DIR__ . '/uploads/' . $additionalFilename;
+
+                                // Crear directorio si no existe
+                                if (!file_exists(__DIR__ . '/uploads')) {
+                                    mkdir(__DIR__ . '/uploads', 0777, true);
+                                }
+
+                                // Extraer y decodificar base64
+                                $base64 = preg_replace('/^data:image\/\w+;base64,/', '', $additionalImage);
+                                $decodedImage = base64_decode($base64);
+
+                                // Guardar archivo
+                                if (file_put_contents($additionalUploadPath, $decodedImage)) {
+                                    $additionalImageUrl = 'https://web.lweb.ch/recipedigitalizer/apis/uploads/' . $additionalFilename;
+                                    error_log('Additional image updated and saved to: ' . $additionalUploadPath);
+                                }
+                            } catch (Exception $e) {
+                                error_log('Error saving additional image during update: ' . $e->getMessage());
+                            }
+                        } else if (!empty($additionalImage) && filter_var($additionalImage, FILTER_VALIDATE_URL)) {
+                            // Si es una URL válida, usarla directamente
+                            $additionalImageUrl = $additionalImage;
+                        }
+
+                        // Insertar imagen adicional en recipe_images
+                        if (!empty($additionalImageUrl)) {
+                            try {
+                                $additionalImageStmt = $pdo->prepare("
+                                    INSERT INTO recipe_images (recipe_id, image_url, image_base64, display_order)
+                                    VALUES (?, ?, ?, ?)
+                                ");
+                                $additionalImageStmt->execute([
+                                    $id,
+                                    $additionalImageUrl,
+                                    $additionalImage,
+                                    $displayOrder
+                                ]);
+                                error_log('Additional image record updated for recipe ID: ' . $id);
+                            } catch (Exception $e) {
+                                error_log('Error updating additional image record: ' . $e->getMessage());
+                            }
+                        }
+
+                        $displayOrder++;
+                    }
+                }
+            }
 
             // Obtener receta actualizada
             $updatedStmt = $pdo->prepare("SELECT * FROM recipes WHERE id = :id");

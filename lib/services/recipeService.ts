@@ -319,14 +319,69 @@ export class RecipeService {
    * Futuro: POST /api/recipes/:id/images
    */
   static async saveAdditionalImages(id: number, images: string[]): Promise<void> {
+    // Guardar en localStorage (cache local)
     localStorage.setItem(`${this.IMAGES_KEY_PREFIX}${id}`, JSON.stringify(images));
+
+    // Si estamos en producción, sincronizar con la base de datos
+    if (API_CONFIG.USE_PRODUCTION) {
+      try {
+        const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.RECIPE_BY_ID(id));
+        console.log('🖼️ Syncing additional images to database:', { id, imagesCount: images.length });
+
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: getApiHeaders(),
+          body: JSON.stringify({
+            additional_images: images
+          })
+        });
+
+        if (!response.ok) {
+          console.error('❌ Failed to sync additional images to database');
+          throw new Error('Failed to sync additional images');
+        }
+
+        const data = await response.json();
+        console.log('✅ Additional images synced to database:', data);
+      } catch (error) {
+        console.error('❌ Error syncing additional images:', error);
+        // No lanzar error para no romper la funcionalidad local
+      }
+    }
   }
 
   /**
    * Obtener imágenes adicionales
-   * Futuro: GET /api/recipes/:id/images
+   * Carga desde la base de datos en producción, fallback a localStorage
    */
   static async getAdditionalImages(id: number): Promise<string[]> {
+    // Si estamos en producción, obtener desde la base de datos
+    if (API_CONFIG.USE_PRODUCTION) {
+      try {
+        const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.RECIPE_BY_ID(id));
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: getApiHeaders()
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && data.data.additional_images) {
+            const dbImages = data.data.additional_images.map((img: any) =>
+              img.image_url || img.image_base64 || ''
+            ).filter((url: string) => url !== '');
+
+            // También guardar en localStorage como cache
+            localStorage.setItem(`${this.IMAGES_KEY_PREFIX}${id}`, JSON.stringify(dbImages));
+            return dbImages;
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading additional images from database:', error);
+      }
+    }
+
+    // Fallback a localStorage
     const stored = localStorage.getItem(`${this.IMAGES_KEY_PREFIX}${id}`);
     return stored ? JSON.parse(stored) : [];
   }
