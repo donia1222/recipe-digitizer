@@ -32,6 +32,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
   const [analysis, setAnalysis] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false)
   const [recalculatingServings, setRecalculatingServings] = useState<boolean>(false)
+  const [selectedRecipeUserId, setSelectedRecipeUserId] = useState<string | null>(null)
+  const [selectedRecipeCreatedAt, setSelectedRecipeCreatedAt] = useState<string | null>(null)
   const [progress, setProgress] = useState<number>(0)
   const [servings, setServings] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -279,6 +281,10 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
     setLoading(true)
     setProgress(0.2)
 
+    // Reset recipe selection data for new analysis
+    setSelectedRecipeUserId(null)
+    setSelectedRecipeCreatedAt(null)
+
     try {
       setProgress(0.3)
 
@@ -500,6 +506,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
             setImage(item.image)
             setAnalysis(item.analysis)
             setCurrentRecipeId(item.id.toString())
+            setSelectedRecipeUserId(item.user_id || null)
+            setSelectedRecipeCreatedAt(item.date || null)
             changeView('analyze')
 
             // Extract servings from analysis if available
@@ -531,6 +539,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
             setImage(item.image)
             setAnalysis(item.analysis)
             setCurrentRecipeId(item.id.toString())
+            setSelectedRecipeUserId(item.user_id || null)
+            setSelectedRecipeCreatedAt(item.date || null)
             changeView('analyze')
 
             // Extract servings from analysis if available
@@ -632,8 +642,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
                 currentServings={servings}
                 originalServings={originalServings}
                 onRecipeUpdate={handleRecipeUpdate}
-                userId={currentUser?.id}
-                createdAt={new Date().toISOString()}
+                userId={selectedRecipeUserId || currentUser?.id}
+                createdAt={selectedRecipeCreatedAt || new Date().toISOString()}
               />
             )}
           </div>

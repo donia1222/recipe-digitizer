@@ -1,4 +1,4 @@
-import { API_CONFIG, getApiUrl, getApiHeaders } from './apiConfig';
+import { API_CONFIG, getApiUrl, getApiHeaders } from './api-config';
 
 export interface User {
   id: string | number;  // Puede ser string (UUID) o number según el contexto
@@ -31,6 +31,33 @@ export interface SubAdmin {
 
 export class UserService {
   // User CRUD operations
+  static async getUserById(userId: string): Promise<User | null> {
+    if (!API_CONFIG.USE_PRODUCTION) {
+      const users = this.getUsersFromLocalStorage();
+      return users.find(user => user.id.toString() === userId) || null;
+    }
+
+    try {
+      const response = await fetch(getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.USER_BY_ID(userId)), {
+        method: 'GET',
+        headers: getApiHeaders(),
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null; // User not found
+        }
+        throw new Error('Failed to fetch user');
+      }
+
+      const data = await response.json();
+      return data.success ? data.data : null;
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      return null;
+    }
+  }
+
   static async getAllUsers(): Promise<User[]> {
     if (!API_CONFIG.USE_PRODUCTION) {
       return this.getUsersFromLocalStorage();
@@ -254,7 +281,7 @@ export class UserService {
         return { success: false, error: 'No token found' };
       }
 
-      const response = await fetch(getApiUrl(`${API_CONFIG.PRODUCTION.ENDPOINTS.AUTH}?action=verify`), {
+      const response = await fetch(getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.VERIFY), {
         method: 'GET',
         headers: {
           ...getApiHeaders(),
@@ -301,7 +328,7 @@ export class UserService {
 
     try {
       console.log('Attempting login for user:', username);
-      const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.AUTH + '?action=login');
+      const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.LOGIN);
       console.log('Login URL:', url);
 
       const response = await fetch(url, {
@@ -356,7 +383,7 @@ export class UserService {
     }
 
     try {
-      const response = await fetch(getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.AUTH + '?action=verify'), {
+      const response = await fetch(getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.VERIFY), {
         method: 'GET',
         headers: {
           ...getApiHeaders(),

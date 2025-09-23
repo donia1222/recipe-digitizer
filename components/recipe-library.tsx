@@ -157,8 +157,15 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
     return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine
   }
 
+  const [userNameCache, setUserNameCache] = useState<{[key: string]: string}>({})
+
   const getUserName = (userId?: string): string => {
     if (!userId) return 'Unbekannter Benutzer';
+
+    // Check cache first
+    if (userNameCache[userId]) {
+      return userNameCache[userId];
+    }
 
     // Try to get user name from current user if it matches
     const currentUserStr = localStorage.getItem('current-user');
@@ -166,22 +173,57 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
       try {
         const currentUser = JSON.parse(currentUserStr);
         if (currentUser.id === userId) {
-          return currentUser.name || 'Sie';
+          const name = currentUser.name || 'Sie';
+          setUserNameCache(prev => ({ ...prev, [userId]: name }));
+          return name;
         }
       } catch (error) {
         console.error('Error parsing current user:', error);
       }
     }
 
-    // Common user mappings (can be expanded with API call to get real user names)
-    const userMappings: { [key: string]: string } = {
-      'admin-001': 'Andrea Müller',
-      'worker-001': 'Hans Weber',
-      'worker-002': 'Maria Schmidt',
-      'guest-001': 'Peter Fischer'
-    };
+    // Fetch from API in background
+    fetchUserName(userId);
 
-    return userMappings[userId] || 'Benutzer';
+    return 'Cargando...';
+  }
+
+  const fetchUserName = async (userId: string) => {
+    try {
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/users.php?id=${userId}`);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Check if data.data is an array (all users) or single user
+        if (Array.isArray(data.data)) {
+          const user = data.data.find((u: any) => u.id === userId);
+          if (user && user.name) {
+            setUserNameCache(prev => ({ ...prev, [userId]: user.name }));
+            return;
+          }
+        } else if (data.data.name) {
+          setUserNameCache(prev => ({ ...prev, [userId]: data.data.name }));
+          return;
+        }
+      }
+
+      // Fallback to static mapping
+      const staticMappings: { [key: string]: string } = {
+        '1': 'Andrea Müller',
+        '2': 'Hans Weber',
+        '3': 'Maria Schmidt',
+        '4': 'Peter Fischer',
+        'admin-001': 'Andrea Müller',
+        'worker-001': 'Hans Weber',
+        'worker-002': 'Maria Schmidt',
+        'guest-001': 'Peter Fischer'
+      };
+      const fallbackName = staticMappings[userId] || 'Usuario';
+      setUserNameCache(prev => ({ ...prev, [userId]: fallbackName }));
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      setUserNameCache(prev => ({ ...prev, [userId]: 'Usuario' }));
+    }
   }
 
 

@@ -11,6 +11,8 @@ import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import RecipeComments from "./recipe-comments"
 import { RecipeService } from "@/lib/services/recipeService"
+import { AuthService } from "@/lib/services/authService"
+import { UserService } from "@/lib/services/userService"
 
 interface RecipeAnalyzerProps {
   recipe: string
@@ -42,6 +44,11 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   const [showGalleryModal, setShowGalleryModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [editedRecipe, setEditedRecipe] = useState(recipe)
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [canEditRecipe, setCanEditRecipe] = useState(false)
+  const [userNameCache, setUserNameCache] = useState<{[key: string]: string}>({})
+  const [userName, setUserName] = useState<string>('Benutzer')
   const { toast } = useToast()
 
   // Load recipe images from localStorage on component mount
@@ -57,6 +64,124 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       }
     }
   }, [recipeId])
+
+  // Check user permissions for editing/deleting recipes
+  React.useEffect(() => {
+    const checkPermissions = async () => {
+      try {
+        // Get current user role
+        const role = await AuthService.getCurrentRole()
+        setCurrentUserRole(role)
+
+        // Get current user ID
+        const currentUserStr = localStorage.getItem('current-user')
+        let currentUser = null
+        if (currentUserStr) {
+          try {
+            currentUser = JSON.parse(currentUserStr)
+            setCurrentUserId(currentUser?.id)
+          } catch (error) {
+            console.error('Error parsing current user:', error)
+          }
+        }
+
+        // Determine if user can edit this recipe
+        let canEdit = false
+
+        if (role === 'admin') {
+          // Admin can edit any recipe
+          canEdit = true
+        } else if (role === 'worker' && currentUser?.id && userId) {
+          // Worker can only edit their own recipes
+          canEdit = currentUser.id === userId
+        } else if (role === 'guest') {
+          // Guest cannot edit any recipe
+          canEdit = false
+        }
+
+        setCanEditRecipe(canEdit)
+      } catch (error) {
+        console.error('Error checking permissions:', error)
+        setCanEditRecipe(false)
+      }
+    }
+
+    checkPermissions()
+  }, [userId])
+
+  // Load user name for the recipe author
+  React.useEffect(() => {
+    const loadUserName = async () => {
+      if (!userId) {
+        setUserName('Unbekannter Benutzer')
+        return
+      }
+
+      console.log('🔍 Loading user name for userId:', userId)
+
+      // Try current user first
+      const currentUserStr = localStorage.getItem('current-user')
+      if (currentUserStr) {
+        try {
+          const currentUser = JSON.parse(currentUserStr)
+          console.log('🔍 Current user from localStorage:', currentUser)
+          if (currentUser.id === userId) {
+            const name = currentUser.name || 'Sie'
+            console.log('🔍 Using current user name:', name)
+            setUserName(name)
+            return
+          }
+        } catch (error) {
+          console.error('Error parsing current user:', error)
+        }
+      }
+
+      // Try to fetch user from API
+      try {
+        console.log('🔍 Fetching user from API:', userId)
+        const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/users.php?id=${userId}`)
+        const data = await response.json()
+        console.log('🔍 API Response:', data)
+
+        if (data.success && data.data) {
+          // Check if data.data is an array (all users) or single user
+          if (Array.isArray(data.data)) {
+            const user = data.data.find((u: any) => u.id === userId)
+            if (user && user.name) {
+              console.log('🔍 Found user in array:', user.name)
+              setUserName(user.name)
+              return
+            }
+          } else if (data.data.name) {
+            console.log('🔍 Using API user name:', data.data.name)
+            setUserName(data.data.name)
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user from API:', error)
+      }
+
+      // Fallback to static mapping
+      const staticMappings: { [key: string]: string } = {
+        '1': 'Andrea Müller',
+        '2': 'Hans Weber',
+        '3': 'Maria Schmidt',
+        '4': 'Peter Fischer',
+        'admin-001': 'Andrea Müller',
+        'worker-001': 'Hans Weber',
+        'worker-002': 'Maria Schmidt',
+        'guest-001': 'Peter Fischer'
+      }
+
+      const foundName = staticMappings[userId]
+      console.log('🔍 Static mapping result:', foundName, 'for userId:', userId)
+
+      setUserName(foundName || 'Benutzer')
+    }
+
+    loadUserName()
+  }, [userId])
 
   // Update edited recipe when recipe prop changes
   React.useEffect(() => {
@@ -509,32 +634,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
     return extractTitleFromText(recipe)
   }
 
-  const getUserName = (userId?: string): string => {
-    if (!userId) return 'Unbekannter Benutzer';
-
-    // Try to get user name from current user if it matches
-    const currentUserStr = localStorage.getItem('current-user');
-    if (currentUserStr) {
-      try {
-        const currentUser = JSON.parse(currentUserStr);
-        if (currentUser.id === userId) {
-          return currentUser.name || 'Sie';
-        }
-      } catch (error) {
-        console.error('Error parsing current user:', error);
-      }
-    }
-
-    // Common user mappings (can be expanded with API call to get real user names)
-    const userMappings: { [key: string]: string } = {
-      'admin-001': 'Andrea Müller',
-      'worker-001': 'Hans Weber',
-      'worker-002': 'Maria Schmidt',
-      'guest-001': 'Peter Fischer'
-    };
-
-    return userMappings[userId] || 'Benutzer';
-  }
 
   const formatDate = (dateString?: string): string => {
     if (!dateString) return '';
@@ -690,7 +789,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance">{getRecipeTitle()}</h2>
         {(userId || createdAt) && (
           <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mt-3">
-            <span>Von {getUserName(userId)}</span>
+            <span>Von {userName}</span>
             {createdAt && (
               <>
                 <span>•</span>
@@ -780,25 +879,38 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         }
       })}
 
-      {/* Recipe Action Buttons */}
-      <div className="mt-8 text-center">
-        <div className="flex gap-4 justify-center">
-          <Button
-            onClick={handleEditRecipe}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            Rezept bearbeiten
-          </Button>
-          <Button
-            onClick={handleDeleteRecipe}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Rezept löschen
-          </Button>
+      {/* Recipe Action Buttons - Only show if user has permissions */}
+      {canEditRecipe ? (
+        <div className="mt-8 text-center">
+          <div className="flex gap-4 justify-center">
+            <Button
+              onClick={handleEditRecipe}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Rezept bearbeiten
+            </Button>
+            <Button
+              onClick={handleDeleteRecipe}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Rezept löschen
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        currentUserRole && userId && currentUserId !== userId && (
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500 italic">
+              {currentUserRole === 'guest'
+                ? 'Nur zum Anzeigen - Gäste können keine Rezepte bearbeiten'
+                : 'Sie können nur Ihre eigenen Rezepte bearbeiten'
+              }
+            </p>
+          </div>
+        )
+      )}
 
       {/* Recipe Comments Section */}
       <div className="mt-12">
