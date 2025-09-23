@@ -51,9 +51,12 @@ interface HistoryItem {
 interface RecipeArchivePageProps {
   onSelectRecipe: (item: HistoryItem) => void
   onBack: () => void
+  initialSearchFilter?: string
+  userRole?: 'admin' | 'worker' | 'guest' | null
+  currentUserId?: string
 }
 
-const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, onBack }) => {
+const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, onBack, initialSearchFilter, userRole, currentUserId }) => {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [folders, setFolders] = useState<RecipeFolder[]>([])
   const [selectedFolder, setSelectedFolder] = useState<string | undefined>(undefined)
@@ -63,7 +66,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set())
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editFolderName, setEditFolderName] = useState("")
-  const [searchQuery, setSearchQuery] = useState("")
+  const [searchQuery, setSearchQuery] = useState(initialSearchFilter || "")
 
   const folderColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"]
 
@@ -606,11 +609,11 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
             const allowedIds = getAllSubfolderIds(selectedFolder)
             return allowedIds.includes(item.folderId || "")
           })
-        : history.filter((item) => !item.folderId)
+        : history // Mostrar TODAS las recetas cuando no hay carpeta seleccionada
 
-  // Apply search filter
+  // Apply search filter - Si hay búsqueda, buscar en TODAS las recetas sin importar carpeta
   const searchFilteredHistory = searchQuery
-    ? filteredHistory.filter((item) => {
+    ? history.filter((item) => {
         const searchLower = searchQuery.toLowerCase()
         const title = item.title?.toLowerCase() || ""
         const analysis = item.analysis?.toLowerCase() || ""
@@ -780,33 +783,35 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                             </span>
 
                             {/* Edit and Delete buttons for main categories */}
-                            <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity ml-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setEditingFolder(folder.id)
-                                  setEditFolderName(folder.name)
-                                }}
-                                className="h-7 w-7 p-0 border-gray-300 hover:bg-gray-50"
-                              >
-                                <Edit3 size={12} />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => deleteFolder(folder.id, e)}
-                                className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
-                              >
-                                <Trash2 size={12} />
-                              </Button>
-                            </div>
+                            {userRole === 'admin' && (
+                              <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity ml-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setEditingFolder(folder.id)
+                                    setEditFolderName(folder.name)
+                                  }}
+                                  className="h-7 w-7 p-0 border-gray-300 hover:bg-gray-50"
+                                >
+                                  <Edit3 size={12} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => deleteFolder(folder.id, e)}
+                                  className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                                >
+                                  <Trash2 size={12} />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         )}
 
                         {/* Add Subcategory Button */}
-                        {editingFolder !== folder.id && (
+                        {editingFolder !== folder.id && userRole === 'admin' && (
                           <button
                             onClick={() => createSubcategory(folder.id)}
                             className="ml-2 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
@@ -886,28 +891,30 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                   </span>
 
                                   {/* Edit and Delete buttons for subcategories */}
-                                  <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setEditingFolder(subcategory.id)
-                                        setEditFolderName(subcategory.name)
-                                      }}
-                                      className="h-6 w-6 p-0 border-gray-300 hover:bg-gray-50"
-                                    >
-                                      <Edit3 size={10} />
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={(e) => deleteFolder(subcategory.id, e)}
-                                      className="h-6 w-6 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
-                                    >
-                                      <Trash2 size={10} />
-                                    </Button>
-                                  </div>
+                                  {userRole === 'admin' && (
+                                    <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setEditingFolder(subcategory.id)
+                                          setEditFolderName(subcategory.name)
+                                        }}
+                                        className="h-6 w-6 p-0 border-gray-300 hover:bg-gray-50"
+                                      >
+                                        <Edit3 size={10} />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={(e) => deleteFolder(subcategory.id, e)}
+                                        className="h-6 w-6 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                                      >
+                                        <Trash2 size={10} />
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </motion.div>
@@ -959,7 +966,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                     </Button>
                   </div>
                 </div>
-              ) : (
+              ) : userRole === 'admin' ? (
                 <Button
                   onClick={() => setIsCreatingFolder(true)}
                   variant="outline"
@@ -968,7 +975,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                   <FolderPlus className="h-4 w-4 mr-2" />
                   New Category
                 </Button>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -1034,16 +1041,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           className="w-full h-40 object-cover"
                         />
                         <div className="absolute top-3 right-3 flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={(e) => toggleFavorite(item.id, e)}
-                            className={`h-8 w-8 p-0 bg-white/90 hover:bg-white shadow-sm ${
-                              item.isFavorite ? "text-amber-500" : "text-gray-400"
-                            }`}
-                          >
-                            <Star className={`h-4 w-4 ${item.isFavorite ? "fill-current" : ""}`} />
-                          </Button>
+                   
                         </div>
                       </div>
                       <CardContent className="p-4">
@@ -1084,19 +1082,6 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           </div>
                         )}
 
-                        <div className="flex justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onSelectRecipe(item)
-                            }}
-                            className="w-full h-8 text-sm bg-blue-600 hover:bg-blue-700 text-white"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Recipe
-                          </Button>
-                        </div>
                       </CardContent>
                     </Card>
                   </motion.div>

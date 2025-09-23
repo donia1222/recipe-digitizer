@@ -64,6 +64,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
   const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
   const [showServingsModal, setShowServingsModal] = useState<boolean>(false)
   const [previousView, setPreviousView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
+  const [userSearchFilter, setUserSearchFilter] = useState<string | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const { toast } = useToast()
@@ -567,12 +568,21 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
               setServingsInput("2")
             }
           }}
-          onBack={goBack}
+          onBack={() => {
+            setUserSearchFilter(undefined) // Limpiar filtro al volver
+            goBack()
+          }}
+          initialSearchFilter={userSearchFilter}
+          userRole={userRole}
+          currentUserId={currentUser?.id}
         />
       ) : currentView === 'users' ? (
         <UserPage
           onBack={goBack}
-          onOpenArchive={() => changeView('archive')}
+          onOpenArchive={(userFilter?: string) => {
+            setUserSearchFilter(userFilter)
+            changeView('archive')
+          }}
         />
       ) : currentView === 'library' ? (
         <RecipeLibrary

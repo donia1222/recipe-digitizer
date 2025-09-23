@@ -54,7 +54,7 @@ interface Notification {
 
 interface UserPageProps {
   onBack: () => void
-  onOpenArchive: () => void
+  onOpenArchive: (userFilter?: string) => void
   onLogout?: () => void
 }
 
@@ -579,7 +579,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
     // Mark ALL notifications as read when clicking any notification
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
     setShowNotifications(false)
-    onOpenArchive()
+    onOpenArchive(currentUser?.name)
   }
 
   const handleNotificationPanelClose = () => {
@@ -945,7 +945,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                   </Card>
 
                   <Card className="cursor-pointer hover:shadow-md transition-all duration-200 border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600">
-                    <CardContent className="p-6" onClick={onOpenArchive}>
+                    <CardContent className="p-6" onClick={() => onOpenArchive(currentUser?.name)}>
                       <div className="flex items-center gap-4">
                         <div className="w-16 h-16 bg-green-500 rounded-lg flex items-center justify-center">
                           <BookOpen className="h-8 w-8 text-white" />
