@@ -10,7 +10,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: "admin" | "user" | "worker" | "guest"
+  role: "admin" | "worker" | "guest"
   status: "active" | "inactive"
   lastLogin: string
 }

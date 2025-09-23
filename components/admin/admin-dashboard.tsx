@@ -50,17 +50,19 @@ export default function AdminDashboard() {
         const usersFromDB = await UserService.getAllUsers()
         console.log('👥 Usuarios cargados desde BD:', usersFromDB)
 
-        // Transform users to match the UI interface
-        const transformedUsers = usersFromDB.map(user => ({
-          id: user.id ? user.id.toString() : `user_${Date.now()}`,
-          name: user.name || user.username || 'Sin nombre',
-          email: user.email,
-          role: user.role as 'admin' | 'user' | 'worker' | 'guest',
-          status: (user.active === 1 || user.active === true || user.status === 'active') ? 'active' : 'inactive' as 'active' | 'inactive',
-          lastLogin: user.last_active || user.last_login || new Date().toISOString().split('T')[0],
-          recipesCount: user.recipes_created || 0,
-          joinDate: user.created_at ? user.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
-        }))
+        // Transform users to match the UI interface (filter out 'user' role)
+        const transformedUsers = usersFromDB
+          .filter(user => ['admin', 'worker', 'guest'].includes(user.role)) // Only include valid roles
+          .map(user => ({
+            id: user.id ? user.id.toString() : `user_${Date.now()}`,
+            name: user.name || user.username || 'Sin nombre',
+            email: user.email,
+            role: user.role as 'admin' | 'worker' | 'guest',
+            status: (user.active === 1 || user.active === true || user.status === 'active') ? 'active' : 'inactive' as 'active' | 'inactive',
+            lastLogin: user.last_active || user.last_login || new Date().toISOString().split('T')[0],
+            recipesCount: user.recipes_created || 0,
+            joinDate: user.created_at ? user.created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+          }))
 
         setUsers(transformedUsers)
 

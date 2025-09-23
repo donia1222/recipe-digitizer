@@ -17,7 +17,7 @@ interface User {
   id: string
   name: string
   email: string
-  role: 'admin' | 'user' | 'worker' | 'guest'
+  role: 'admin' | 'worker' | 'guest'
   status: 'active' | 'inactive'
   lastLogin: string
   recipesCount?: number
@@ -31,7 +31,7 @@ interface UserManagementProps {
 
 export default function UserManagement({ users, setUsers }: UserManagementProps) {
   const [searchTerm, setSearchTerm] = useState("")
-  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'user' | 'worker' | 'guest'>('all')
+  const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'worker' | 'guest'>('all')
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all')
   const [isAddUserOpen, setIsAddUserOpen] = useState(false)
   const [isEditUserOpen, setIsEditUserOpen] = useState(false)
@@ -39,7 +39,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
   const [newUser, setNewUser] = useState({
     name: '',
     email: '',
-    role: 'user' as User['role'],
+    role: 'guest' as User['role'],
     password: ''
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -81,7 +81,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
       }
 
       setUsers([...users, user])
-      setNewUser({ name: '', email: '', role: 'user', password: '' })
+      setNewUser({ name: '', email: '', role: 'guest', password: '' })
       setIsAddUserOpen(false)
 
       toast({
@@ -203,7 +203,6 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'admin': return 'bg-red-100 text-red-800 border-red-200'
-      case 'user': return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'worker': return 'bg-green-100 text-green-800 border-green-200'
       case 'guest': return 'bg-gray-100 text-gray-800 border-gray-200'
       default: return 'bg-gray-100 text-gray-800 border-gray-200'
@@ -219,7 +218,6 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin': return 'Administrator'
-      case 'user': return 'Benutzer'
       case 'worker': return 'Trabajador'
       case 'guest': return 'Invitado'
       default: return role
@@ -323,14 +321,13 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
               />
             </div>
 
-            <Select value={filterRole} onValueChange={(value) => setFilterRole(value as "admin" | "worker" | "guest" | "all" | "user")}>
+            <Select value={filterRole} onValueChange={(value) => setFilterRole(value as "admin" | "worker" | "guest" | "all")}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle Rollen</SelectItem>
                 <SelectItem value="admin">Administratoren</SelectItem>
-                <SelectItem value="user">Benutzer</SelectItem>
                 <SelectItem value="worker">Trabajadores</SelectItem>
                 <SelectItem value="guest">Invitados</SelectItem>
               </SelectContent>
@@ -392,8 +389,8 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100">Benutzer</p>
-                <p className="text-2xl font-bold">{users.filter(u => u.role === 'user').length}</p>
+                <p className="text-purple-100">Trabajadores</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.role === 'worker').length}</p>
               </div>
               <Users className="h-8 w-8 text-purple-200" />
             </div>
@@ -541,7 +538,6 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Benutzer</SelectItem>
                     <SelectItem value="worker">Trabajador</SelectItem>
                     <SelectItem value="guest">Invitado</SelectItem>
                     <SelectItem value="admin">Administrator</SelectItem>

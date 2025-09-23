@@ -113,12 +113,10 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
         const result = await UserService.login(username, password)
         if (result.success && result.user) {
-          // Determine effective role for worker view
+          // Only users with 'worker' role can login as worker
           const userRole = result.user.role
 
-          // Admins and workers can use worker view
-          // Guests get limited worker access
-          if (userRole === 'admin' || userRole === 'worker' || userRole === 'guest') {
+          if (userRole === 'worker') {
             localStorage.setItem('user-role', 'worker')
             localStorage.setItem('actual-role', userRole) // Store actual role
             localStorage.setItem('current-user', JSON.stringify(result.user))
@@ -129,7 +127,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           } else {
             toast({
               title: "Acceso denegado",
-              description: "Usuario no autorizado",
+              description: "Este usuario no tiene permisos de trabajador",
               variant: "destructive"
             })
           }
@@ -154,14 +152,24 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
         const result = await UserService.login(username, password)
         if (result.success && result.user) {
-          // Any authenticated user can login as guest
-          localStorage.setItem('user-role', 'guest')
-          localStorage.setItem('actual-role', result.user.role) // Store actual role
-          localStorage.setItem('current-user', JSON.stringify(result.user))
-          if (result.token) {
-            localStorage.setItem('auth-token', result.token)
+          // Only users with 'guest' role can login as guest
+          const userRole = result.user.role
+
+          if (userRole === 'guest') {
+            localStorage.setItem('user-role', 'guest')
+            localStorage.setItem('actual-role', userRole) // Store actual role
+            localStorage.setItem('current-user', JSON.stringify(result.user))
+            if (result.token) {
+              localStorage.setItem('auth-token', result.token)
+            }
+            onLogin('guest')
+          } else {
+            toast({
+              title: "Acceso denegado",
+              description: "Este usuario no tiene permisos de invitado",
+              variant: "destructive"
+            })
           }
-          onLogin('guest')
         } else {
           toast({
             title: "Error de autenticación",
