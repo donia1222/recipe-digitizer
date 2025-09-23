@@ -154,9 +154,13 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
         setFolders(dbCategories);
 
-        // También guardar en localStorage para compatibilidad
-        localStorage.setItem("recipeFolders", JSON.stringify(dbCategories));
-        console.log('📁 Categorías guardadas en localStorage');
+        // Solo guardar en localStorage si hay espacio (opcional)
+        try {
+          localStorage.setItem("recipeFolders", JSON.stringify(dbCategories));
+          console.log('📁 Categorías guardadas en localStorage como backup');
+        } catch (quotaError) {
+          console.warn('⚠️ localStorage quota exceeded, skipping categories backup');
+        }
 
         // Log después del setState para verificar (esto no es el problema real)
         setTimeout(() => {
@@ -170,11 +174,19 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       console.error('❌ Detalles del error:', error instanceof Error ? error.message : 'Unknown error');
 
       // Fallback a localStorage si hay error
-      const savedFolders = localStorage.getItem("recipeFolders")
-      if (savedFolders) {
-        console.log('📁 Usando categorías desde localStorage como fallback');
-        setFolders(JSON.parse(savedFolders))
-      } else {
+      try {
+        const savedFolders = localStorage.getItem("recipeFolders")
+        if (savedFolders) {
+          console.log('📁 Usando categorías desde localStorage como fallback');
+          setFolders(JSON.parse(savedFolders))
+          return; // Exit early if localStorage worked
+        }
+      } catch (storageError) {
+        console.warn('⚠️ localStorage no disponible para fallback');
+      }
+
+      // Si no hay localStorage o falló, usar categorías por defecto
+      {
         // Si no hay localStorage, usar categorías por defecto
         console.log('📁 Usando categorías por defecto');
         const defaultCategories = [
@@ -212,7 +224,12 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           }
         ];
         setFolders(defaultCategories);
-        localStorage.setItem("recipeFolders", JSON.stringify(defaultCategories));
+
+        try {
+          localStorage.setItem("recipeFolders", JSON.stringify(defaultCategories));
+        } catch (quotaError) {
+          console.warn('⚠️ localStorage quota exceeded, skipping default categories backup');
+        }
       }
     }
   };
@@ -356,35 +373,24 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
     try {
       // Update folder in database
-      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php', {
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php?id=${folderId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          category_id: folderId,
-          name: newName.trim()
-        })
+        body: JSON.stringify({ name: newName.trim() })
       })
 
       if (response.ok) {
-        console.log('✅ Category updated in database')
+        await response.json();
+        console.log('✅ Category updated in database successfully');
+        // Reload categories first, then data
+        await loadCategories();
+        await loadData();
       } else {
-        console.error('❌ Failed to update category in database')
-      }
-
-      // Update local state
-      const updatedFolders = folders.map((f) => (f.id === folderId ? { ...f, name: newName.trim() } : f))
-      setFolders(updatedFolders)
-
-      // Update localStorage as backup
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem("recipeFolders", JSON.stringify(updatedFolders))
-        } catch (quotaError) {
-          console.warn('⚠️ localStorage quota exceeded, skipping backup')
-          // Skip localStorage backup since database is working
-        }
+        const errorText = await response.text();
+        console.error('❌ Failed to update category in database:', errorText);
+        throw new Error('Failed to update category in database');
       }
 
       setEditingFolder(null)
@@ -430,41 +436,22 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       }
 
       // Delete folder from database
-      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php', {
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php?id=${folderId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          category_id: folderId
-        })
+        }
       })
 
       if (response.ok) {
-        console.log('✅ Category deleted from database')
+        await response.json();
+        console.log('✅ Category deleted from database successfully');
+        // Reload data from database to ensure sync
+        await loadData();
       } else {
-        console.error('❌ Failed to delete category from database')
-      }
-
-      // Update local state
-      const updatedHistory = history.map((item) =>
-        allSubfolderIds.includes(item.folderId || "") ? { ...item, folderId: undefined } : item,
-      )
-      setHistory(updatedHistory)
-
-      // Remove the folder and all its subcategories from local state
-      const updatedFolders = folders.filter((f) => !allSubfolderIds.includes(f.id))
-      setFolders(updatedFolders)
-
-      // Update localStorage as backup
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
-          localStorage.setItem("recipeFolders", JSON.stringify(updatedFolders))
-        } catch (quotaError) {
-          console.warn('⚠️ localStorage quota exceeded, skipping backup')
-          // Skip localStorage backup since database is working
-        }
+        const errorText = await response.text();
+        console.error('❌ Failed to delete category from database:', errorText);
+        throw new Error('Failed to delete category from database');
       }
 
       // Reset selected folder if it was deleted
@@ -495,12 +482,36 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
-  const toggleFavorite = (id: number, e: React.MouseEvent) => {
+  const toggleFavorite = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation()
 
-    const updatedHistory = history.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
-    setHistory(updatedHistory)
-    localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+    try {
+      // Update in database
+      const recipe = history.find(item => item.id === id)
+      if (recipe) {
+        await RecipeService.update(id, { isFavorite: !recipe.isFavorite })
+        console.log('✅ Favorite status updated in database')
+      }
+
+      // Update local state
+      const updatedHistory = history.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
+      setHistory(updatedHistory)
+
+      // Update localStorage as backup only
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+        } catch (quotaError) {
+          console.warn('⚠️ localStorage quota exceeded, skipping favorite backup')
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Error updating favorite:', error)
+      // Fallback to local only if database fails
+      const updatedHistory = history.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
+      setHistory(updatedHistory)
+    }
   }
 
   const moveToFolder = async (recipeId: number, categoryId: string | undefined) => {
@@ -544,7 +555,15 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         // Si no encontramos el ID numérico, actualizar solo localmente
         const updatedHistory = history.map((item) => (item.id === recipeId ? { ...item, folderId: categoryId } : item))
         setHistory(updatedHistory)
-        localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+
+        // Update localStorage as backup only
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+          } catch (quotaError) {
+            console.warn('⚠️ localStorage quota exceeded, skipping move backup')
+          }
+        }
       }
 
     } catch (error) {
@@ -553,7 +572,14 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       // Fallback a solo localStorage si hay error
       const updatedHistory = history.map((item) => (item.id === recipeId ? { ...item, folderId: categoryId } : item))
       setHistory(updatedHistory)
-      localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
+        } catch (quotaError) {
+          console.warn('⚠️ localStorage quota exceeded, skipping fallback backup')
+        }
+      }
     }
   }
 
