@@ -683,7 +683,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
                 currentServings={servings}
                 originalServings={originalServings}
                 onRecipeUpdate={handleRecipeUpdate}
-                userId={selectedRecipeUserId || (currentRecipeId ? undefined : currentUser?.id)}
+                userId={selectedRecipeUserId || currentUser?.id}
                 createdAt={selectedRecipeCreatedAt || new Date().toISOString()}
                 approvalMessage={approvalMessage}
               />

@@ -83,28 +83,49 @@ export default function AdminDashboard() {
 
         setSubAdmins(transformedSubAdmins)
 
-        // Load recipes and counts
+        // Load approved recipes count
         const recipesFromDB = await RecipeService.getAll()
-        const pendingCount = recipesFromDB.filter((r: any) => r.status === 'pending').length
-        const approvedCount = recipesFromDB.filter((r: any) => r.status === 'approved').length
-        setNotifications(pendingCount)
+        const approvedCount = recipesFromDB.length // Todos los de 'recipes' son aprobados
         setTotalRecipes(approvedCount)
 
-        // Set pending recipes for the component
-        const pendingRecipesList = recipesFromDB
-          .filter((r: any) => r.status === 'pending')
-          .map((r: any) => ({
-            id: r.id,
-            title: r.title || 'Sin título',
-            author: r.user_id || 'Desconocido',
-            user: r.user_id || 'Desconocido',
-            date: r.created_at || new Date().toISOString(),
-            submittedAt: r.created_at || new Date().toISOString(),
-            status: 'pending' as const,
-            image: r.image || r.image_base64 || '',
-            analysis: r.analysis || ''
-          }))
-        setPendingRecipes(pendingRecipesList)
+        // Load PENDING recipes from pending-recipes API
+        try {
+          const pendingResponse = await fetch('https://web.lweb.ch/recipedigitalizer/apis/pending-recipes.php', {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-cache'
+          })
+
+          if (pendingResponse.ok) {
+            const pendingResult = await pendingResponse.json()
+            if (pendingResult.success && pendingResult.data) {
+              const pendingCount = pendingResult.data.length
+              setNotifications(pendingCount)
+
+              // Set pending recipes for the component
+              const pendingRecipesList = pendingResult.data.map((r: any) => ({
+                id: r.id,
+                title: r.title || 'Sin título',
+                author: r.user_name || 'Desconocido',
+                user: r.user_name || 'Desconocido',
+                date: r.created_at || new Date().toISOString(),
+                submittedAt: r.created_at || new Date().toISOString(),
+                status: 'pending' as const,
+                image: r.image_url || r.image_base64 || '',
+                analysis: r.analysis || ''
+              }))
+              setPendingRecipes(pendingRecipesList)
+            } else {
+              console.log('No pending recipes found')
+              setNotifications(0)
+              setPendingRecipes([])
+            }
+          }
+        } catch (pendingError) {
+          console.error('Error loading pending recipes:', pendingError)
+          setNotifications(0)
+          setPendingRecipes([])
+        }
 
       } catch (error) {
         console.error('Error loading data:', error)
