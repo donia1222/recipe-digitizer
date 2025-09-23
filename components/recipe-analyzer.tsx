@@ -244,6 +244,58 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             const data = await response.json();
             console.log('✅ Additional images synced to database:', data);
 
+            // IMPORTANTE: También actualizar el historial de recetas para que se vea la imagen en las miniaturas
+            console.log('🔍 Checking if should update history:', {
+              hasRecipe: !!recipe,
+              recipeImage: recipe?.image ? 'HAS_IMAGE' : 'NO_IMAGE',
+              recipeId
+            });
+
+            // Actualizar historial si la receta no tiene imagen principal O si no tiene muchas imágenes adicionales
+            const shouldUpdateHistory = recipe && (!recipe.image || recipeImages.length <= 2);
+            console.log('🔍 Should update history:', shouldUpdateHistory);
+
+            if (shouldUpdateHistory) {
+              console.log('🔄 Updating recipe history with new image');
+              const storedHistory = localStorage.getItem('recipeHistory');
+              if (storedHistory) {
+                const history = JSON.parse(storedHistory);
+                console.log('🔍 Current history length:', history.length);
+
+                const recipeIndex = history.findIndex((item: any) =>
+                  item.id?.toString() === recipeId || item.recipeId === recipeId
+                );
+                console.log('🔍 Found recipe at index:', recipeIndex);
+
+                if (recipeIndex !== -1) {
+                  console.log('🔍 Recipe found in metadata history:', {
+                    title: history[recipeIndex].title,
+                    hadImage: history[recipeIndex].hasImage,
+                    id: history[recipeIndex].id,
+                    recipeId: history[recipeIndex].recipeId
+                  });
+
+                  // Actualizar solo el flag hasImage en los metadatos (no la imagen completa)
+                  history[recipeIndex].hasImage = true;
+
+                  try {
+                    localStorage.setItem('recipeHistory', JSON.stringify(history));
+                    console.log('✅ Recipe metadata updated with image flag');
+                  } catch (quotaError) {
+                    console.warn('⚠️ localStorage quota exceeded, skipping metadata update');
+                  }
+
+                  // Disparar evento para que otras páginas se actualicen
+                  window.dispatchEvent(new Event('recipeUpdated'));
+                } else {
+                  console.log('❌ Recipe not found in history for recipeId:', recipeId);
+                  console.log('🔍 Available recipe IDs in history:', history.map(h => h.id || h.recipeId));
+                }
+              } else {
+                console.log('❌ No stored history found');
+              }
+            }
+
             toast({
               title: "Bild hinzugefügt",
               description: "Das Bild wurde erfolgreich gespeichert.",

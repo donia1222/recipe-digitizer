@@ -74,6 +74,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         console.log('📚 Cargando recetas desde la BD...');
         const recipesFromDB = await RecipeService.getAll();
         console.log('📚 Recetas desde BD:', recipesFromDB);
+        console.log('📚 Número de recetas desde BD:', recipesFromDB.length);
 
         // Por ahora también cargar de localStorage para compatibilidad
         const savedHistory = localStorage.getItem("recipeHistory")
@@ -90,11 +91,42 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         // IMPORTANTE: Sincronizar category_id de BD con folderId de frontend
         const syncedRecipes = combinedRecipes.map((recipe: any) => ({
           ...recipe,
-          folderId: recipe.category_id || recipe.folderId // Usar category_id de BD si existe
+          folderId: recipe.category_id || recipe.folderId, // Usar category_id de BD si existe
+          image: recipe.image_base64 || recipe.image_url || recipe.image, // Mapear imagen de BD
+          // Mantener compatibilidad con el formato del historial
+          title: recipe.title || recipe.name,
+          date: recipe.created_at || recipe.date,
+          recipeId: recipe.recipe_id || recipe.recipeId
         }));
 
         console.log('🔄 Recipes synced with categories:', syncedRecipes);
         setHistory(syncedRecipes);
+
+        // IMPORTANTE: También actualizar localStorage con METADATOS ÚNICAMENTE
+        // para que las futuras actualizaciones de imágenes funcionen (SIN imágenes base64 completas)
+        console.log('💾 Syncing recipe metadata to localStorage...');
+        const recipeMetadata = syncedRecipes.map((recipe: any) => ({
+          id: recipe.id,
+          recipeId: recipe.recipeId,
+          title: recipe.title,
+          date: recipe.date,
+          folderId: recipe.folderId,
+          isFavorite: recipe.isFavorite,
+          analysis: recipe.analysis?.substring(0, 200) + '...', // Solo primeros 200 chars
+          // NO incluir image base64 completa - solo indicar si existe
+          hasImage: !!(recipe.image || recipe.image_base64 || recipe.image_url),
+          // Para la miniatura, cargaremos desde BD cuando sea necesario
+          user_id: recipe.user_id,
+          status: recipe.status
+        }));
+
+        try {
+          localStorage.setItem('recipeHistory', JSON.stringify(recipeMetadata));
+          console.log('✅ Recipe metadata synced to localStorage');
+        } catch (quotaError) {
+          console.warn('⚠️ localStorage quota exceeded, skipping metadata sync');
+          // Continuar sin localStorage - la app funciona desde BD
+        }
       } catch (error) {
         console.error('Error cargando recetas:', error);
         // Fallback a localStorage si hay error
@@ -226,6 +258,15 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     const handleRecipeUpdate = () => {
       console.log('📚 Recipe updated event received in archive, reloading data...');
       loadData();
+
+      // También recargar el historial desde localStorage para actualizar miniaturas
+      console.log('🔄 Reloading history from localStorage after recipe update...');
+      const storedHistory = localStorage.getItem('recipeHistory');
+      if (storedHistory) {
+        const updatedHistory = JSON.parse(storedHistory);
+        setHistory(updatedHistory);
+        console.log('✅ History reloaded from localStorage');
+      }
     };
 
     const handleRecipeDelete = () => {
