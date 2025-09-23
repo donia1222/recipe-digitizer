@@ -134,6 +134,16 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         }));
 
         console.log('📁 Categorías convertidas para frontend:', dbCategories);
+
+        // Debug subcategorías específicamente
+        const subcategorias = dbCategories.filter((cat: any) => cat.parentId);
+        console.log('🔍 SUBCATEGORÍAS DETECTADAS:', subcategorias);
+        subcategorias.forEach((sub: any) => {
+          console.log(`   📂 "${sub.name}" es hija de "${sub.parentId}"`);
+        });
+
+        const categoriasPrincipales = dbCategories.filter((cat: any) => !cat.parentId);
+        console.log('🔍 CATEGORÍAS PRINCIPALES:', categoriasPrincipales);
         console.log('📁 Current folders state before update:', folders);
 
         setFolders(dbCategories);
@@ -567,7 +577,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   }
 
   const getSubcategories = (parentId: string) => {
-    return folders.filter((folder) => folder.parentId === parentId)
+    const subcats = folders.filter((folder) => folder.parentId === parentId);
+    console.log(`🔍 getSubcategories("${parentId}"):`, subcats.map(s => s.name));
+    return subcats;
   }
 
   const getMainCategories = () => {
