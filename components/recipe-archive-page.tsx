@@ -45,6 +45,7 @@ interface HistoryItem {
   folderId?: string
   title?: string
   isFavorite?: boolean
+  user_id?: string
 }
 
 interface RecipeArchivePageProps {
@@ -67,8 +68,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const folderColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"]
 
   // Load history and folders from database and localStorage
-  useEffect(() => {
-    const loadData = async () => {
+  const loadData = async () => {
       try {
         // Cargar recetas desde la BD
         console.log('📚 Cargando recetas desde la BD...');
@@ -96,8 +96,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           setHistory(JSON.parse(savedHistory))
         }
       }
-    };
+  };
 
+  useEffect(() => {
     loadData();
 
     // Cargar carpetas (todavía desde localStorage)
@@ -105,6 +106,27 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     if (savedFolders) {
       setFolders(JSON.parse(savedFolders))
     }
+  }, [])
+
+  // Escuchar eventos de actualización y eliminación de recetas
+  useEffect(() => {
+    const handleRecipeUpdate = () => {
+      console.log('📚 Recipe updated event received in archive, reloading data...');
+      loadData();
+    };
+
+    const handleRecipeDelete = () => {
+      console.log('📚 Recipe deleted event received in archive, reloading data...');
+      loadData();
+    };
+
+    window.addEventListener('recipeUpdated', handleRecipeUpdate);
+    window.addEventListener('recipeDeleted', handleRecipeDelete);
+
+    return () => {
+      window.removeEventListener('recipeUpdated', handleRecipeUpdate);
+      window.removeEventListener('recipeDeleted', handleRecipeDelete);
+    };
   }, [])
 
   const createFolder = () => {
@@ -224,6 +246,33 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       month: "2-digit",
       year: "numeric",
     })
+  }
+
+  const getUserName = (userId?: string): string => {
+    if (!userId) return 'Unbekannter Benutzer';
+
+    // Try to get user name from current user if it matches
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === userId) {
+          return currentUser.name || 'Sie';
+        }
+      } catch (error) {
+        console.error('Error parsing current user:', error);
+      }
+    }
+
+    // Common user mappings (can be expanded with API call to get real user names)
+    const userMappings: { [key: string]: string } = {
+      'admin-001': 'Andrea Müller',
+      'worker-001': 'Hans Weber',
+      'worker-002': 'Maria Schmidt',
+      'guest-001': 'Peter Fischer'
+    };
+
+    return userMappings[userId] || 'Benutzer';
   }
 
   const getSubcategories = (parentId: string) => {
@@ -699,7 +748,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
                           <Calendar className="h-3 w-3" />
-                          <span>{formatDate(item.date)}</span>
+                          <span>Von {getUserName(item.user_id)} • {formatDate(item.date)}</span>
                         </div>
 
                         {/* Category dropdown */}

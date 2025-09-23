@@ -19,6 +19,7 @@ interface HistoryItem {
   folderId?: string
   title?: string
   isFavorite?: boolean
+  user_id?: string
 }
 
 interface RecipeLibraryProps {
@@ -44,6 +45,27 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  // Escuchar eventos de actualización y eliminación de recetas
+  useEffect(() => {
+    const handleRecipeUpdate = () => {
+      console.log('📚 Recipe updated event received, reloading data...');
+      loadData();
+    };
+
+    const handleRecipeDelete = () => {
+      console.log('📚 Recipe deleted event received, reloading data...');
+      loadData();
+    };
+
+    window.addEventListener('recipeUpdated', handleRecipeUpdate);
+    window.addEventListener('recipeDeleted', handleRecipeDelete);
+
+    return () => {
+      window.removeEventListener('recipeUpdated', handleRecipeUpdate);
+      window.removeEventListener('recipeDeleted', handleRecipeDelete);
+    };
   }, [])
 
   const loadData = async () => {
@@ -133,6 +155,33 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
   const extractRecipeTitle = (analysis: string) => {
     const firstLine = analysis.split('\n')[0]
     return firstLine.length > 50 ? firstLine.substring(0, 50) + '...' : firstLine
+  }
+
+  const getUserName = (userId?: string): string => {
+    if (!userId) return 'Unbekannter Benutzer';
+
+    // Try to get user name from current user if it matches
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === userId) {
+          return currentUser.name || 'Sie';
+        }
+      } catch (error) {
+        console.error('Error parsing current user:', error);
+      }
+    }
+
+    // Common user mappings (can be expanded with API call to get real user names)
+    const userMappings: { [key: string]: string } = {
+      'admin-001': 'Andrea Müller',
+      'worker-001': 'Hans Weber',
+      'worker-002': 'Maria Schmidt',
+      'guest-001': 'Peter Fischer'
+    };
+
+    return userMappings[userId] || 'Benutzer';
   }
 
 
@@ -487,7 +536,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
 
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 text-sm mb-3">
                             <Calendar size={14} />
-                            {formatDate(item.date)}
+                            Von {getUserName(item.user_id)} • {formatDate(item.date)}
                           </div>
 
                         </div>
@@ -528,7 +577,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
                               <Calendar size={14} />
-                              {formatDate(item.date)}
+                              Von {getUserName(item.user_id)} • {formatDate(item.date)}
                             </div>
                           </div>
                         </div>

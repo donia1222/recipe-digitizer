@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Download, Printer, Share, ImagePlus, X, ChevronLeft, ChevronRight, Eye, Users, Edit } from "lucide-react"
+import { Download, Printer, Share, ImagePlus, X, ChevronLeft, ChevronRight, Eye, Users, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
 import Image from "next/image"
 import RecipeComments from "./recipe-comments"
+import { RecipeService } from "@/lib/services/recipeService"
 
 interface RecipeAnalyzerProps {
   recipe: string
@@ -19,6 +20,8 @@ interface RecipeAnalyzerProps {
   currentServings?: number
   originalServings?: number
   onRecipeUpdate?: (newRecipe: string) => void
+  userId?: string
+  createdAt?: string
 }
 
 const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
@@ -29,6 +32,8 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   currentServings,
   originalServings,
   onRecipeUpdate,
+  userId,
+  createdAt,
 }) => {
   const sections = recipe.split("\n\n")
   const [recipeImages, setRecipeImages] = useState<string[]>([])
@@ -201,20 +206,138 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
     setShowEditModal(true)
   }
 
-  const handleSaveRecipe = () => {
-    if (onRecipeUpdate) {
-      onRecipeUpdate(editedRecipe)
+  const handleSaveRecipe = async () => {
+    try {
+      // Extraer el ID numérico del recipeId si es necesario
+      let numericId: number | null = null;
+
+      if (recipeId) {
+        // Si recipeId es algo como "recipe_123" o "123", extraer el número
+        const match = recipeId.match(/(\d+)$/);
+        if (match) {
+          numericId = parseInt(match[1], 10);
+        } else if (!isNaN(parseInt(recipeId))) {
+          numericId = parseInt(recipeId);
+        }
+      }
+
+      if (numericId) {
+        // Guardar en base de datos usando RecipeService
+        console.log('🔵 Saving recipe to DB with ID:', numericId);
+        const updatedRecipe = await RecipeService.update(numericId, {
+          analysis: editedRecipe,
+          title: extractTitleFromText(editedRecipe) // Extraer título del contenido editado
+        });
+
+        if (updatedRecipe) {
+          console.log('✅ Recipe updated successfully');
+          toast({
+            title: "Rezept aktualisiert",
+            description: "Das Rezept wurde erfolgreich in der Datenbank gespeichert.",
+          });
+        } else {
+          throw new Error('Failed to update recipe in database');
+        }
+      } else {
+        console.log('⚠️ No valid recipe ID found, updating locally only');
+        toast({
+          title: "Rezept aktualisiert",
+          description: "Das Rezept wurde lokal gespeichert.",
+        });
+      }
+
+      // Actualizar también en el componente padre
+      if (onRecipeUpdate) {
+        onRecipeUpdate(editedRecipe);
+      }
+
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('❌ Error saving recipe:', error);
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Speichern des Rezepts. Bitte versuchen Sie es erneut.",
+        variant: "destructive"
+      });
     }
-    setShowEditModal(false)
-    toast({
-      title: "Rezept aktualisiert",
-      description: "Das Rezept wurde erfolgreich gespeichert.",
-    })
   }
 
   const handleCancelEdit = () => {
     setEditedRecipe(recipe) // Reset to original
     setShowEditModal(false)
+  }
+
+  const handleDeleteRecipe = async () => {
+    try {
+      // Extraer el ID numérico del recipeId si es necesario
+      let numericId: number | null = null;
+
+      if (recipeId) {
+        // Si recipeId es algo como "recipe_123" o "123", extraer el número
+        const match = recipeId.match(/(\d+)$/);
+        if (match) {
+          numericId = parseInt(match[1], 10);
+        } else if (!isNaN(parseInt(recipeId))) {
+          numericId = parseInt(recipeId);
+        }
+      }
+
+      if (!numericId) {
+        toast({
+          title: "Fehler",
+          description: "Rezept-ID nicht gefunden",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Confirmar eliminación
+      const recipeTitle = extractTitleFromText(recipe);
+      const confirmed = window.confirm(
+        `Sind Sie sicher, dass Sie das Rezept "${recipeTitle}" löschen möchten?\n\nDiese Aktion kann nicht rückgängig gemacht werden.`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      console.log('🔵 Deleting recipe with ID:', numericId);
+
+      // Eliminar de la base de datos usando RecipeService
+      const success = await RecipeService.delete(numericId);
+
+      if (success) {
+        console.log('✅ Recipe deleted successfully');
+
+        toast({
+          title: "Rezept gelöscht",
+          description: "Das Rezept wurde erfolgreich aus der Datenbank entfernt.",
+        });
+
+        // Disparar evento para actualizar otras vistas
+        const event = new CustomEvent('recipeDeleted', {
+          detail: {
+            recipeId: recipeId,
+            timestamp: Date.now()
+          }
+        });
+        window.dispatchEvent(event);
+
+        // Redirigir de vuelta a la biblioteca después de un breve delay
+        setTimeout(() => {
+          window.history.back();
+        }, 1500);
+      } else {
+        throw new Error('Failed to delete recipe from database');
+      }
+    } catch (error) {
+      console.error('❌ Error deleting recipe:', error);
+      toast({
+        title: "Fehler",
+        description: "Fehler beim Löschen des Rezepts. Bitte versuchen Sie es erneut.",
+        variant: "destructive"
+      });
+    }
   }
 
   const handlePrint = () => {
@@ -357,9 +480,9 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length)
   }
 
-  // Extract recipe title from analysis
-  const getRecipeTitle = () => {
-    const lines = recipe.split("\n").filter((line) => line.trim())
+  // Extract recipe title from any recipe text
+  const extractTitleFromText = (recipeText: string) => {
+    const lines = recipeText.split("\n").filter((line) => line.trim())
     for (const line of lines.slice(0, 5)) {
       if (
         line.length < 60 &&
@@ -379,6 +502,53 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       }
     }
     return "Mein Rezept"
+  }
+
+  // Extract recipe title from current recipe (for compatibility)
+  const getRecipeTitle = () => {
+    return extractTitleFromText(recipe)
+  }
+
+  const getUserName = (userId?: string): string => {
+    if (!userId) return 'Unbekannter Benutzer';
+
+    // Try to get user name from current user if it matches
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === userId) {
+          return currentUser.name || 'Sie';
+        }
+      } catch (error) {
+        console.error('Error parsing current user:', error);
+      }
+    }
+
+    // Common user mappings (can be expanded with API call to get real user names)
+    const userMappings: { [key: string]: string } = {
+      'admin-001': 'Andrea Müller',
+      'worker-001': 'Hans Weber',
+      'worker-002': 'Maria Schmidt',
+      'guest-001': 'Peter Fischer'
+    };
+
+    return userMappings[userId] || 'Benutzer';
+  }
+
+  const formatDate = (dateString?: string): string => {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+
+    return new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   }
 
   return (
@@ -518,6 +688,17 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       {/* Recipe Title */}
       <div className="text-center py-6">
         <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance">{getRecipeTitle()}</h2>
+        {(userId || createdAt) && (
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mt-3">
+            <span>Von {getUserName(userId)}</span>
+            {createdAt && (
+              <>
+                <span>•</span>
+                <span>{formatDate(createdAt)}</span>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {sections.map((section, index) => {
@@ -599,15 +780,24 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         }
       })}
 
-      {/* Edit Recipe Button */}
+      {/* Recipe Action Buttons */}
       <div className="mt-8 text-center">
-        <Button
-          onClick={handleEditRecipe}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg transition-colors duration-200"
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Rezept bearbeiten
-        </Button>
+        <div className="flex gap-4 justify-center">
+          <Button
+            onClick={handleEditRecipe}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Rezept bearbeiten
+          </Button>
+          <Button
+            onClick={handleDeleteRecipe}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors duration-200"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Rezept löschen
+          </Button>
+        </div>
       </div>
 
       {/* Recipe Comments Section */}

@@ -209,6 +209,98 @@ switch ($method) {
         }
         break;
 
+    case 'PUT':
+        // Actualizar receta
+        try {
+            $input = file_get_contents('php://input');
+            $data = json_decode($input, true);
+
+            error_log('PUT data received: ' . print_r($data, true));
+
+            // Obtener ID de la receta desde la URL o los datos
+            $id = $_GET['id'] ?? $data['id'] ?? null;
+            if (!$id) {
+                echo json_encode(['error' => 'ID de receta requerido']);
+                exit;
+            }
+
+            // Verificar que la receta existe
+            $checkStmt = $pdo->prepare("SELECT * FROM recipes WHERE id = :id");
+            $checkStmt->execute([':id' => $id]);
+            $existingRecipe = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$existingRecipe) {
+                echo json_encode(['error' => 'Receta no encontrada']);
+                exit;
+            }
+
+            // Preparar campos para actualizar
+            $updateFields = [];
+            $params = [':id' => $id];
+
+            if (isset($data['title'])) {
+                $updateFields[] = 'title = :title';
+                $params[':title'] = $data['title'];
+            }
+
+            if (isset($data['analysis'])) {
+                $updateFields[] = 'analysis = :analysis';
+                $params[':analysis'] = $data['analysis'];
+            }
+
+            if (isset($data['status'])) {
+                $updateFields[] = 'status = :status';
+                $params[':status'] = $data['status'];
+            }
+
+            if (isset($data['servings'])) {
+                $updateFields[] = 'servings = :servings';
+                $params[':servings'] = $data['servings'];
+            }
+
+            if (isset($data['original_servings'])) {
+                $updateFields[] = 'original_servings = :original_servings';
+                $params[':original_servings'] = $data['original_servings'];
+            }
+
+            if (isset($data['is_favorite'])) {
+                $updateFields[] = 'is_favorite = :is_favorite';
+                $params[':is_favorite'] = $data['is_favorite'] ? 1 : 0;
+            }
+
+            // Siempre actualizar updated_at
+            $updateFields[] = 'updated_at = NOW()';
+
+            if (empty($updateFields)) {
+                echo json_encode(['error' => 'No hay campos para actualizar']);
+                exit;
+            }
+
+            // Construir y ejecutar query
+            $sql = "UPDATE recipes SET " . implode(', ', $updateFields) . " WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+
+            // Obtener receta actualizada
+            $updatedStmt = $pdo->prepare("SELECT * FROM recipes WHERE id = :id");
+            $updatedStmt->execute([':id' => $id]);
+            $updatedRecipe = $updatedStmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Receta actualizada exitosamente',
+                'data' => $updatedRecipe
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Error updating recipe: ' . $e->getMessage());
+            echo json_encode([
+                'success' => false,
+                'error' => 'Error al actualizar receta: ' . $e->getMessage()
+            ]);
+        }
+        break;
+
     default:
         echo json_encode(['error' => 'Método no soportado']);
 }

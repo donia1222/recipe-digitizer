@@ -26,6 +26,7 @@ interface HistoryItem {
   folderId?: string
   title?: string
   isFavorite?: boolean
+  user_id?: string
 }
 
 interface HistoryModalProps {
@@ -181,6 +182,33 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
       hour: '2-digit',
       minute: '2-digit'
     }).format(date)
+  }
+
+  const getUserName = (userId?: string): string => {
+    if (!userId) return 'Unbekannter Benutzer';
+
+    // Try to get user name from current user if it matches
+    const currentUserStr = localStorage.getItem('current-user');
+    if (currentUserStr) {
+      try {
+        const currentUser = JSON.parse(currentUserStr);
+        if (currentUser.id === userId) {
+          return currentUser.name || 'Sie';
+        }
+      } catch (error) {
+        console.error('Error parsing current user:', error);
+      }
+    }
+
+    // Common user mappings (can be expanded with API call to get real user names)
+    const userMappings: { [key: string]: string } = {
+      'admin-001': 'Andrea Müller',
+      'worker-001': 'Hans Weber',
+      'worker-002': 'Maria Schmidt',
+      'guest-001': 'Peter Fischer'
+    };
+
+    return userMappings[userId] || 'Benutzer';
   }
 
   const extractRecipeTitle = (analysis: string) => {
@@ -459,7 +487,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, onClose, onSelectIt
                       <div className="p-4">
                         <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
                           <Calendar size={12} />
-                          {formatDate(item.date)}
+                          Von {getUserName(item.user_id)} • {formatDate(item.date)}
                         </div>
                         
                         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">

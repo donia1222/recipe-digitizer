@@ -172,18 +172,50 @@ export class RecipeService {
 
   /**
    * Actualizar receta existente
-   * Futuro: PUT /api/recipes/:id
+   * API: PUT /api/recipes/:id
    */
   static async update(id: number, updates: Partial<Recipe>): Promise<Recipe | null> {
-    const recipes = await this.getAll();
-    const index = recipes.findIndex(r => r.id === id);
+    try {
+      // Usar API en producción
+      if (API_CONFIG.USE_PRODUCTION) {
+        const url = getApiUrl(API_CONFIG.PRODUCTION.ENDPOINTS.RECIPE_BY_ID(id));
+        console.log('🔵 PUT to:', url);
+        console.log('🔵 Updates:', updates);
 
-    if (index === -1) return null;
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: getApiHeaders(),
+          body: JSON.stringify(updates)
+        });
 
-    recipes[index] = { ...recipes[index], ...updates };
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(recipes));
+        console.log('🔵 Response status:', response.status);
 
-    return recipes[index];
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ Error response:', errorText);
+          throw new Error('Error updating recipe');
+        }
+
+        const data = await response.json();
+        console.log('✅ Recipe updated in DB:', data);
+
+        return data.data || null;
+      }
+
+      // Fallback a localStorage para desarrollo
+      const recipes = await this.getAll();
+      const index = recipes.findIndex(r => r.id === id);
+
+      if (index === -1) return null;
+
+      recipes[index] = { ...recipes[index], ...updates };
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(recipes));
+
+      return recipes[index];
+    } catch (error) {
+      console.error('Error updating recipe:', error);
+      return null;
+    }
   }
 
   /**

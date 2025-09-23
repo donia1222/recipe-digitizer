@@ -155,6 +155,16 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
   // Handler for recipe updates from edit functionality
   const handleRecipeUpdate = (newRecipe: string) => {
     setAnalysis(newRecipe)
+
+    // Disparar evento personalizado para notificar a otros componentes que se actualizó una receta
+    const event = new CustomEvent('recipeUpdated', {
+      detail: {
+        recipeId: currentRecipeId,
+        newContent: newRecipe,
+        timestamp: Date.now()
+      }
+    });
+    window.dispatchEvent(event);
   }
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -622,6 +632,8 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
                 currentServings={servings}
                 originalServings={originalServings}
                 onRecipeUpdate={handleRecipeUpdate}
+                userId={currentUser?.id}
+                createdAt={new Date().toISOString()}
               />
             )}
           </div>
