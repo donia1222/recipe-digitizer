@@ -209,13 +209,13 @@ switch ($method) {
                 }
             }
 
-            // Insertar receta
-            $sql = "INSERT INTO recipes (
+            // Insertar receta en RECETAS_PENDIENTES (requiere aprobación)
+            $sql = "INSERT INTO recetas_pendientes (
                         recipe_id, title, analysis, image_base64, image_url,
-                        user_id, status, category_id, created_at
+                        user_id, category_id, created_at
                     ) VALUES (
                         :recipe_id, :title, :analysis, :image, :image_url,
-                        :user_id, :status, :category_id, NOW()
+                        :user_id, :category_id, NOW()
                     )";
 
             $stmt = $pdo->prepare($sql);
@@ -226,7 +226,6 @@ switch ($method) {
                 ':image' => $data['image'] ?? '',
                 ':image_url' => $imageUrl,
                 ':user_id' => $data['user_id'] ?? 'admin-001',
-                ':status' => $data['status'] ?? 'approved',
                 ':category_id' => $data['category_id'] ?? null
             ]);
 
@@ -267,7 +266,7 @@ switch ($method) {
                     if (!empty($additionalImageUrl)) {
                         try {
                             $additionalImageStmt = $pdo->prepare("
-                                INSERT INTO recipe_images (recipe_id, image_url, image_base64, display_order)
+                                INSERT INTO recetas_pendientes_images (recipe_id, image_url, image_base64, display_order)
                                 VALUES (?, ?, ?, ?)
                             ");
                             $additionalImageStmt->execute([
@@ -276,7 +275,7 @@ switch ($method) {
                                 $additionalImage,
                                 $displayOrder
                             ]);
-                            error_log('Additional image record created for recipe ID: ' . $newId);
+                            error_log('Additional image record created for PENDING recipe ID: ' . $newId);
                         } catch (Exception $e) {
                             error_log('Error inserting additional image record: ' . $e->getMessage());
                         }
