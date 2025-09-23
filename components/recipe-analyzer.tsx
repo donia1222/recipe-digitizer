@@ -876,7 +876,17 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           </div>
         </div>
       </div>
-
+     {/* Mensaje temporal de aprobación - antes de comentarios */}
+      {approvalMessage && (
+        <div className="mt-8 mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in slide-in-from-bottom-4 duration-500">
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <p className="text-green-800 dark:text-green-200 font-medium text-sm">
+              {approvalMessage}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Recipe Images Gallery */}
       {allImages.length > 0 && (
         <div className="space-y-4">
@@ -944,6 +954,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           </div>
         )}
       </div>
+ 
 
       {sections.map((section, index) => {
         // Skip if this section is the title we already extracted
@@ -1057,17 +1068,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         )
       )}
 
-      {/* Mensaje temporal de aprobación - antes de comentarios */}
-      {approvalMessage && (
-        <div className="mt-8 mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg animate-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-green-800 dark:text-green-200 font-medium text-sm">
-              {approvalMessage}
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* Recipe Comments Section */}
       <div className="mt-6">
