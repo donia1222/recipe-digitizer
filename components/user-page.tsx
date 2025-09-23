@@ -145,7 +145,10 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
   // Load user recipes from DATABASE (not localStorage)
   useEffect(() => {
     const loadUserRecipes = async () => {
-      if (!currentUser?.id) return;
+      if (!currentUser?.id) {
+        console.log("❌ No current user available, skipping recipe load");
+        return;
+      }
 
       try {
         console.log("🔵 Loading recipes from database for user:", currentUser.id);
@@ -154,13 +157,26 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
         console.log("📚 Recipes from database:", dbRecipes);
         console.log("📚 Number of recipes found:", dbRecipes.length);
 
+        // VERIFICAR QUE TENEMOS currentUser antes de filtrar
+        if (!currentUser?.id) {
+          console.log("❌ Current user lost during API call, aborting filter");
+          return;
+        }
+
         // FILTRAR MANUALMENTE EN EL FRONTEND (porque PHP no filtra bien)
         console.log("🔧 FILTRADO MANUAL: Total recetas recibidas:", dbRecipes.length);
+        console.log("🔧 Current user ID for filtering:", currentUser.id);
         const filteredRecipes = dbRecipes.filter((recipe: any) => {
-          console.log("🔍 Checking recipe:", recipe.id, "user_id:", recipe.user_id, "vs current:", currentUser.id);
-          return recipe.user_id === currentUser.id;
+          const matches = String(recipe.user_id) === String(currentUser.id);
+          console.log("🔍 Checking recipe:", recipe.id, "user_id:", recipe.user_id, "vs current:", currentUser.id, "matches:", matches);
+          return matches;
         });
         console.log("✅ FILTRADO MANUAL: Recetas del usuario:", filteredRecipes.length);
+
+        // Si no encontramos recetas del usuario, mostrar un mensaje de debug
+        if (filteredRecipes.length === 0 && dbRecipes.length > 0) {
+          console.log("⚠️ No recipes found for user. All user_ids in DB:", dbRecipes.map((r: any) => r.user_id));
+        }
 
         // Convert database recipes to UserRecipe format
         const userRecipes = filteredRecipes.map((recipe: any) => {
@@ -201,6 +217,7 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
         setCurrentUser({ id: user.id, name: user.name })
         console.log("✅ Current user loaded:", user.name, "ID:", user.id)
         console.log("🔍 Full user object:", user)
+
       }
     } catch (error) {
       console.error("Error loading current user:", error)
@@ -348,12 +365,9 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
       }
 
       console.log("Creating new recipe:", newRecipe) // Debug log
-      // Recipe will be added to state when we reload from database after saving
 
-      // Simulate admin approval after 3 seconds only for new recipes
-      setTimeout(() => {
-        simulateApproval(newRecipe)
-      }, 3000)
+      // Save recipe immediately to database and reload
+      simulateApproval(newRecipe)
     }
 
     setShowSuccessModal(true)
@@ -364,11 +378,6 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
 
   const simulateApproval = async (recipe: UserRecipe) => {
     console.log("simulateApproval called for recipe:", recipe.title) // Debug log
-
-    // Update recipe status to approved
-    setUserRecipes((prev) =>
-      prev.map((r) => (r.id === recipe.id ? { ...r, status: "approved", approvedAt: new Date().toISOString() } : r)),
-    )
 
     // Add to main recipe history (simulate adding to public archive)
     try {
@@ -396,10 +405,20 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
         })
         console.log("✅ Recipe saved to database successfully")
 
-        // Reload recipes from database
+        // Reload recipes from database with proper filtering
         if (currentUser?.id) {
           const dbRecipes = await RecipeService.getByUser(currentUser.id);
-          const userRecipes = dbRecipes.map((recipe: any) => ({
+          console.log("🔄 Reloading after save - Total from DB:", dbRecipes.length);
+
+          // APLICAR EL MISMO FILTRADO MANUAL QUE EN loadUserRecipes
+          const filteredRecipes = dbRecipes.filter((recipe: any) => {
+            const matches = String(recipe.user_id) === String(currentUser.id);
+            console.log("🔍 [RELOAD] Checking recipe:", recipe.id, "user_id:", recipe.user_id, "vs current:", currentUser.id, "matches:", matches);
+            return matches;
+          });
+          console.log("✅ [RELOAD] Recetas filtradas del usuario:", filteredRecipes.length);
+
+          const userRecipes = filteredRecipes.map((recipe: any) => ({
             id: recipe.id.toString(),
             title: recipe.title || "Sin título",
             description: recipe.analysis || "",
@@ -413,7 +432,7 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
             createdBy: currentUser.name
           }));
           setUserRecipes(userRecipes);
-          console.log("🔄 Recipes reloaded from database");
+          console.log("🔄 Recipes reloaded from database with filtering");
         }
       } catch (dbError) {
         console.error("❌ Failed to save to database:", dbError)
@@ -463,6 +482,9 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
       console.log("Updated notifications:", updated) // Debug log
       return updated
     })
+
+    // Ya no necesitamos recarga automática porque el filtrado funciona correctamente
+    console.log("✅ Recipe process completed - no reload needed")
   }
 
   const formatRecipeForArchive = (recipe: UserRecipe): string => {
@@ -880,7 +902,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                     <CardContent>
                       <div className="space-y-4">
                         {userRecipes
-                          .slice(-3)
+                          .slice(-6)
                           .reverse()
                           .map((recipe) => (
                             <div
@@ -950,8 +972,12 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                           type="number"
                           min="1"
                           max="20"
-                          value={formData.servings}
-                          onChange={(e) => handleInputChange("servings", Number.parseInt(e.target.value))}
+                          value={isNaN(formData.servings) ? 2 : formData.servings}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            const numValue = value === "" ? 2 : Number.parseInt(value);
+                            handleInputChange("servings", isNaN(numValue) ? 2 : numValue);
+                          }}
                           className="bg-white/70 dark:bg-gray-800/70"
                         />
                       </div>

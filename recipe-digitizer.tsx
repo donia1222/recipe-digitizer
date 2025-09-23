@@ -489,7 +489,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
           onSelectRecipe={(item) => {
             setImage(item.image)
             setAnalysis(item.analysis)
-            setCurrentRecipeId(item.recipeId || null)
+            setCurrentRecipeId(item.id.toString())
             changeView('analyze')
 
             // Extract servings from analysis if available
@@ -520,7 +520,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
           onSelectItem={(item) => {
             setImage(item.image)
             setAnalysis(item.analysis)
-            setCurrentRecipeId(item.recipeId || null)
+            setCurrentRecipeId(item.id.toString())
             changeView('analyze')
 
             // Extract servings from analysis if available
@@ -616,7 +616,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
             {analysis && (
               <RecipeAnalyzer
                 recipe={analysis}
-                recipeId={currentRecipeId || undefined}
+                recipeId={currentRecipeId || `recipe_${Date.now()}`}
                 originalImage={image || undefined}
                 onServingsClick={() => setShowServingsModal(true)}
                 currentServings={servings}
