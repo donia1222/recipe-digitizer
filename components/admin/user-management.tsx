@@ -290,7 +290,6 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">Benutzer</SelectItem>
                     <SelectItem value="worker">Mitarbeiter</SelectItem>
                     <SelectItem value="guest">Gast</SelectItem>
                     <SelectItem value="admin">Administrator</SelectItem>

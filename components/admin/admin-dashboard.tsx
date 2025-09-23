@@ -157,7 +157,7 @@ export default function AdminDashboard() {
 
   const DashboardView = () => (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6">
         <StatCard
           title="Ausstehende Rezepte"
           value={pendingRecipes.filter((r) => r.status === "pending").length}
@@ -182,14 +182,7 @@ export default function AdminDashboard() {
           color="bg-green-500"
           onClick={() => setCurrentView("recipes")}
         />
-        <StatCard
-          title="Sub-Administratoren"
-          value={subAdmins.length}
-          description="Delegierte Administratoren"
-          icon={Shield}
-          color="bg-purple-500"
-          onClick={() => setCurrentView("subadmins")}
-        />
+
       </div>
 
       {notifications > 0 && (
