@@ -51,56 +51,45 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   const [userName, setUserName] = useState<string>('Benutzer')
   const { toast } = useToast()
 
-  // Load recipe images from localStorage or database on component mount
+  // Load recipe images directly from database in a single optimized call
   React.useEffect(() => {
     const loadRecipeImages = async () => {
       if (!recipeId) return;
 
-      // First try localStorage
-      const savedImages = localStorage.getItem(`recipe-images-${recipeId}`)
-      if (savedImages) {
-        try {
-          setRecipeImages(JSON.parse(savedImages))
-          return;
-        } catch (error) {
-          console.error("Error loading recipe images from localStorage:", error)
-        }
-      }
-
-      // If no localStorage images, try to load from database
       try {
-        console.log('🔍 Loading images from database for recipe:', recipeId);
+        console.log('🔍 Loading images directly from database for recipe:', recipeId);
 
-        // Get numeric ID for the recipe
-        const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
-        const searchData = await searchResponse.json();
+        // Single optimized call to get recipe with images
+        const recipeResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${recipeId}`);
+        const recipeData = await recipeResponse.json();
 
-        let numericId = null;
-        if (searchData.success && searchData.data) {
-          const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
-          if (recipe) {
-            numericId = recipe.id;
-          }
-        }
-
-        if (numericId) {
-          // Load recipe with additional images from database
-          const recipeResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${numericId}`);
-          const recipeData = await recipeResponse.json();
-
-          if (recipeData.success && recipeData.data && recipeData.data.additional_images) {
-            const dbImages = recipeData.data.additional_images
-              .map((img: any) => img.image_base64)
-              .filter(Boolean);
-            console.log('✅ Loaded images from database:', dbImages.length);
-            setRecipeImages(dbImages);
-
-            // Save to localStorage for future use
-            localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(dbImages));
-          }
+        if (recipeData.success && recipeData.data && recipeData.data.additional_images) {
+          const dbImages = recipeData.data.additional_images
+            .map((img: any) => img.image_base64)
+            .filter(Boolean);
+          console.log('✅ Loaded images from database:', dbImages.length);
+          setRecipeImages(dbImages);
         }
       } catch (error) {
         console.error('❌ Error loading images from database:', error);
+        // If numeric ID doesn't work, try with search fallback
+        try {
+          const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
+          const searchData = await searchResponse.json();
+
+          if (searchData.success && searchData.data) {
+            const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
+            if (recipe && recipe.additional_images) {
+              const dbImages = recipe.additional_images
+                .map((img: any) => img.image_base64)
+                .filter(Boolean);
+              console.log('✅ Loaded images from fallback search:', dbImages.length);
+              setRecipeImages(dbImages);
+            }
+          }
+        } catch (fallbackError) {
+          console.error('❌ Error in fallback image loading:', fallbackError);
+        }
       }
     };
 
@@ -239,11 +228,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         const updatedImages = [...recipeImages, imageData]
         setRecipeImages(updatedImages)
 
-        // Save to localStorage
-        if (recipeId) {
-          localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
-        }
-
         // Sync with database directly
         if (recipeId) {
           try {
@@ -287,57 +271,9 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             const data = await response.json();
             console.log('✅ Additional images synced to database:', data);
 
-            // IMPORTANTE: También actualizar el historial de recetas para que se vea la imagen en las miniaturas
-            console.log('🔍 Checking if should update history:', {
-              hasRecipe: !!foundRecipe,
-              recipeImage: foundRecipe?.image ? 'HAS_IMAGE' : 'NO_IMAGE',
-              recipeId
-            });
-
-            // Actualizar historial si la receta no tiene imagen principal O si no tiene muchas imágenes adicionales
-            const shouldUpdateHistory = foundRecipe && (!foundRecipe.image || recipeImages.length <= 2);
-            console.log('🔍 Should update history:', shouldUpdateHistory);
-
-            if (shouldUpdateHistory) {
-              console.log('🔄 Updating recipe history with new image');
-              const storedHistory = localStorage.getItem('recipeHistory');
-              if (storedHistory) {
-                const history = JSON.parse(storedHistory);
-                console.log('🔍 Current history length:', history.length);
-
-                const recipeIndex = history.findIndex((item: any) =>
-                  item.id?.toString() === recipeId || item.recipeId === recipeId
-                );
-                console.log('🔍 Found recipe at index:', recipeIndex);
-
-                if (recipeIndex !== -1) {
-                  console.log('🔍 Recipe found in metadata history:', {
-                    title: history[recipeIndex].title,
-                    hadImage: history[recipeIndex].hasImage,
-                    id: history[recipeIndex].id,
-                    recipeId: history[recipeIndex].recipeId
-                  });
-
-                  // Actualizar solo el flag hasImage en los metadatos (no la imagen completa)
-                  history[recipeIndex].hasImage = true;
-
-                  try {
-                    localStorage.setItem('recipeHistory', JSON.stringify(history));
-                    console.log('✅ Recipe metadata updated with image flag');
-                  } catch (quotaError) {
-                    console.warn('⚠️ localStorage quota exceeded, skipping metadata update');
-                  }
-
-                  // Disparar evento para que otras páginas se actualicen
-                  window.dispatchEvent(new Event('recipeUpdated'));
-                } else {
-                  console.log('❌ Recipe not found in history for recipeId:', recipeId);
-                  console.log('🔍 Available recipe IDs in history:', history.map((h: any) => h.id || h.recipeId));
-                }
-              } else {
-                console.log('❌ No stored history found');
-              }
-            }
+            // Disparar evento para que otras páginas se actualicen con las nuevas imágenes
+            console.log('📡 Recipe updated with new images, notifying other components...');
+            window.dispatchEvent(new Event('recipeUpdated'));
 
             toast({
               title: "Bild hinzugefügt",
@@ -366,11 +302,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   const removeImage = async (index: number) => {
     const updatedImages = recipeImages.filter((_, i) => i !== index)
     setRecipeImages(updatedImages)
-
-    // Update localStorage
-    if (recipeId) {
-      localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(updatedImages))
-    }
 
     // Sync with database directly
     if (recipeId) {
@@ -412,6 +343,10 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
         const data = await response.json();
         console.log('✅ Image deletion synced to database:', data);
+
+        // Disparar evento para que otras páginas se actualicen
+        console.log('📡 Recipe updated after image deletion, notifying other components...');
+        window.dispatchEvent(new Event('recipeUpdated'));
 
         toast({
           title: "Bild entfernt",

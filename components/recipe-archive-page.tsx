@@ -76,64 +76,35 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         console.log('📚 Recetas desde BD:', recipesFromDB);
         console.log('📚 Número de recetas desde BD:', recipesFromDB.length);
 
-        // Por ahora también cargar de localStorage para compatibilidad
-        const savedHistory = localStorage.getItem("recipeHistory")
-        const localRecipes = savedHistory ? JSON.parse(savedHistory) : [];
-
-        // Combinar recetas de BD y localStorage (evitar duplicados)
-        const combinedRecipes = [...recipesFromDB];
-        localRecipes.forEach((localRecipe: any) => {
-          if (!combinedRecipes.find(r => r.id === localRecipe.id)) {
-            combinedRecipes.push(localRecipe);
-          }
-        });
-
         // IMPORTANTE: Sincronizar category_id de BD con folderId de frontend
-        const syncedRecipes = combinedRecipes.map((recipe: any) => ({
-          ...recipe,
-          folderId: recipe.category_id || recipe.folderId, // Usar category_id de BD si existe
-          image: recipe.image_base64 || recipe.image_url || recipe.image, // Mapear imagen de BD
-          // Mantener compatibilidad con el formato del historial
-          title: recipe.title || recipe.name,
-          date: recipe.created_at || recipe.date,
-          recipeId: recipe.recipe_id || recipe.recipeId
-        }));
+        const syncedRecipes = recipesFromDB.map((recipe: any) => {
+          // Determinar imagen principal: usar imagen principal, o primera imagen adicional si no hay principal
+          let mainImage = recipe.image_base64 || recipe.image_url || recipe.image;
+
+          // Si no hay imagen principal pero sí hay imágenes adicionales, usar la primera
+          if (!mainImage && recipe.additional_images && recipe.additional_images.length > 0) {
+            const firstAdditionalImage = recipe.additional_images[0];
+            mainImage = firstAdditionalImage.image_base64 || firstAdditionalImage.image_url;
+            console.log('🖼️ Using first additional image as main for recipe:', recipe.id, 'has additional images:', recipe.additional_images.length);
+          }
+
+          return {
+            ...recipe,
+            folderId: recipe.category_id || recipe.folderId, // Usar category_id de BD si existe
+            image: mainImage, // Imagen principal o primera adicional
+            // Mantener compatibilidad con el formato del historial
+            title: recipe.title || recipe.name,
+            date: recipe.created_at || recipe.date,
+            recipeId: recipe.recipe_id || recipe.recipeId
+          };
+        });
 
         console.log('🔄 Recipes synced with categories:', syncedRecipes);
         setHistory(syncedRecipes);
 
-        // IMPORTANTE: También actualizar localStorage con METADATOS ÚNICAMENTE
-        // para que las futuras actualizaciones de imágenes funcionen (SIN imágenes base64 completas)
-        console.log('💾 Syncing recipe metadata to localStorage...');
-        const recipeMetadata = syncedRecipes.map((recipe: any) => ({
-          id: recipe.id,
-          recipeId: recipe.recipeId,
-          title: recipe.title,
-          date: recipe.date,
-          folderId: recipe.folderId,
-          isFavorite: recipe.isFavorite,
-          analysis: recipe.analysis?.substring(0, 200) + '...', // Solo primeros 200 chars
-          // NO incluir image base64 completa - solo indicar si existe
-          hasImage: !!(recipe.image || recipe.image_base64 || recipe.image_url),
-          // Para la miniatura, cargaremos desde BD cuando sea necesario
-          user_id: recipe.user_id,
-          status: recipe.status
-        }));
-
-        try {
-          localStorage.setItem('recipeHistory', JSON.stringify(recipeMetadata));
-          console.log('✅ Recipe metadata synced to localStorage');
-        } catch (quotaError) {
-          console.warn('⚠️ localStorage quota exceeded, skipping metadata sync');
-          // Continuar sin localStorage - la app funciona desde BD
-        }
       } catch (error) {
         console.error('Error cargando recetas:', error);
-        // Fallback a localStorage si hay error
-        const savedHistory = localStorage.getItem("recipeHistory")
-        if (savedHistory) {
-          setHistory(JSON.parse(savedHistory))
-        }
+        setHistory([]); // Si hay error, mostrar lista vacía
       }
   };
 
@@ -256,17 +227,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   // Escuchar eventos de actualización y eliminación de recetas
   useEffect(() => {
     const handleRecipeUpdate = () => {
-      console.log('📚 Recipe updated event received in archive, reloading data...');
-      loadData();
-
-      // También recargar el historial desde localStorage para actualizar miniaturas
-      console.log('🔄 Reloading history from localStorage after recipe update...');
-      const storedHistory = localStorage.getItem('recipeHistory');
-      if (storedHistory) {
-        const updatedHistory = JSON.parse(storedHistory);
-        setHistory(updatedHistory);
-        console.log('✅ History reloaded from localStorage');
-      }
+      console.log('📚 Recipe updated event received in archive, reloading data from database...');
+      loadData(); // Esto ya recarga todo desde la base de datos
     };
 
     const handleRecipeDelete = () => {
