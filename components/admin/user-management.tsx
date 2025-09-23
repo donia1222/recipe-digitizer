@@ -85,14 +85,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
       setIsAddUserOpen(false)
 
       toast({
-        title: "Usuario creado",
-        description: `${newUser.name} ha sido añadido exitosamente.`,
+        title: "Benutzer erstellt",
+        description: `${newUser.name} wurde erfolgreich hinzugefügt.`,
       })
     } catch (error) {
       console.error('Error creating user:', error)
       toast({
         title: "Error",
-        description: "No se pudo crear el usuario. Intente nuevamente.",
+        description: "Benutzer konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
         variant: "destructive"
       })
     } finally {
@@ -121,14 +121,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
       setSelectedUser(null)
 
       toast({
-        title: "Usuario actualizado",
-        description: "Los cambios han sido guardados exitosamente.",
+        title: "Benutzer aktualisiert",
+        description: "Die Änderungen wurden erfolgreich gespeichert.",
       })
     } catch (error) {
       console.error('Error updating user:', error)
       toast({
         title: "Error",
-        description: "No se pudo actualizar el usuario.",
+        description: "Benutzer konnte nicht aktualisiert werden.",
         variant: "destructive"
       })
     } finally {
@@ -138,7 +138,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
 
   const handleDeleteUser = async (id: string) => {
     const user = users.find(u => u.id === id)
-    if (user && window.confirm(`¿Estás seguro de que quieres eliminar al usuario "${user.name}"?`)) {
+    if (user && window.confirm(`Sind Sie sicher, dass Sie den Benutzer "${user.name}" löschen möchten?`)) {
       setIsLoading(true)
       try {
         // Delete from database
@@ -148,14 +148,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
         setUsers(users.filter(u => u.id !== id))
 
         toast({
-          title: "Usuario eliminado",
-          description: "El usuario ha sido eliminado exitosamente.",
+          title: "Benutzer gelöscht",
+          description: "Der Benutzer wurde erfolgreich gelöscht.",
         })
       } catch (error) {
         console.error('Error deleting user:', error)
         toast({
           title: "Error",
-          description: "No se pudo eliminar el usuario.",
+          description: "Benutzer konnte nicht gelöscht werden.",
           variant: "destructive"
         })
       } finally {
@@ -185,14 +185,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
       ))
 
       toast({
-        title: "Estado actualizado",
-        description: `Usuario ${newStatus === 'active' ? 'activado' : 'desactivado'} exitosamente.`,
+        title: "Status aktualisiert",
+        description: `Benutzer ${newStatus === 'active' ? 'aktiviert' : 'deaktiviert'} erfolgreich.`,
       })
     } catch (error) {
       console.error('Error toggling user status:', error)
       toast({
         title: "Error",
-        description: "No se pudo actualizar el estado del usuario.",
+        description: "Benutzerstatus konnte nicht aktualisiert werden.",
         variant: "destructive"
       })
     } finally {
@@ -218,8 +218,8 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin': return 'Administrator'
-      case 'worker': return 'Trabajador'
-      case 'guest': return 'Invitado'
+      case 'worker': return 'Mitarbeiter'
+      case 'guest': return 'Gast'
       default: return role
     }
   }
@@ -241,9 +241,12 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
           <DialogTrigger asChild>
             <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white">
               <UserPlus className="h-4 w-4 mr-2" />
-    
+              Benutzer hinzufügen
             </Button>
           </DialogTrigger>
+        </Dialog>
+
+        <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Neuen Benutzer hinzufügen</DialogTitle>
@@ -268,7 +271,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  placeholder="usuario@email.com"
+                  placeholder="benutzer@email.com"
                 />
               </div>
               <div>
@@ -282,7 +285,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                 />
               </div>
               <div>
-                <Label htmlFor="role">Rol</Label>
+                <Label htmlFor="role">Rolle</Label>
                 <Select value={newUser.role} onValueChange={(value: User['role']) => setNewUser({ ...newUser, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -307,7 +310,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
         </Dialog>
       </div>
 
-      {/* Filtros y búsqueda */}
+      {/* Filter und Suche */}
       <Card className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
@@ -323,31 +326,31 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
 
             <Select value={filterRole} onValueChange={(value) => setFilterRole(value as "admin" | "worker" | "guest" | "all")}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por rol" />
+                <SelectValue placeholder="Nach Rolle filtern" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle Rollen</SelectItem>
                 <SelectItem value="admin">Administratoren</SelectItem>
-                <SelectItem value="worker">Trabajadores</SelectItem>
-                <SelectItem value="guest">Invitados</SelectItem>
+                <SelectItem value="worker">Mitarbeiter</SelectItem>
+                <SelectItem value="guest">Gäste</SelectItem>
               </SelectContent>
             </Select>
 
             <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as "all" | "active" | "inactive")}>
               <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por estado" />
+                <SelectValue placeholder="Nach Status filtern" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Alle Status</SelectItem>
                 <SelectItem value="active">Aktiv</SelectItem>
-                <SelectItem value="inactive">Inactivos</SelectItem>
+                <SelectItem value="inactive">Inaktiv</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Estadísticas */}
+      {/* Statistiken */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
           <CardContent className="p-4">
@@ -389,7 +392,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100">Trabajadores</p>
+                <p className="text-purple-100">Mitarbeiter</p>
                 <p className="text-2xl font-bold">{users.filter(u => u.role === 'worker').length}</p>
               </div>
               <Users className="h-8 w-8 text-purple-200" />
@@ -425,7 +428,7 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                           {getRoleText(user.role)}
                         </Badge>
                         <Badge className={getStatusColor(user.status)}>
-                          {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                          {user.status === 'active' ? 'Aktiv' : 'Inaktiv'}
                         </Badge>
                       </div>
                     </div>
@@ -435,11 +438,9 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                     <div className="text-right text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-1 mb-1">
                         <Calendar className="h-4 w-4" />
-                        Último acceso: {user.lastLogin}
+                        Letzter Zugriff: {user.lastLogin}
                       </div>
-                      {user.recipesCount !== undefined && (
-                        <div>Recetas: {user.recipesCount}</div>
-                      )}
+                      {/* <div>Rezepte: {recipeCounts[user.id] ?? 0}</div> */}
                     </div>
 
                     <DropdownMenu>
@@ -494,20 +495,20 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
               Keine Benutzer gefunden
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              Intenta cambiar los filtros de búsqueda
+              Versuchen Sie, die Suchfilter zu ändern
             </p>
           </CardContent>
         </Card>
       )}
 
-      {/* Modal de edición de usuario */}
+      {/* Benutzer-Bearbeitungsmodal */}
       {selectedUser && (
         <Dialog open={isEditUserOpen} onOpenChange={setIsEditUserOpen}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Benutzer bearbeiten</DialogTitle>
               <DialogDescription>
-                Modifica la información del usuario
+                Benutzerinformationen bearbeiten
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -538,14 +539,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="worker">Trabajador</SelectItem>
-                    <SelectItem value="guest">Invitado</SelectItem>
+                    <SelectItem value="worker">Mitarbeiter</SelectItem>
+                    <SelectItem value="guest">Gast</SelectItem>
                     <SelectItem value="admin">Administrator</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label htmlFor="edit-status">Estado</Label>
+                <Label htmlFor="edit-status">Status</Label>
                 <Select
                   value={selectedUser.status}
                   onValueChange={(value: User['status']) => setSelectedUser({ ...selectedUser, status: value })}
@@ -554,14 +555,14 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Activo</SelectItem>
-                    <SelectItem value="inactive">Inactivo</SelectItem>
+                    <SelectItem value="active">Aktiv</SelectItem>
+                    <SelectItem value="inactive">Inaktiv</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex gap-2 pt-4">
                 <Button onClick={handleEditUser} className="flex-1">
-                  Guardar Cambios
+                  Änderungen speichern
                 </Button>
                 <Button variant="outline" onClick={() => setIsEditUserOpen(false)}>
                   Abbrechen

@@ -432,4 +432,70 @@ export class UserService {
       return null;
     }
   }
+
+  /**
+   * Get recipe count for a specific user
+   */
+  static async getUserRecipeCount(userId: string): Promise<number> {
+    if (!API_CONFIG.USE_PRODUCTION) {
+      // For localStorage, count from recipeHistory
+      try {
+        const history = localStorage.getItem('recipeHistory');
+        if (history) {
+          const recipes = JSON.parse(history);
+          // Filter recipes by userId if stored, otherwise return total for fallback
+          return recipes.filter((recipe: any) => recipe.userId === userId || !recipe.userId).length;
+        }
+      } catch (error) {
+        console.error('Error counting recipes from localStorage:', error);
+      }
+      return 0;
+    }
+
+    try {
+      // API call to get recipe count for user
+      const response = await fetch(getApiUrl(`${API_CONFIG.PRODUCTION.ENDPOINTS.RECIPES}/count?user_id=${userId}`), {
+        method: 'GET',
+        headers: getApiHeaders(),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch recipe count for user:', userId);
+        return 0;
+      }
+
+      const data = await response.json();
+      return data.success ? (data.count || 0) : 0;
+    } catch (error) {
+      console.error('Error fetching recipe count:', error);
+      return 0;
+    }
+  }
+
+  /**
+   * Get recipe counts for all users
+   */
+  static async getAllUsersRecipeCounts(): Promise<Record<string, number>> {
+    // Always use production API for recipe counts since recipes are in database
+    console.log('🔍 Getting recipe counts from database...');
+
+    try {
+      // API call to get recipe counts for all users
+      const response = await fetch(getApiUrl(`${API_CONFIG.PRODUCTION.ENDPOINTS.RECIPES}/counts`), {
+        method: 'GET',
+        headers: getApiHeaders(),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch recipe counts');
+        return {};
+      }
+
+      const data = await response.json();
+      return data.success ? (data.counts || {}) : {};
+    } catch (error) {
+      console.error('Error fetching recipe counts:', error);
+      return {};
+    }
+  }
 }

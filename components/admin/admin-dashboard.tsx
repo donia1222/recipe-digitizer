@@ -30,6 +30,7 @@ import { RecipeService } from "@/lib/services/recipeService"
 
 export default function AdminDashboard() {
   const router = useRouter()
+
   const [currentView, setCurrentView] = useState<"dashboard" | "recipes" | "users" | "subadmins" | "pending">(
     "dashboard",
   )
