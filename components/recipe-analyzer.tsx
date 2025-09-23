@@ -51,18 +51,60 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   const [userName, setUserName] = useState<string>('Benutzer')
   const { toast } = useToast()
 
-  // Load recipe images from localStorage on component mount
+  // Load recipe images from localStorage or database on component mount
   React.useEffect(() => {
-    if (recipeId) {
+    const loadRecipeImages = async () => {
+      if (!recipeId) return;
+
+      // First try localStorage
       const savedImages = localStorage.getItem(`recipe-images-${recipeId}`)
       if (savedImages) {
         try {
           setRecipeImages(JSON.parse(savedImages))
+          return;
         } catch (error) {
-          console.error("Error loading recipe images:", error)
+          console.error("Error loading recipe images from localStorage:", error)
         }
       }
-    }
+
+      // If no localStorage images, try to load from database
+      try {
+        console.log('🔍 Loading images from database for recipe:', recipeId);
+
+        // Get numeric ID for the recipe
+        const searchResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php`);
+        const searchData = await searchResponse.json();
+
+        let numericId = null;
+        if (searchData.success && searchData.data) {
+          const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
+          if (recipe) {
+            numericId = recipe.id;
+          }
+        }
+
+        if (numericId) {
+          // Load recipe with additional images from database
+          const recipeResponse = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${numericId}`);
+          const recipeData = await recipeResponse.json();
+
+          if (recipeData.success && recipeData.data && recipeData.data.additional_images) {
+            const dbImages = recipeData.data.additional_images
+              .map((img: any) => img.image_base64)
+              .filter(Boolean);
+            console.log('✅ Loaded images from database:', dbImages.length);
+            setRecipeImages(dbImages);
+
+            // Save to localStorage for future use
+            localStorage.setItem(`recipe-images-${recipeId}`, JSON.stringify(dbImages));
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error loading images from database:', error);
+      }
+    };
+
+    loadRecipeImages();
   }, [recipeId])
 
   // Check user permissions for editing/deleting recipes
@@ -213,10 +255,11 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             const searchData = await searchResponse.json();
 
             let numericId = null;
+            let foundRecipe = null;
             if (searchData.success && searchData.data) {
-              const recipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
-              if (recipe) {
-                numericId = recipe.id;
+              foundRecipe = searchData.data.find((r: any) => r.recipe_id === recipeId || r.id.toString() === recipeId);
+              if (foundRecipe) {
+                numericId = foundRecipe.id;
                 console.log('🔍 Found numeric ID for recipe:', { recipeId, numericId });
               }
             }
@@ -246,13 +289,13 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
             // IMPORTANTE: También actualizar el historial de recetas para que se vea la imagen en las miniaturas
             console.log('🔍 Checking if should update history:', {
-              hasRecipe: !!recipe,
-              recipeImage: recipe?.image ? 'HAS_IMAGE' : 'NO_IMAGE',
+              hasRecipe: !!foundRecipe,
+              recipeImage: foundRecipe?.image ? 'HAS_IMAGE' : 'NO_IMAGE',
               recipeId
             });
 
             // Actualizar historial si la receta no tiene imagen principal O si no tiene muchas imágenes adicionales
-            const shouldUpdateHistory = recipe && (!recipe.image || recipeImages.length <= 2);
+            const shouldUpdateHistory = foundRecipe && (!foundRecipe.image || recipeImages.length <= 2);
             console.log('🔍 Should update history:', shouldUpdateHistory);
 
             if (shouldUpdateHistory) {
@@ -289,7 +332,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
                   window.dispatchEvent(new Event('recipeUpdated'));
                 } else {
                   console.log('❌ Recipe not found in history for recipeId:', recipeId);
-                  console.log('🔍 Available recipe IDs in history:', history.map(h => h.id || h.recipeId));
+                  console.log('🔍 Available recipe IDs in history:', history.map((h: any) => h.id || h.recipeId));
                 }
               } else {
                 console.log('❌ No stored history found');
