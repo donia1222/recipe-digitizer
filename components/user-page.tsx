@@ -68,6 +68,8 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
   const [editingRecipe, setEditingRecipe] = useState<UserRecipe | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
+  const [loadingRecipes, setLoadingRecipes] = useState(true)
+  const [showAllRecipes, setShowAllRecipes] = useState(false)
   const hasInitializedRef = useRef(false)
 
   // Emergency localStorage cleanup function
@@ -147,9 +149,11 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
     const loadUserRecipes = async () => {
       if (!currentUser?.id) {
         console.log("❌ No current user available, skipping recipe load");
+        setLoadingRecipes(false);
         return;
       }
 
+      setLoadingRecipes(true);
       try {
         console.log("🔵 Loading recipes from database for user:", currentUser.id);
         console.log("🔵 Current user full object:", currentUser);
@@ -195,11 +199,16 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
           };
         });
 
+        // Sort by creation date, newest first
+        userRecipes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         setUserRecipes(userRecipes);
         console.log("✅ User recipes loaded:", userRecipes.length);
       } catch (error) {
         console.error("❌ Error loading recipes from database:", error);
         setUserRecipes([]);
+      } finally {
+        setLoadingRecipes(false);
       }
     };
 
@@ -207,6 +216,66 @@ const UserPage: React.FC<UserPageProps> = ({ onBack, onOpenArchive, onLogout }) 
       loadUserRecipes();
     }
   }, [currentUser])
+
+  // Listen for recipe updates from admin approval
+  useEffect(() => {
+    const handleRecipeUpdate = () => {
+      console.log('🔄 Recipe updated detected, reloading user recipes...');
+      if (currentUser?.id) {
+        loadUserRecipes();
+      }
+    };
+
+    const loadUserRecipes = async () => {
+      if (!currentUser?.id) return;
+
+      try {
+        console.log("🔵 Reloading recipes from database for user:", currentUser.id);
+        const dbRecipes = await RecipeService.getByUser(currentUser.id);
+
+        const filteredRecipes = dbRecipes.filter((recipe: any) => {
+          const recipeUserId = recipe.user_id;
+          const currentUserId = currentUser.id;
+          const matches = recipeUserId === currentUserId;
+          console.log(`🔍 [RELOAD] Checking recipe: ${recipe.id} user_id: ${recipeUserId} vs current: ${currentUserId} matches: ${matches}`);
+          return matches;
+        });
+
+        const userRecipes = filteredRecipes.map((recipe: any) => {
+          return {
+            id: recipe.id.toString(),
+            title: recipe.title || "Sin título",
+            description: recipe.analysis || "",
+            ingredients: [],
+            preparation: recipe.analysis || "",
+            estimatedTime: "30 min",
+            servings: recipe.servings || 2,
+            image: recipe.image || recipe.image_base64 || "",
+            status: recipe.status || "approved",
+            createdAt: recipe.created_at || new Date().toISOString(),
+            createdBy: currentUser?.name || "Usuario"
+          };
+        });
+
+        // Sort by creation date, newest first
+        userRecipes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        setUserRecipes(userRecipes);
+        console.log("✅ Recipes reloaded successfully:", userRecipes.length);
+      } catch (error) {
+        console.error("❌ Error reloading recipes:", error);
+      }
+    };
+
+    // Listen for recipe approval events
+    window.addEventListener('recipeApproved', handleRecipeUpdate);
+    window.addEventListener('recipeUpdated', handleRecipeUpdate);
+
+    return () => {
+      window.removeEventListener('recipeApproved', handleRecipeUpdate);
+      window.removeEventListener('recipeUpdated', handleRecipeUpdate);
+    };
+  }, [currentUser]);
 
   // Load current user from localStorage (updated from database)
   useEffect(() => {
@@ -815,7 +884,9 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                           <ChefHat className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{userRecipes.length}</p>
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {loadingRecipes ? "..." : userRecipes.length}
+                          </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Erstellte Rezepte</p>
                         </div>
                       </div>
@@ -830,7 +901,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                         </div>
                         <div>
                           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {userRecipes.filter((r) => r.status === "approved").length}
+                            {loadingRecipes ? "..." : userRecipes.filter((r) => r.status === "approved").length}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Genehmigte Rezepte</p>
                         </div>
@@ -846,7 +917,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                         </div>
                         <div>
                           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {userRecipes.filter((r) => r.status === "pending").length}
+                            {loadingRecipes ? "..." : userRecipes.filter((r) => r.status === "pending").length}
                           </p>
                           <p className="text-sm text-gray-600 dark:text-gray-400">Ausstehend</p>
                         </div>
@@ -902,8 +973,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                     <CardContent>
                       <div className="space-y-4">
                         {userRecipes
-                          .slice(-6)
-                          .reverse()
+                          .slice(0, showAllRecipes ? userRecipes.length : 6)
                           .map((recipe) => (
                             <div
                               key={recipe.id}
@@ -931,6 +1001,23 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                             </div>
                           ))}
                       </div>
+
+                      {/* Botón Ver más / Ver menos */}
+                      {userRecipes.length > 6 && (
+                        <div className="mt-4 text-center">
+                          <Button
+                            onClick={() => setShowAllRecipes(!showAllRecipes)}
+                            variant="outline"
+                            size="sm"
+                            className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                          >
+                            {showAllRecipes ?
+                              `Weniger anzeigen` :
+                              `${userRecipes.length - 6} weitere anzeigen`
+                            }
+                          </Button>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 )}

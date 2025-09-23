@@ -127,6 +127,17 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
           // Recargar las recetas después de la acción
           await loadPendingRecipes()
 
+          // Disparar evento para notificar a otras páginas
+          if (reviewAction === 'approve') {
+            console.log('🔔 Disparando evento recipeApproved para notificar a user-page');
+            window.dispatchEvent(new CustomEvent('recipeApproved', {
+              detail: {
+                recipeId: selectedRecipe.id,
+                recipeTitle: selectedRecipe.title
+              }
+            }));
+          }
+
           // Mostrar mensaje de éxito
           const actionText = reviewAction === 'approve' ? 'genehmigt' : 'abgelehnt'
           console.log(`Rezept "${selectedRecipe.title}" wurde ${actionText}`)
