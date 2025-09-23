@@ -50,7 +50,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
   // Escuchar eventos de actualización y eliminación de recetas
   useEffect(() => {
     const handleRecipeUpdate = () => {
-      console.log('📚 Recipe updated event received, reloading data...');
+      console.log('📚 Recipe updated event received in LIBRARY, reloading data...');
       loadData();
     };
 
@@ -70,31 +70,57 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
 
   const loadData = async () => {
     try {
-      // Cargar recetas desde la BD
+      // Cargar recetas directamente desde la BD con cache busting
       console.log('📚 Cargando recetas desde la BD...');
-      const recipesFromDB = await RecipeService.getAll();
-      console.log('📚 Recetas desde BD:', recipesFromDB);
 
-      // Por ahora también cargar de localStorage para compatibilidad
-      const savedHistory = localStorage.getItem("recipeHistory")
-      const localRecipes = savedHistory ? JSON.parse(savedHistory) : [];
-
-      // Combinar recetas de BD y localStorage (evitar duplicados)
-      const combinedRecipes = [...recipesFromDB];
-      localRecipes.forEach((localRecipe: any) => {
-        if (!combinedRecipes.find(r => r.id === localRecipe.id)) {
-          combinedRecipes.push(localRecipe);
-        }
+      // Hacer llamada directa a la API para forzar datos frescos
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?t=${Date.now()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache'
       });
 
-      setHistory(combinedRecipes);
+      const data = await response.json();
+      const recipesFromDB = data.data || [];
+      console.log('📚 Recetas desde BD (fresh):', recipesFromDB);
+
+      // IMPORTANTE: Usar imagen adicional como miniatura si no hay imagen principal
+      const optimizedRecipes = recipesFromDB.map((recipe: any) => {
+        // Determinar imagen principal: usar imagen principal, o primera imagen adicional si no hay principal
+        let mainImage = recipe.image_base64 || recipe.image_url || recipe.image;
+
+        // Debug: Mostrar información de la receta
+        console.log('🔍 Processing recipe in library:', {
+          id: recipe.id,
+          title: recipe.title,
+          hasMainImage: !!mainImage,
+          hasAdditionalImages: !!(recipe.additional_images && recipe.additional_images.length > 0),
+          additionalImagesCount: recipe.additional_images ? recipe.additional_images.length : 0
+        });
+
+        // Si no hay imagen principal pero sí hay imágenes adicionales, usar la primera
+        if (!mainImage && recipe.additional_images && recipe.additional_images.length > 0) {
+          const firstAdditionalImage = recipe.additional_images[0];
+          mainImage = firstAdditionalImage.image_base64 || firstAdditionalImage.image_url;
+          console.log('🖼️ Library - Using first additional image as main for recipe:', recipe.id, 'has additional images:', recipe.additional_images.length);
+        }
+
+        return {
+          ...recipe,
+          image: mainImage, // Imagen principal o primera adicional
+          folderId: recipe.category_id || recipe.folderId,
+          title: recipe.title || recipe.name,
+          date: recipe.created_at || recipe.date,
+          recipeId: recipe.recipe_id || recipe.recipeId
+        };
+      });
+
+      setHistory(optimizedRecipes);
     } catch (error) {
       console.error('Error cargando recetas:', error);
-      // Fallback a localStorage si hay error
-      const savedHistory = localStorage.getItem("recipeHistory")
-      if (savedHistory) {
-        setHistory(JSON.parse(savedHistory))
-      }
+      setHistory([]); // Si hay error, mostrar lista vacía
     }
   }
 
