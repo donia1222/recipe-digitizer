@@ -15,10 +15,16 @@ try {
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_SERVER['REQUEST_URI'];
 
-// Extract ID from path if present (e.g., /users.php/user_123)
+// Extract ID from query parameter (?id=user_123) or path (/users.php/user_123)
 $id = null;
-if (preg_match('/\/users\.php\/([a-zA-Z0-9_\.\-]+)/', $path, $matches)) {
+if (isset($_GET['id'])) {
+    $id = $_GET['id'];
+    error_log("🔍 DEBUG: ID from GET: " . $id);
+} elseif (preg_match('/\/users\.php\/([a-zA-Z0-9_\.\-]+)/', $path, $matches)) {
     $id = $matches[1];
+    error_log("🔍 DEBUG: ID from PATH: " . $id);
+} else {
+    error_log("🔍 DEBUG: No ID found. GET params: " . print_r($_GET, true));
 }
 
 switch ($method) {

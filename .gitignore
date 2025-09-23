@@ -36,3 +36,6 @@ update*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code documentation (private)
+CLAUDE.md

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, Send, Edit, Trash2, User } from "lucide-react"
+import { MessageCircle, Send, Edit, Trash2, User, Heart, X } from "lucide-react"
 
 interface Comment {
   id: string
@@ -31,6 +31,8 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
   const [loading, setLoading] = useState(true)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState("")
+  const [showLikesDialog, setShowLikesDialog] = useState<string | null>(null)
+  const [likesUsers, setLikesUsers] = useState<any[]>([])
 
   // Load current user
   useEffect(() => {
@@ -172,6 +174,46 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
     }
   }
 
+  const handleToggleLike = async (commentId: string) => {
+    if (!currentUser) return
+
+    try {
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/comments.php?id=${commentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'toggle_like',
+          user_id: currentUser.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Actualizar el comentario específico con los nuevos valores
+        setComments(prevComments =>
+          prevComments.map(comment =>
+            comment.id === commentId
+              ? {
+                  ...comment,
+                  likes: data.data.likes,
+                  likedBy: data.data.userLiked
+                    ? [...comment.likedBy.filter(id => id !== currentUser.id), currentUser.id]
+                    : comment.likedBy.filter(id => id !== currentUser.id)
+                }
+              : comment
+          )
+        )
+      } else {
+        console.error("Error toggling like:", data.message)
+      }
+    } catch (error) {
+      console.error("Error toggling like:", error)
+    }
+  }
+
   const formatRelativeTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
@@ -189,6 +231,104 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
 
   const isMyComment = (comment: Comment) => {
     return currentUser && comment.author === currentUser.name
+  }
+
+  const hasUserLiked = (comment: Comment) => {
+    return currentUser && comment.likedBy.includes(currentUser.id)
+  }
+
+  const showLikesUsers = async (comment: Comment) => {
+    if (comment.likes === 0) return
+
+    try {
+      // Obtener información de usuarios que dieron like
+      const userIds = comment.likedBy
+      const usersPromises = userIds.map(async (userId: string) => {
+        // Si es el usuario actual, usar su información local
+        if (currentUser && userId === currentUser.id) {
+          return {
+            id: userId,
+            name: `Du (${currentUser.name})`,
+            role: currentUser.role || 'guest',
+            isCurrentUser: true
+          }
+        }
+
+        try {
+          // Solución temporal: obtener todos los usuarios y filtrar en el frontend
+          const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/users.php`)
+          const data = await response.json()
+
+          console.log(`🔍 API Response for user ${userId}:`, data)
+
+          if (data.success && data.data && Array.isArray(data.data)) {
+            // Buscar el usuario específico en el array
+            const user = data.data.find((u: any) => u.id === userId)
+
+            if (user) {
+              console.log(`✅ Found user: ${user.name}`)
+              return {
+                id: userId,
+                name: user.name || user.username || user.email || generateFriendlyName(userId),
+                role: user.role || 'guest',
+                isCurrentUser: false
+              }
+            } else {
+              console.log(`❌ User not found in API array: ${userId}`)
+              return {
+                id: userId,
+                name: generateFriendlyName(userId),
+                role: 'guest',
+                isCurrentUser: false
+              }
+            }
+          } else {
+            console.log(`❌ API returned invalid data: ${userId}`)
+            return {
+              id: userId,
+              name: generateFriendlyName(userId),
+              role: 'guest',
+              isCurrentUser: false
+            }
+          }
+        } catch (error) {
+          console.log(`❌ API Error for user ${userId}:`, error)
+          return {
+            id: userId,
+            name: generateFriendlyName(userId),
+            role: 'guest',
+            isCurrentUser: false
+          }
+        }
+      })
+
+      const users = await Promise.all(usersPromises)
+      setLikesUsers(users)
+      setShowLikesDialog(comment.id)
+    } catch (error) {
+      console.error("Error loading likes users:", error)
+    }
+  }
+
+  const generateFriendlyName = (userId: string) => {
+    if (userId.startsWith('user_')) {
+      // Extraer timestamp o parte final del ID para crear un nombre único
+      const timestamp = userId.split('.')[1] || userId.split('_')[1]
+      if (timestamp) {
+        const shortId = timestamp.substring(0, 6)
+        return `Benutzer ${shortId}`
+      }
+      return 'Gast Benutzer'
+    }
+
+    // Si es un ID corto, mostrar como "Usuario ###"
+    if (userId.length < 10) {
+      return `Benutzer ${userId}`
+    }
+
+    // Para IDs largos, tomar las primeras 6 caracteres
+    const shortId = userId.substring(0, 6)
+    return `Benutzer ${shortId}`
   }
 
   if (loading) {
@@ -295,9 +435,49 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {comment.content}
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                      {comment.content}
+                    </p>
+
+                    {/* Like Button and Counter */}
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleLike(comment.id)}
+                        disabled={!currentUser}
+                        className={`h-6 px-2 text-xs transition-colors ${
+                          hasUserLiked(comment)
+                            ? 'text-red-500 hover:text-red-600'
+                            : 'text-gray-400 hover:text-red-500'
+                        }`}
+                      >
+                        <Heart
+                          className={`h-3 w-3 mr-1 ${hasUserLiked(comment) ? 'fill-current' : ''}`}
+                        />
+                        {comment.likes}
+                      </Button>
+
+                      {/* Show likes users button */}
+                      {comment.likes > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => showLikesUsers(comment)}
+                          className="h-6 px-2 text-xs text-gray-400 hover:text-blue-500 transition-colors"
+                        >
+                          {comment.likes === 1 ? '1 Person' : `${comment.likes} Personen`}
+                        </Button>
+                      )}
+
+                      {!currentUser && (
+                        <span className="text-xs text-gray-400">
+                          Anmelden um zu liken
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 )}
               </div>
             ))
@@ -343,6 +523,59 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
             <p className="text-gray-600 dark:text-gray-400">
               Melde dich an, um Kommentare zu schreiben
             </p>
+          </div>
+        )}
+
+        {/* Likes Dialog */}
+        {showLikesDialog && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full max-h-96 overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Gefällt {likesUsers.length} {likesUsers.length === 1 ? 'Person' : 'Personen'}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowLikesDialog(null)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="max-h-64 overflow-y-auto p-4">
+                {likesUsers.length === 0 ? (
+                  <div className="text-center text-gray-500 py-4">
+                    Laden...
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {likesUsers.map((user, index) => (
+                      <div key={user.id || index} className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <User className={`h-4 w-4 ${user.isCurrentUser ? 'text-blue-500' : 'text-gray-400'}`} />
+                          <span className={`font-medium ${user.isCurrentUser ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                            {user.name}
+                          </span>
+                          {user.role && user.role !== 'guest' && (
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${
+                                user.role === 'admin'
+                                  ? 'bg-red-50 text-red-700 border-red-200'
+                                  : 'bg-blue-50 text-blue-700 border-blue-200'
+                              }`}
+                            >
+                              {user.role === 'admin' ? 'Admin' : 'Worker'}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
