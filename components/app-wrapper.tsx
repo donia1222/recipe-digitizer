@@ -3,12 +3,14 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import LoginPage from "@/components/login-page"
+import LandingPage from "@/components/landing-page"
 import RecipeDigitizer from "@/recipe-digitizer"
 
 export default function AppWrapper() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [userRole, setUserRole] = useState<'admin' | 'worker' | 'guest' | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showLandingPage, setShowLandingPage] = useState(true)
 
   // Check for existing session on component mount
   useEffect(() => {
@@ -16,8 +18,12 @@ export default function AppWrapper() {
       const savedAuth = localStorage.getItem("recipe-auth")
       const savedRole = localStorage.getItem("user-role") as 'admin' | 'worker' | 'guest' | null
       const authToken = localStorage.getItem("auth-token")
+      const hasSeenLanding = localStorage.getItem("has-seen-landing")
 
-      if (savedAuth === "granted" && savedRole) {
+      // If user has seen landing page and is authenticated, skip landing
+      if (hasSeenLanding === "true" && savedAuth === "granted" && savedRole) {
+        setShowLandingPage(false)
+
         // If we have an auth token, try to refresh user data from server
         if (authToken) {
           try {
@@ -35,7 +41,12 @@ export default function AppWrapper() {
 
         setIsAuthenticated(true)
         setUserRole(savedRole)
+      } else if (hasSeenLanding === "true") {
+        // User has seen landing but is not authenticated, go to login
+        setShowLandingPage(false)
       }
+      // If user hasn't seen landing, showLandingPage stays true
+
       setIsLoading(false)
     }
 
@@ -58,6 +69,22 @@ export default function AppWrapper() {
     localStorage.removeItem("user-role")
   }
 
+  const handleAccessApp = () => {
+    // Mark that user has seen the landing page
+    localStorage.setItem("has-seen-landing", "true")
+    setShowLandingPage(false)
+  }
+
+  const handleBackToLanding = () => {
+    // Clear the landing page flag and logout user
+    localStorage.removeItem("has-seen-landing")
+    setShowLandingPage(true)
+    setIsAuthenticated(false)
+    setUserRole(null)
+    localStorage.removeItem("recipe-auth")
+    localStorage.removeItem("user-role")
+  }
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -70,9 +97,14 @@ export default function AppWrapper() {
     )
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={handleLogin} />
+  // Show landing page if user hasn't seen it yet
+  if (showLandingPage) {
+    return <LandingPage onAccessApp={handleAccessApp} />
   }
 
-  return <RecipeDigitizer handleLogout={handleLogout} userRole={userRole} />
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={handleLogin} onBackToLanding={handleBackToLanding} />
+  }
+
+  return <RecipeDigitizer handleLogout={handleLogout} userRole={userRole} onBackToLanding={handleBackToLanding} />
 }

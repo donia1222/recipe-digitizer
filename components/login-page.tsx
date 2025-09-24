@@ -12,9 +12,10 @@ import { useToast } from "@/components/ui/use-toast"
 
 interface LoginPageProps {
   onLogin: (role: "admin" | "worker" | "guest") => void
+  onBackToLanding?: () => void
 }
 
-export default function LoginPage({ onLogin }: LoginPageProps) {
+export default function LoginPage({ onLogin, onBackToLanding }: LoginPageProps) {
   const [selectedRole, setSelectedRole] = useState<"admin" | "worker" | "guest" | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -368,8 +369,29 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen  flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
+    <div className="min-h-screen">
+      {/* Header with back button */}
+      {onBackToLanding && (
+        <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={onBackToLanding}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={`flex items-center justify-center p-4 ${onBackToLanding ? 'pt-24 min-h-screen' : 'min-h-screen'}`}>
+        <div className="w-full max-w-4xl">
         <div className="text-center mb-16">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-600 dark:text-white mb-4 text-balance mt-10">Willkommen</h1>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-pretty">
@@ -415,6 +437,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
 
         <div className="text-center mt-16">
           <p className="text-xs text-gray-500 dark:text-gray-400">Rezept Digitalisierung System © 2025 Lweb Schweiz</p>
+        </div>
         </div>
       </div>
     </div>

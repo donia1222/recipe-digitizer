@@ -9,6 +9,7 @@ import {
   Scan,
   ChefHat,
   ArrowRight,
+  ArrowLeft,
   Users,
   Heart,
   BookOpen,
@@ -24,6 +25,7 @@ interface HomeDashboardProps {
   onOpenArchive: () => void
   onOpenUsers: () => void
   userRole: "admin" | "worker" | "guest" | null
+  onBackToLanding?: () => void
 }
 
 export default function HomeDashboard({
@@ -32,6 +34,7 @@ export default function HomeDashboard({
   onOpenArchive,
   onOpenUsers,
   userRole,
+  onBackToLanding,
 }: HomeDashboardProps) {
   const router = useRouter()
   const [typedText, setTypedText] = useState("")
@@ -57,6 +60,17 @@ export default function HomeDashboard({
         <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
+              {onBackToLanding && (
+                <Button
+                  onClick={onBackToLanding}
+                  variant="outline"
+                  size="sm"
+                  className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+              )}
+
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                   <ChefHat className="h-6 w-6 text-blue-600" />

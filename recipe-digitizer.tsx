@@ -24,9 +24,10 @@ import { RecipeService } from "@/lib/services/recipeService"
 interface RecipeDigitizerProps {
   handleLogout: () => void
   userRole: 'admin' | 'worker' | 'guest' | null
+  onBackToLanding?: () => void
 }
 
-export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigitizerProps) {
+export default function RecipeDigitizer({ handleLogout, userRole, onBackToLanding }: RecipeDigitizerProps) {
   const [image, setImage] = useState<string | null>(null)
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string } | null>(null)
   const [analysis, setAnalysis] = useState<string>("")
@@ -541,6 +542,7 @@ export default function RecipeDigitizer({ handleLogout, userRole }: RecipeDigiti
           onOpenArchive={() => changeView('archive')}
           onOpenUsers={() => changeView('users')}
           userRole={userRole}
+          onBackToLanding={onBackToLanding}
         />
       ) : currentView === 'archive' ? (
         <RecipeArchivePage
