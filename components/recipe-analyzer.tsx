@@ -25,6 +25,7 @@ interface RecipeAnalyzerProps {
   userId?: string
   createdAt?: string
   approvalMessage?: string | null
+  isFromArchive?: boolean  // Nueva prop para indicar si viene del archivo
 }
 
 const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
@@ -38,6 +39,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   userId,
   createdAt,
   approvalMessage,
+  isFromArchive = false,
 }) => {
   // Function to detect and format manual recipes
   const parseRecipe = (recipeText: string) => {
@@ -1152,8 +1154,8 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
         }
       })}
 
-      {/* Recipe Action Buttons - Only show if user has permissions */}
-      {canEditRecipe ? (
+      {/* Recipe Action Buttons - Only show if user has permissions and not in analysis mode */}
+      {canEditRecipe && isFromArchive ? (
         <div className="mt-8 text-center">
           <div className="flex gap-4 justify-center">
             <Button
@@ -1188,7 +1190,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
       {/* Recipe Comments Section */}
       <div className="mt-6">
-        <RecipeComments recipeId={recipeId} />
+        <RecipeComments recipeId={recipeId} isAnalysisMode={!isFromArchive} />
       </div>
 
       {/* Image Gallery Modal */}

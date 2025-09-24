@@ -700,6 +700,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
                 userId={selectedRecipeUserId || currentUser?.id}
                 createdAt={selectedRecipeCreatedAt || new Date().toISOString()}
                 approvalMessage={approvalMessage}
+                isFromArchive={selectedRecipeUserId !== null}
               />
             )}
           </div>

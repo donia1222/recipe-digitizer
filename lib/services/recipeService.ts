@@ -28,6 +28,7 @@ export class RecipeService {
   private static ORIGINAL_SERVINGS_KEY = 'recipe-original-servings';
   private static IMAGES_KEY_PREFIX = 'recipe-images-';
 
+
   /**
    * Obtener recetas por usuario
    */
@@ -55,8 +56,8 @@ export class RecipeService {
         return data.data || [];
       }
 
-      // Fallback a localStorage para desarrollo
-      return this.getFromLocalStorage().filter(recipe => recipe.user_id === userId);
+      // Si la API falló, retornar array vacío
+      return [];
     } catch (error) {
       console.error('Error fetching user recipes:', error);
       return [];
@@ -143,11 +144,17 @@ export class RecipeService {
         const data = await response.json();
         console.log('✅ Recipe created in DB:', data);
 
+        // Verificar la estructura de la respuesta
+        if (!data || !data.data) {
+          console.error('❌ Invalid response structure:', data);
+          throw new Error('Invalid API response structure');
+        }
+
         // Retornar la receta creada
         return {
           ...recipe,
-          id: data.data.id,
-          recipeId: data.data.recipeId,
+          id: data.data.id || Date.now(), // Fallback a timestamp si no hay ID
+          recipeId: data.data.recipeId || data.data.id,
           date: new Date().toISOString()
         } as Recipe;
       }
@@ -390,7 +397,7 @@ export class RecipeService {
    * Actualizar porciones
    * Futuro: PATCH /api/recipes/:id/servings
    */
-  static async updateServings(id: number, servings: number, originalServings?: number): Promise<void> {
+  static async updateServings(_id: number, servings: number, originalServings?: number): Promise<void> {
     localStorage.setItem(this.SERVINGS_KEY, servings.toString());
     if (originalServings) {
       localStorage.setItem(this.ORIGINAL_SERVINGS_KEY, originalServings.toString());

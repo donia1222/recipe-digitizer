@@ -20,10 +20,17 @@ interface Comment {
 
 interface RecipeCommentsProps {
   recipeId?: string
+  isAnalysisMode?: boolean  // Nueva prop para indicar si está en modo análisis
 }
 
-const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId }) => {
-  console.log("🎯 RecipeComments initialized with recipeId:", recipeId)
+const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId, isAnalysisMode = false }) => {
+  console.log("🎯 RecipeComments initialized with recipeId:", recipeId, "isAnalysisMode:", isAnalysisMode)
+
+  // No mostrar comentarios si está en modo análisis
+  if (isAnalysisMode) {
+    console.log("🚫 Hiding comments - analysis mode active")
+    return null
+  }
 
   const [newComment, setNewComment] = useState("")
   const [comments, setComments] = useState<Comment[]>([])
