@@ -965,81 +965,130 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           </div>
         </div>
       )}
-      {/* Recipe Images Gallery */}
+      {/* Hero Image with Title Overlay */}
       {allImages.length > 0 && (
-        <div className="space-y-4">
-          <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <ImagePlus className="h-5 w-5 text-gray-600" />
-            Rezeptbilder ({allImages.length})
-          </h4>
-          <div className="overflow-x-auto">
-            <div className="flex gap-4 px-2 py-2" style={{ minWidth: "max-content" }}>
-              {allImages.map((image, index) => (
-                <div key={index} className="relative group flex-none">
-                  <div
-                    className="w-28 h-28 sm:w-36 sm:h-36 relative overflow-hidden rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-300 transition-colors duration-200"
-                    onClick={() => openGallery(index)}
-                  >
-                    <Image
-                      src={image || "/placeholder.svg"}
-                      alt={
-                        index === 0 && originalImage
-                          ? "Imagen original"
-                          : `Rezeptbild ${originalImage ? index : index + 1}`
-                      }
-                      fill
-                      className="object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
-                      <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+        <div className="space-y-6">
+          {/* Hero Section - First Image with Title */}
+          <div className="relative h-96 rounded-xl overflow-hidden shadow-xl">
+            <Image
+              src={allImages[0] || "/placeholder.svg"}
+              alt={originalImage ? "Imagen original" : "Rezeptbild"}
+              fill
+              className="object-cover"
+            />
+            {/* Dark overlay for text readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-black/20"></div>
+
+            {/* Title and info overlay */}
+            <div className="absolute inset-0 flex flex-col justify-center items-center text-center p-6">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 drop-shadow-2xl text-balance">
+                {getRecipeTitle()}
+              </h2>
+              {(userId || createdAt) && (
+                <div className="inline-flex items-center gap-3 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-6 py-3 shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-white/30 rounded-full flex items-center justify-center">
+                      <ChefHat className="h-4 w-4 text-white" />
                     </div>
-                    {index === 0 && originalImage && (
-                      <div className="absolute top-2 left-2 bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
-                        Original
-                      </div>
-                    )}
+                    <span className="text-sm font-medium text-white">Von {userName}</span>
                   </div>
-                  {canEditRecipe && (index > 0 || !originalImage) ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        removeImage(originalImage ? index - 1 : index)
-                      }}
-                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors duration-200"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  ) : null}
+                  {createdAt && (
+                    <>
+                      <div className="w-1 h-1 bg-white/60 rounded-full"></div>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-white/80" />
+                        <span className="text-sm text-white/90">{formatDate(createdAt)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))}
+              )}
+            </div>
+
+
+            {/* Click to view all images */}
+            <div
+              className="absolute inset-0 cursor-pointer group"
+              onClick={() => openGallery(0)}
+            >
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200"></div>
+              <div className="absolute bottom-4 right-4 bg-white/20 backdrop-blur-sm text-white px-3 py-2 rounded-full text-sm font-medium group-hover:bg-white/30 transition-colors duration-200">
+                <Eye className="h-4 w-4 inline mr-1" />
+                {allImages.length > 1 ? `${allImages.length} Bilder` : '1 Bild'}
+              </div>
             </div>
           </div>
+
+          {/* Additional Images Gallery */}
+          {allImages.length > 1 && (
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <ImagePlus className="h-5 w-5 text-gray-600" />
+                Weitere Bilder ({allImages.length - 1})
+              </h4>
+              <div className="overflow-x-auto">
+                <div className="flex gap-4 px-2 py-2" style={{ minWidth: "max-content" }}>
+                  {allImages.slice(1).map((image, index) => (
+                    <div key={index + 1} className="relative group flex-none">
+                      <div
+                        className="w-28 h-28 sm:w-36 sm:h-36 relative overflow-hidden rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-300 transition-colors duration-200"
+                        onClick={() => openGallery(index + 1)}
+                      >
+                        <Image
+                          src={image || "/placeholder.svg"}
+                          alt={`Rezeptbild ${index + 2}`}
+                          fill
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+                          <Eye className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                        </div>
+                      </div>
+                      {canEditRecipe && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeImage(originalImage ? index : index + 1)
+                          }}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 transition-colors duration-200"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Recipe Title */}
-      <div className="text-center py-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance mb-4">{getRecipeTitle()}</h2>
-        {(userId || createdAt) && (
-          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-green-50 border border-gray-200 rounded-full px-6 py-3 shadow-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <ChefHat className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-800">Von {userName}</span>
-            </div>
-            {createdAt && (
-              <>
-                <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">{formatDate(createdAt)}</span>
+      {/* Fallback Title (if no images) */}
+      {allImages.length === 0 && (
+        <div className="text-center py-8">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance mb-4">{getRecipeTitle()}</h2>
+          {(userId || createdAt) && (
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-green-50 border border-gray-200 rounded-full px-6 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <ChefHat className="h-4 w-4 text-blue-600" />
                 </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+                <span className="text-sm font-medium text-gray-800">Von {userName}</span>
+              </div>
+              {createdAt && (
+                <>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">{formatDate(createdAt)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
  
 
       {sections.map((section, index) => {
@@ -1237,9 +1286,6 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
               <span className="font-semibold">{currentImageIndex + 1}</span>
               <span className="mx-1 text-gray-300">/</span>
               <span className="text-gray-200">{allImages.length}</span>
-              {currentImageIndex === 0 && originalImage && (
-                <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full">(Original)</span>
-              )}
             </div>
 
             {/* Main image */}

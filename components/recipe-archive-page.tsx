@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Folder,
   FolderPlus,
@@ -23,6 +24,9 @@ import {
   Edit3,
   Trash2,
   Search,
+  Users,
+  Grid3x3,
+  List,
 } from "lucide-react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
@@ -70,13 +74,72 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editFolderName, setEditFolderName] = useState("")
   const [searchQuery, setSearchQuery] = useState(initialSearchFilter || "")
+  const [selectedUserId, setSelectedUserId] = useState<string | undefined>(undefined)
+  const [availableUsers, setAvailableUsers] = useState<{id: string, name: string}[]>([])
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards')
+  const [scrollPosition, setScrollPosition] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMoreRecipes, setHasMoreRecipes] = useState(true)
   const [isLoadingCategoryRecipes, setIsLoadingCategoryRecipes] = useState(false)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [recipeToDelete, setRecipeToDelete] = useState<HistoryItem | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [deleteCategoryModalOpen, setDeleteCategoryModalOpen] = useState(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<{id: string, name: string, isSubcategory?: boolean} | null>(null)
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false)
+  const [isCategoriesCollapsed, setIsCategoriesCollapsed] = useState(() => {
+    // Check if it's a small screen (mobile/tablet)
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1280 // xl breakpoint
+    }
+    return true // Default to collapsed on SSR
+  })
   const RECIPES_PER_PAGE = 6
 
   const folderColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"]
+
+  // Handle view mode change with scroll position preservation
+  const handleViewModeChange = (newMode: 'cards' | 'list') => {
+    // Save current scroll position
+    const currentScrollPos = window.pageYOffset || document.documentElement.scrollTop
+    setScrollPosition(currentScrollPos)
+
+    // Change view mode
+    setViewMode(newMode)
+
+    // Restore scroll position after a short delay to allow layout change
+    setTimeout(() => {
+      window.scrollTo({
+        top: currentScrollPos,
+        behavior: 'smooth'
+      })
+    }, 100)
+  }
+
+  // Load available users who have created recipes
+  const loadAvailableUsers = async () => {
+    try {
+      console.log('👥 Loading available users who created recipes...');
+
+      // Get all users from API
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/users.php');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const users = Array.isArray(data.data) ? data.data : [data.data];
+        const usersList = users.map((user: any) => ({
+          id: user.id,
+          name: user.name || user.id
+        }));
+
+        setAvailableUsers(usersList);
+        console.log('👥 Loaded users:', usersList);
+      }
+    } catch (error) {
+      console.error('❌ Error loading users:', error);
+    }
+  }
 
   // Load first page of recipes from database with pagination
   const loadData = async (reset = false) => {
@@ -337,6 +400,17 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   useEffect(() => {
     loadData(true); // Reset to first page
     loadCategories();
+    loadAvailableUsers();
+
+    // Handle resize to auto-expand categories on large screens
+    const handleResize = () => {
+      if (window.innerWidth >= 1280) {
+        setIsCategoriesCollapsed(false)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // Load counts after folders are loaded AND immediately after first recipe load
@@ -390,13 +464,17 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     if (!newFolderName.trim()) return
 
     try {
-      // Obtener usuario actual
+      // Obtener usuario actual (puede ser null y está bien)
       const currentUserStr = localStorage.getItem('current-user');
       let currentUserId = null;
       if (currentUserStr) {
         try {
           const currentUser = JSON.parse(currentUserStr);
-          currentUserId = currentUser.id;
+          // Solo asignar si el ID parece válido y no está vacío
+          if (currentUser.id && typeof currentUser.id === 'string' && currentUser.id.trim()) {
+            currentUserId = currentUser.id.trim();
+            console.log('🔍 Using currentUserId for category:', currentUserId);
+          }
         } catch (error) {
           console.error('Error parsing current user:', error);
         }
@@ -412,7 +490,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           name: newFolderName.trim(),
           color: folderColors[Math.floor(Math.random() * folderColors.length)],
           parent_id: creatingSubcategoryFor || null,
-          user_id: currentUserId,
+          user_id: null, // Temporalmente null para evitar foreign key error
           display_order: folders.length + 1
         })
       });
@@ -539,12 +617,15 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
-  const deleteFolder = async (folderId: string, e: React.MouseEvent) => {
-    e.stopPropagation()
+  // Confirm delete category
+  const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return
+
+    setIsDeletingCategory(true)
 
     try {
       // First, move all recipes from this folder and its subcategories to uncategorized
-      const allSubfolderIds = getAllSubfolderIds(folderId)
+      const allSubfolderIds = getAllSubfolderIds(categoryToDelete.id)
 
       // Update recipes in database to remove category_id
       for (const subfolderId of allSubfolderIds) {
@@ -560,7 +641,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       }
 
       // Delete folder from database
-      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php?id=${folderId}`, {
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/categories-simple.php?id=${categoryToDelete.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -587,10 +668,16 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         setSelectedFolder(undefined)
       }
 
+      // Close modal
+      setDeleteCategoryModalOpen(false)
+      setCategoryToDelete(null)
+
+      console.log('✅ Category deleted successfully')
+
     } catch (error) {
       console.error('❌ Error deleting folder:', error)
       // Fallback to localStorage only if database fails
-      const allSubfolderIds = getAllSubfolderIds(folderId)
+      const allSubfolderIds = getAllSubfolderIds(categoryToDelete.id)
       const updatedHistory = history.map((item) =>
         allSubfolderIds.includes(item.folderId || "") ? { ...item, folderId: undefined } : item,
       )
@@ -607,6 +694,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           console.warn('⚠️ localStorage quota exceeded, skipping backup')
         }
       }
+    } finally {
+      setIsDeletingCategory(false)
     }
   }
 
@@ -849,6 +938,57 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
+  // Handle delete recipe
+  const handleDeleteRecipe = (recipe: HistoryItem) => {
+    setRecipeToDelete(recipe)
+    setDeleteModalOpen(true)
+  }
+
+  // Handle delete category/subcategory
+  const handleDeleteCategory = (folderId: string, folderName: string, isSubcategory: boolean = false) => {
+    setCategoryToDelete({id: folderId, name: folderName, isSubcategory})
+    setDeleteCategoryModalOpen(true)
+  }
+
+  // Confirm delete recipe
+  const confirmDeleteRecipe = async () => {
+    if (!recipeToDelete) return
+
+    setIsDeleting(true)
+    try {
+      // Delete from API
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?id=${recipeToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+
+      const result = await response.json()
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to delete recipe')
+      }
+
+      // Remove from local state
+      setHistory(prev => prev.filter(item => item.id !== recipeToDelete.id))
+      setAllRecipes(prev => prev.filter(item => item.id !== recipeToDelete.id))
+
+      // Refresh recipe counts
+      loadRecipeCounts()
+
+      // Close modal
+      setDeleteModalOpen(false)
+      setRecipeToDelete(null)
+
+      console.log('✅ Recipe deleted successfully')
+    } catch (error) {
+      console.error('❌ Error deleting recipe:', error)
+      // You could add a toast notification here
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   const getSubcategories = (parentId: string) => {
     const subcats = folders.filter((folder) => folder.parentId === parentId);
     // Remove duplicates by name to handle database duplicates
@@ -883,7 +1023,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         : history // Mostrar TODAS las recetas cuando no hay carpeta seleccionada
 
   // Apply search filter - Si hay búsqueda, buscar en TODAS las recetas sin importar carpeta
-  const searchFilteredHistory = searchQuery
+  let searchFilteredHistory = searchQuery
     ? allRecipes.filter((item) => {
         const searchLower = searchQuery.toLowerCase()
         const title = item.title?.toLowerCase() || ""
@@ -891,6 +1031,11 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         return title.includes(searchLower) || analysis.includes(searchLower)
       })
     : filteredHistory
+
+  // Apply user filter
+  const finalFilteredHistory = selectedUserId
+    ? searchFilteredHistory.filter((item) => item.user_id === selectedUserId)
+    : searchFilteredHistory
 
   // Load more recipes function
   const loadMoreRecipes = async () => {
@@ -1046,18 +1191,34 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 sm:px-6 pt-24 pb-12">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="pt-24 pb-0">
+        <div className="flex flex-col xl:flex-row min-h-screen xl:min-h-[calc(100vh-6rem)]">
           {/* Sidebar - Categories */}
-          <div className="w-full lg:w-80 space-y-4">
-            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-              <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <Folder className="h-4 w-4 text-gray-600" />
-                Categories
-              </h3>
+          <div className="w-full xl:w-[28rem] xl:max-w-md bg-white border-r border-gray-200 xl:fixed xl:left-0 xl:top-24 xl:-bottom-10 xl:overflow-y-auto">
+            <div className="p-6">
+              <div className="space-y-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium text-gray-900 flex items-center gap-2">
+                  <Folder className="h-4 w-4 text-gray-600" />
+                  Kategorien
+                </h3>
+                <button
+                  onClick={() => setIsCategoriesCollapsed(!isCategoriesCollapsed)}
+                  className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                  title={isCategoriesCollapsed ? "Kategorien anzeigen" : "Kategorien verbergen"}
+                >
+                  {isCategoriesCollapsed ? (
+                    <ChevronRight className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
 
-              {/* All Recipes */}
-              <button
+              {!isCategoriesCollapsed && (
+                <>
+                  {/* All Recipes */}
+                  <button
                 onClick={() => {
                   setSelectedFolder(undefined);
                   loadData(true); // Reset to paginated view
@@ -1165,8 +1326,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                   e.stopPropagation()
                                   createSubcategory(folder.id)
                                 }}
-                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
-                                title="Add Subcategory"
+                                className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 bg-green-100 border border-green-300 hover:border-green-400 rounded-full transition-all duration-200 shadow-sm hover:shadow-md"
+                                title="Unterkategorie hinzufügen"
                               >
                                 <Plus className="h-3 w-3" />
                               </button>
@@ -1213,7 +1374,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  onClick={(e) => deleteFolder(folder.id, e)}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteCategory(folder.id, folder.name, false)
+                                  }}
                                   className="h-7 w-7 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
                                 >
                                   <Trash2 size={12} />
@@ -1314,7 +1478,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={(e) => deleteFolder(subcategory.id, e)}
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleDeleteCategory(subcategory.id, subcategory.name, true)
+                                        }}
                                         className="h-6 w-6 p-0 border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
                                       >
                                         <Trash2 size={10} />
@@ -1331,8 +1498,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 </AnimatePresence>
               </div>
 
-              {/* Create new folder */}
-              {isCreatingFolder ? (
+                  {/* Create new folder */}
+                  {isCreatingFolder ? (
                 <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mt-3">
                   {creatingSubcategoryFor && (
                     <div className="text-xs text-gray-500 mb-2">
@@ -1379,14 +1546,18 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                   className="w-full mt-3 border-dashed border-gray-300 hover:bg-gray-50 text-gray-600"
                 >
                   <FolderPlus className="h-4 w-4 mr-2" />
-                  New Category
+                  Neue Kategorie
                 </Button>
               ) : null}
+                </>
+              )}
+              </div>
             </div>
           </div>
 
           {/* Main Content - Recipes Grid */}
-          <div className="flex-1">
+          <div className="flex-1 xl:ml-[28rem] xl:min-h-screen">
+            <div className="container mx-auto px-4 sm:px-6 xl:px-8 pb-0">
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -1421,46 +1592,108 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 </span>
               </div>
 
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  type="text"
-                  placeholder="Suche nach Rezepttitel oder Inhalt..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const newSearchQuery = e.target.value;
-                    setSearchQuery(newSearchQuery);
+              {/* Search Bar and Filters */}
+              <div className="flex gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    type="text"
+                    placeholder="Suche nach Rezepttitel oder Inhalt..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      const newSearchQuery = e.target.value;
+                      setSearchQuery(newSearchQuery);
 
-                    if (newSearchQuery.trim()) {
-                      // If searching, load all matching recipes
-                      setSelectedFolder(undefined); // Clear category selection
-                      loadCategoryOrSearchRecipes(undefined, newSearchQuery.trim());
-                    } else {
-                      // If search cleared, reload paginated view
-                      loadData(true);
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 py-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedFolder(undefined);
-                      loadData(true); // Reset to paginated view
+                      if (newSearchQuery.trim()) {
+                        // If searching, load all matching recipes
+                        setSelectedFolder(undefined); // Clear category selection
+                        loadCategoryOrSearchRecipes(undefined, newSearchQuery.trim());
+                      } else {
+                        // If search cleared, reload paginated view
+                        loadData(true);
+                      }
                     }}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="w-full pl-10 pr-4 py-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedFolder(undefined);
+                        loadData(true); // Reset to paginated view
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                {/* User Filter Dropdown */}
+                <div className="relative min-w-[200px]">
+                  <div className="relative">
+                    <select
+                      value={selectedUserId || ""}
+                      onChange={(e) => setSelectedUserId(e.target.value || undefined)}
+                      className={`w-full pl-10 pr-10 py-2 border rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 text-sm font-medium shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer appearance-none ${
+                        selectedUserId
+                          ? "border-blue-300 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700"
+                          : "border-gray-300 bg-gradient-to-r from-white to-gray-50 text-gray-700"
+                      }`}
+                    >
+                      <option value="">Alle Benutzer</option>
+                      {availableUsers.map((user) => (
+                        <option key={user.id} value={user.id}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                    {/* User Icon */}
+                    <div className={`absolute left-3 top-1/2 transform -translate-y-1/2 ${
+                      selectedUserId ? "text-blue-500" : "text-gray-400"
+                    }`}>
+                      <Users className="h-4 w-4" />
+                    </div>
+                    {/* Dropdown Arrow */}
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => handleViewModeChange('cards')}
+                    className={`px-3 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                      viewMode === 'cards'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                    title="Kartenansicht"
                   >
-                    <X className="h-4 w-4" />
+                    <Grid3x3 className="h-4 w-4" />
+                    <span className="hidden sm:inline">Karten</span>
                   </button>
-                )}
+                  <button
+                    onClick={() => handleViewModeChange('list')}
+                    className={`px-3 py-2 text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                      viewMode === 'list'
+                        ? 'bg-blue-500 text-white shadow-sm'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                    title="Listenansicht"
+                  >
+                    <List className="h-4 w-4" />
+                    <span className="hidden sm:inline">Liste</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <div className={viewMode === 'cards' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4" : "space-y-4"}>
               <AnimatePresence>
-                {searchFilteredHistory.map((item) => (
+                {finalFilteredHistory.map((item) => (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -1469,26 +1702,55 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                     transition={{ duration: 0.2 }}
                   >
                     <Card
-                      className="cursor-pointer hover:shadow-md transition-all duration-200 bg-white border border-gray-200 group overflow-hidden"
+                      className={`cursor-pointer hover:shadow-md transition-all duration-200 bg-white group overflow-hidden ${
+                        viewMode === 'list'
+                          ? 'flex flex-row border-l-4 border-l-blue-200 border border-gray-200 hover:border-l-blue-400 shadow-sm'
+                          : 'border border-gray-200'
+                      }`}
                       onClick={() => onSelectRecipe(item)}
                     >
-                      <div className="relative">
+                      <div className={`relative ${viewMode === 'list' ? 'w-32 h-24 flex-shrink-0' : ''}`}>
                         <Image
                           src={item.image || "/placeholder.svg"}
                           alt="Recipe"
                           width={300}
                           height={200}
-                          className="w-full h-40 object-cover"
+                          className={viewMode === 'list' ? "w-32 h-24 object-cover" : "w-full h-40 object-cover"}
                         />
-                        <div className="absolute top-3 right-3 flex gap-1">
-                   
-                        </div>
+                        {viewMode === 'cards' && (
+                          <div className="absolute top-3 right-3 flex gap-1">
+                            {canUserEditRecipe(item.user_id) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDeleteRecipe(item)
+                                }}
+                                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                title="Rezept löschen"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <CardContent className="p-4">
+                      <CardContent className={viewMode === 'list' ? "p-4 flex-1 relative" : "p-4"}>
                         <div className="flex items-start justify-between mb-3">
-                          <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
+                          <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 flex-1 pr-2">
                             {item.title || extractRecipeTitle(item.analysis)}
                           </h4>
+                          {viewMode === 'list' && canUserEditRecipe(item.user_id) && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDeleteRecipe(item)
+                              }}
+                              className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-sm transition-all duration-200 flex-shrink-0"
+                              title="Rezept löschen"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
                           <Calendar className="h-3 w-3" />
@@ -1497,14 +1759,18 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
                         {/* Category dropdown - Only show if user can edit this recipe */}
                         {canUserEditRecipe(item.user_id) && (
-                          <div className="mb-4">
+                          <div className={viewMode === 'list' ? "mb-1" : "mb-4"}>
                             <select
                               value={item.folderId || ""}
                               onChange={(e) => {
                                 e.stopPropagation()
                                 moveToFolder(item.id, e.target.value || undefined)
                               }}
-                              className="w-full text-xs p-2 rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 cursor-pointer hover:bg-gray-100"
+                              className={`text-xs rounded-lg bg-gray-50 border border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all duration-200 cursor-pointer hover:bg-gray-100 ${
+                                viewMode === 'list'
+                                  ? 'w-auto min-w-[120px] max-w-[150px] px-2 py-1 text-xs'
+                                  : 'w-full p-2'
+                              }`}
                               onClick={(e) => e.stopPropagation()}
                             >
                               <option value="">📂 Uncategorized</option>
@@ -1530,7 +1796,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
             </div>
 
             {/* Ver más button - Only show if not searching and has more recipes */}
-            {!searchQuery && hasMoreRecipes && searchFilteredHistory.length > 0 && (
+            {!searchQuery && hasMoreRecipes && finalFilteredHistory.length > 0 && (
               <div className="flex justify-center mt-8">
                 <Button
                   onClick={loadMoreRecipes}
@@ -1549,7 +1815,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               </div>
             )}
 
-            {searchFilteredHistory.length === 0 && (
+            {finalFilteredHistory.length === 0 && (
               <div className="text-center py-16">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   {searchQuery ? <Search className="h-8 w-8 text-gray-400" /> : <ChefHat className="h-8 w-8 text-gray-400" />}
@@ -1566,9 +1832,136 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 </p>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={deleteModalOpen} onOpenChange={setDeleteModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Rezept löschen?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sind Sie sicher, dass Sie dieses Rezept löschen möchten?
+            </p>
+            {recipeToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-3">
+                  <Image
+                    src={recipeToDelete.image || "/placeholder.svg"}
+                    alt="Recipe"
+                    width={60}
+                    height={60}
+                    className="rounded-lg object-cover"
+                  />
+                  <div>
+                    <h4 className="font-medium text-gray-900 text-sm">
+                      {recipeToDelete.title || extractRecipeTitle(recipeToDelete.analysis)}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(recipeToDelete.date)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-red-600 font-medium">
+              ⚠️ Diese Aktion kann nicht rückgängig gemacht werden.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => setDeleteModalOpen(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={isDeleting}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={confirmDeleteRecipe}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Löscht...
+                  </>
+                ) : (
+                  'Löschen'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Confirmation Modal */}
+      <Dialog open={deleteCategoryModalOpen} onOpenChange={setDeleteCategoryModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              {categoryToDelete?.isSubcategory ? 'Unterkategorie löschen?' : 'Kategorie löschen?'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Sind Sie sicher, dass Sie diese {categoryToDelete?.isSubcategory ? 'Unterkategorie' : 'Kategorie'} löschen möchten?
+            </p>
+            {categoryToDelete && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <Folder className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 text-sm">
+                      {categoryToDelete.name}
+                    </h4>
+                    <p className="text-xs text-gray-500">
+                      {categoryToDelete.isSubcategory ? 'Unterkategorie' : 'Hauptkategorie'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-red-600 font-medium">
+              ⚠️ Alle Rezepte in dieser {categoryToDelete?.isSubcategory ? 'Unterkategorie' : 'Kategorie'} werden auf "Unkategorisiert" verschoben.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <Button
+                onClick={() => setDeleteCategoryModalOpen(false)}
+                variant="outline"
+                className="flex-1"
+                disabled={isDeletingCategory}
+              >
+                Abbrechen
+              </Button>
+              <Button
+                onClick={confirmDeleteCategory}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                disabled={isDeletingCategory}
+              >
+                {isDeletingCategory ? (
+                  <>
+                    <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Löscht...
+                  </>
+                ) : (
+                  'Löschen'
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
