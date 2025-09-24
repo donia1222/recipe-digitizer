@@ -60,23 +60,14 @@ export default function HomeDashboard({
         <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {onBackToLanding && (
-                <Button
-                  onClick={onBackToLanding}
-                  variant="outline"
-                  size="sm"
-                  className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-              )}
+     
 
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                   <ChefHat className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-semibold text-gray-900">Büelriet</h1>
+      
                   <p className="text-sm text-gray-600">Digitale Rezeptsammlung</p>
                 </div>
               </div>
@@ -86,10 +77,10 @@ export default function HomeDashboard({
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-transparent"
+                className="text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-transparent"
               >
-                <LogOut className="h-4 w-4 mr-2" />
-                Abmelden
+                <LogOut className="h-4 w-4 " />
+              
               </Button>
             </div>
           </div>
@@ -98,13 +89,7 @@ export default function HomeDashboard({
 
       <div className="container mx-auto px-4 sm:px-6 pt-24 pb-12">
         <div className="text-center mb-12">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-600 mb-4 mt-8">Willkommen bei Büelriet</h2>
-            <p className="text-lg text-gray-600 min-h-[2rem]">
-              {typedText}
-              <span className="animate-pulse">|</span>
-            </p>
-          </div>
+      
         </div>
 
         {(userRole === "admin" || userRole === "worker") && (

@@ -787,12 +787,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               </Button>
 
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
-                  <ChefHat className="h-5 w-5 text-blue-600" />
-                </div>
+             
                 <div>
-                  <h1 className="text-xl font-semibold text-gray-900">Recipe Archive</h1>
-                  <p className="text-sm text-gray-500">All saved recipes</p>
+       
+                  <p className="text-sm text-gray-500">Recipe Archive</p>
                 </div>
               </div>
             </div>

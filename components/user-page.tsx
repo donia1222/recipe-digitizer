@@ -746,11 +746,21 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
+
+              {/* User name next to back button with simple style */}
+              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                <Users className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  {((currentUser?.name || "Usuario").length > 20
+                    ? (currentUser?.name || "Usuario").substring(0, 20) + "..."
+                    : (currentUser?.name || "Usuario"))}
+                </span>
+              </div>
             </div>
 
             {/* User info and Notifications */}
             <div className="flex items-center gap-3">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">{currentUser?.name || "Usuario"}</div>
+
 
               <Button
                 onClick={onLogout}
@@ -758,8 +768,8 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                 size="sm"
                 className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20 bg-transparent"
               >
-                <LogOut className="h-4 w-4 mr-1" />
-                Abmelden
+                <LogOut className="h-4 w-4 " />
+         
               </Button>
 
               {/* Notifications Bell */}
@@ -855,7 +865,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                 
               </Button>
               <Button
-                onClick={() => setActiveTab("history")}
+              onClick={() => onOpenArchive(currentUser?.name)}
                 variant={activeTab === "history" ? "default" : "ghost"}
                 className={`flex-1 ${activeTab === "history" ? "bg-blue-500 text-white" : ""}`}
               >

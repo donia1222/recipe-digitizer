@@ -23,3 +23,15 @@ export interface SubAdmin {
   createdDate: string
   status: "active" | "inactive"
 }
+
+export interface HistoryItem {
+  id: number
+  recipeId?: string
+  image: string
+  analysis: string
+  date: string
+  folderId?: string
+  title?: string
+  isFavorite?: boolean
+  user_id?: string
+}
