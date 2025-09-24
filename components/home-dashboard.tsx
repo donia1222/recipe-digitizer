@@ -77,7 +77,7 @@ export default function HomeDashboard({
               <Button
                 onClick={handleLogout}
                 variant="outline"
-                className="text-gray-700 hover:bg-gray-50 hover:border-gray-400 bg-transparent"
+               className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20 bg-transparent"
               >
                 <LogOut className="h-4 w-4 " />
               

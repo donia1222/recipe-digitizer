@@ -762,16 +762,7 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
             <div className="flex items-center gap-3">
 
 
-              <Button
-                onClick={onLogout}
-                variant="outline"
-                size="sm"
-                className="text-red-600 border-red-200 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20 bg-transparent"
-              >
-                <LogOut className="h-4 w-4 " />
-         
-              </Button>
-
+        
               {/* Notifications Bell */}
               <div className="relative">
                 <Button
