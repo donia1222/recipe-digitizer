@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, Users, UserCheck, ArrowLeft, Lock, User, Eye, EyeOff } from "lucide-react"
+import { Shield, Users, UserCheck, ArrowLeft, Lock, User, Eye, EyeOff, ChefHat } from "lucide-react"
 import { UserService } from "@/lib/services/userService"
 import { useToast } from "@/components/ui/use-toast"
 
@@ -384,6 +384,16 @@ export default function LoginPage({ onLogin, onBackToLanding }: LoginPageProps) 
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <Shield className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-semibold text-gray-900">Anmeldung</h1>
+                    <p className="text-sm text-gray-600">Wählen Sie Ihre Rolle, um fortzufahren</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -393,10 +403,7 @@ export default function LoginPage({ onLogin, onBackToLanding }: LoginPageProps) 
       <div className={`flex items-center justify-center p-4 ${onBackToLanding ? 'pt-24 min-h-screen' : 'min-h-screen'}`}>
         <div className="w-full max-w-4xl">
         <div className="text-center mb-16">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-600 dark:text-white mb-4 text-balance mt-10">Willkommen</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto text-pretty">
-            Wählen Sie Ihre Rolle, um fortzufahren
-          </p>
+   
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
