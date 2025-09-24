@@ -402,7 +402,7 @@ export default function LoginPage({ onLogin, onBackToLanding }: LoginPageProps) 
 
       <div className={`flex items-center justify-center p-4 ${onBackToLanding ? 'pt-24 min-h-screen' : 'min-h-screen'}`}>
         <div className="w-full max-w-4xl">
-        <div className="text-center mb-16">
+        <div className="text-center mb-8">
    
         </div>
 
