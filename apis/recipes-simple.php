@@ -24,6 +24,80 @@ try {
     exit;
 }
 
+/**
+ * Optimiza una imagen base64: comprime y redimensiona
+ * @param string $base64Data - Imagen en formato base64
+ * @param string $filename - Nombre del archivo de salida
+ * @return array - ['success' => bool, 'url' => string, 'optimized_data' => string]
+ */
+function optimizeImage($base64Data, $filename) {
+    try {
+        if (!extension_loaded('gd')) {
+            return ['success' => false, 'optimized_data' => $base64Data];
+        }
+
+        // Extraer y decodificar base64
+        $base64 = preg_replace('/^data:image\/\w+;base64,/', '', $base64Data);
+        $imageData = base64_decode($base64);
+        if ($imageData === false) {
+            return ['success' => false, 'optimized_data' => $base64Data];
+        }
+
+        // Crear imagen desde string
+        $sourceImage = imagecreatefromstring($imageData);
+        if ($sourceImage === false) {
+            return ['success' => false, 'optimized_data' => $base64Data];
+        }
+
+        // Obtener dimensiones originales
+        $originalWidth = imagesx($sourceImage);
+        $originalHeight = imagesy($sourceImage);
+
+        // Calcular nuevas dimensiones (max 1200x1600)
+        $maxWidth = 1200;
+        $maxHeight = 1600;
+        $ratio = min($maxWidth / $originalWidth, $maxHeight / $originalHeight, 1);
+
+        if ($ratio < 1) {
+            $newWidth = round($originalWidth * $ratio);
+            $newHeight = round($originalHeight * $ratio);
+
+            // Crear imagen optimizada
+            $optimizedImage = imagecreatetruecolor($newWidth, $newHeight);
+            imagecopyresampled($optimizedImage, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+        } else {
+            $optimizedImage = $sourceImage;
+        }
+
+        // Capturar imagen optimizada como base64
+        ob_start();
+        imagejpeg($optimizedImage, null, 80); // 80% calidad
+        $optimizedData = ob_get_contents();
+        ob_end_clean();
+
+        // Limpiar memoria
+        imagedestroy($sourceImage);
+        if ($ratio < 1) {
+            imagedestroy($optimizedImage);
+        }
+
+        // Convertir de vuelta a base64
+        $mimeType = 'image/jpeg';
+        $optimizedBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($optimizedData);
+
+        error_log("🖼️ Image optimized: {$filename} | Original size: " . round(strlen($imageData)/1024, 1) . "KB → Optimized: " . round(strlen($optimizedData)/1024, 1) . "KB");
+
+        return [
+            'success' => true,
+            'optimized_data' => $optimizedBase64
+        ];
+
+    } catch (Exception $e) {
+        error_log("❌ Image optimization error: " . $e->getMessage());
+        return ['success' => false, 'optimized_data' => $base64Data];
+    }
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
@@ -174,8 +248,9 @@ switch ($method) {
             if (!empty($data['image'])) {
                 // Extraer base64 data
                 if (strpos($data['image'], 'data:image') === 0) {
-                    // Es una imagen base64
-                    $imageData = $data['image'];
+                    // Optimizar imagen ANTES de procesarla
+                    $optimizationResult = optimizeImage($data['image'], $recipeId);
+                    $imageData = $optimizationResult['optimized_data'];
 
                     // Intentar guardar como archivo
                     try {
@@ -239,6 +314,10 @@ switch ($method) {
 
                     // Procesar imagen adicional
                     if (!empty($additionalImage) && strpos($additionalImage, 'data:image') === 0) {
+                        // Optimizar imagen adicional ANTES de procesarla
+                        $additionalOptimizationResult = optimizeImage($additionalImage, $recipeId . '_additional_' . $displayOrder);
+                        $additionalImage = $additionalOptimizationResult['optimized_data'];
+
                         try {
                             // Extraer tipo de imagen
                             preg_match('/data:image\/(\w+);base64,/', $additionalImage, $matches);
@@ -421,6 +500,10 @@ switch ($method) {
 
                         // Procesar imagen adicional
                         if (!empty($additionalImage) && strpos($additionalImage, 'data:image') === 0) {
+                            // Optimizar imagen adicional ANTES de procesarla
+                            $additionalOptimizationResult = optimizeImage($additionalImage, $recipeId . '_additional_' . $displayOrder . '_' . time());
+                            $additionalImage = $additionalOptimizationResult['optimized_data'];
+
                             try {
                                 // Extraer tipo de imagen
                                 preg_match('/data:image\/(\w+);base64,/', $additionalImage, $matches);
