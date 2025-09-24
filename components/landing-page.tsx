@@ -140,9 +140,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAccessApp }) => {
               transition={{ delay: 0.2 }}
               className="text-xl sm:text-2xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed"
             >
-              Die intelligente Lösung für die Digitalisierung und Verwaltung von Rezepten mit
-              <span className="font-semibold text-blue-600"> KI-Unterstützung</span> und
-              <span className="font-semibold text-cyan-600"> kollaborativen Funktionen</span>
+              Pflege- und Betreuungszentrum Büelriet
+           
             </motion.p>
 
             <motion.div
@@ -160,10 +159,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAccessApp }) => {
                 <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
 
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <CheckCircle className="h-4 w-4 text-green-500" />
-                <span>Keine Installation erforderlich</span>
-              </div>
             </motion.div>
           </div>
         </div>
@@ -361,119 +356,29 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAccessApp }) => {
               </p>
             </motion.div>
           </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            className="mt-16 bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-8 text-center border border-green-200"
-          >
-            <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Qualitätsgarantie</h3>
-            <p className="text-gray-600">
-              Durch den Genehmigungsprozess stellen wir sicher, dass nur hochwertige,
-              vollständige und korrekte Rezepte in die Sammlung aufgenommen werden.
-            </p>
-          </motion.div>
         </div>
       </section>
 
-      {/* Technology Section */}
-      <section className="px-6 py-20 bg-gradient-to-r from-gray-50 to-blue-50">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-              Moderne Technologie
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Entwickelt mit den neuesten Technologien für beste Performance
-            </p>
-          </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { name: "Next.js 15", icon: Zap, color: "text-black" },
-              { name: "React 19", icon: Palette, color: "text-blue-500" },
-              { name: "TypeScript", icon: CheckCircle, color: "text-blue-600" },
-              { name: "PWA Ready", icon: Smartphone, color: "text-green-500" }
-            ].map((tech, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="text-center"
-              >
-                <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4">
-                  <tech.icon className={`h-8 w-8 ${tech.color}`} />
-                </div>
-                <h3 className="font-semibold text-gray-900">{tech.name}</h3>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="px-6 py-20 bg-gradient-to-r from-blue-500 to-cyan-500">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              Bereit zu starten?
-            </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Beginnen Sie noch heute mit der Digitalisierung Ihrer Rezeptsammlung
-            </p>
-
-            <Button
-              onClick={onAccessApp}
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-50 px-8 py-6 text-lg shadow-2xl hover:shadow-3xl transition-all duration-300 group"
-            >
-              <ChefHat className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
-              Jetzt starten
-              <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-
-            <div className="flex flex-col sm:flex-row justify-center items-center gap-6 mt-8 text-blue-100">
-              <div className="flex items-center gap-2">
-                <Star className="h-4 w-4" />
-                <span className="text-sm">Keine Registrierung</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                <span className="text-sm">Sofort einsatzbereit</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Smartphone className="h-4 w-4" />
-                <span className="text-sm">Alle Geräte</span>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="px-6 py-8 bg-gray-900 text-gray-400 text-center">
         <div className="max-w-4xl mx-auto">
-          <p className="mb-2">
-            Digitale Rezeptsammlung • Entwickelt von Lweb Schweiz
+          <p className="mb-4">
+            Pflege- und Betreuungszentrum Büelriet - Gemeinde Sevelen
           </p>
+          <div className="mb-4 space-x-4 text-sm">
+            <span>AGB</span>
+            <span>•</span>
+            <span>Datenschutz</span>
+            <span>•</span>
+            <span>Impressum</span>
+            <span>•</span>
+            <span>Kontakt</span>
+          </div>
           <p className="text-sm">
-            Powered by Next.js, React & KI-Technologie
+           Entwickelt von <a href="https://www.lweb.ch" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 ">Lweb Schweiz</a>
           </p>
         </div>
       </footer>
