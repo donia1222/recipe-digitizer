@@ -88,6 +88,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [deleteCategoryModalOpen, setDeleteCategoryModalOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<{id: string, name: string, isSubcategory?: boolean} | null>(null)
   const [isDeletingCategory, setIsDeletingCategory] = useState(false)
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false)
   const [isCategoriesCollapsed, setIsCategoriesCollapsed] = useState(() => {
     // Check if it's a small screen (mobile/tablet)
     if (typeof window !== 'undefined') {
@@ -122,19 +123,43 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     try {
       console.log('👥 Loading available users who created recipes...');
 
-      // Get all users from API
-      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/users.php');
-      const data = await response.json();
+      // First, get all users from the API
+      const usersResponse = await fetch('https://web.lweb.ch/recipedigitalizer/apis/users.php');
+      const usersData = await usersResponse.json();
 
-      if (data.success && data.data) {
-        const users = Array.isArray(data.data) ? data.data : [data.data];
-        const usersList = users.map((user: any) => ({
-          id: user.id,
-          name: user.name || user.id
-        }));
+      // Then get all recipes to find which users have created recipes
+      const recipesResponse = await fetch('https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=1&limit=1000');
+      const recipesData = await recipesResponse.json();
+
+      if (usersData.success && recipesData.success && recipesData.data) {
+        // Create a map of all users
+        const allUsers = new Map();
+        if (usersData.data && Array.isArray(usersData.data)) {
+          usersData.data.forEach((user: any) => {
+            allUsers.set(user.id, user.name);
+          });
+        }
+
+        // Get unique user IDs from recipes
+        const uniqueUserIds = [...new Set(
+          recipesData.data
+            .map((recipe: any) => recipe.user_id)
+            .filter((userId: string) => userId && userId.trim())
+        )];
+
+        console.log('👥 Unique user IDs in recipes:', uniqueUserIds);
+        console.log('👥 All users in database:', Array.from(allUsers.keys()));
+
+        // Create list of users who have created recipes
+        const usersList = (uniqueUserIds as string[])
+          .map((userId: string) => ({
+            id: userId,
+            name: allUsers.get(userId) || userId
+          }))
+          .filter((user: { id: string; name: string }) => user.name !== user.id); // Only include users with real names
 
         setAvailableUsers(usersList);
-        console.log('👥 Loaded users:', usersList);
+        console.log('👥 Final users list with recipes:', usersList);
       }
     } catch (error) {
       console.error('❌ Error loading users:', error);
@@ -172,7 +197,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
             image: mainImage,
             title: recipe.title || recipe.name,
             date: recipe.created_at || recipe.date,
-            recipeId: recipe.recipe_id || recipe.recipeId
+            recipeId: recipe.recipe_id || recipe.recipeId,
+            isFavorite: recipe.is_favorite || recipe.isFavorite || false
           };
         });
 
@@ -187,6 +213,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         if (reset) {
           setCurrentPage(1);
         }
+
+        // Load actual favorites status for current user
+        loadUserFavorites();
 
         // IMPORTANTE: Usar el total del API inmediatamente
         if (data.pagination?.total) {
@@ -617,6 +646,110 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
+  // Load user favorites to update isFavorite status
+  const loadUserFavorites = async () => {
+    try {
+      const currentUserStr = localStorage.getItem('current-user')
+      if (!currentUserStr) return
+
+      const currentUser = JSON.parse(currentUserStr)
+      const userId = currentUser.id
+
+      const response = await fetch(`https://web.lweb.ch/recipedigitalizer/apis/favorites.php?user_id=${userId}`)
+      const result = await response.json()
+
+      if (result.success && result.data) {
+        const favoriteRecipeIds = result.data.map((fav: any) => fav.id)
+        console.log('🌟 User favorites loaded:', favoriteRecipeIds)
+
+        // Update both history and allRecipes with favorite status
+        setHistory(prev => prev.map(recipe => ({
+          ...recipe,
+          isFavorite: favoriteRecipeIds.includes(recipe.id)
+        })))
+
+        setAllRecipes(prev => prev.map(recipe => ({
+          ...recipe,
+          isFavorite: favoriteRecipeIds.includes(recipe.id)
+        })))
+      }
+    } catch (error) {
+      console.error('❌ Error loading user favorites:', error)
+    }
+  }
+
+  // Toggle favorite
+  // Toggle favorites filter
+  const handleToggleFavoritesFilter = () => {
+    setShowFavoritesOnly(!showFavoritesOnly)
+    console.log('⭐ Toggling favorites filter:', !showFavoritesOnly)
+  }
+
+  const handleToggleFavorite = async (recipe: HistoryItem, e: React.MouseEvent) => {
+    e.stopPropagation()
+
+    try {
+      const currentUserStr = localStorage.getItem('current-user')
+      if (!currentUserStr) {
+        console.error('No user logged in')
+        return
+      }
+
+      const currentUser = JSON.parse(currentUserStr)
+      const userId = currentUser.id
+
+      console.log('🌟 Toggle favorite:', { userId, recipeId: recipe.id, currentFavorite: recipe.isFavorite })
+      console.log('🔍 Current user data:', currentUser)
+
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/favorites.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          recipe_id: recipe.id
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        console.log('🔄 Updating local state with isFavorite:', result.is_favorite)
+
+        // Update local state
+        setHistory(prev => {
+          const updated = prev.map(item =>
+            item.id === recipe.id
+              ? { ...item, isFavorite: result.is_favorite }
+              : item
+          )
+          console.log('📚 Updated history for recipe', recipe.id, ':', updated.find(i => i.id === recipe.id)?.isFavorite)
+          return updated
+        })
+
+        setAllRecipes(prev => {
+          const updated = prev.map(item =>
+            item.id === recipe.id
+              ? { ...item, isFavorite: result.is_favorite }
+              : item
+          )
+          console.log('📚 Updated allRecipes for recipe', recipe.id, ':', updated.find(i => i.id === recipe.id)?.isFavorite)
+          return updated
+        })
+
+        // Refresh recipe counts
+        loadRecipeCounts()
+
+        console.log('✅ Favorite toggled:', result.message)
+      } else {
+        console.error('❌ Error toggling favorite:', result.error)
+      }
+    } catch (error) {
+      console.error('❌ Error toggling favorite:', error)
+    }
+  }
+
   // Confirm delete category
   const confirmDeleteCategory = async () => {
     if (!categoryToDelete) return
@@ -1033,9 +1166,14 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     : filteredHistory
 
   // Apply user filter
-  const finalFilteredHistory = selectedUserId
+  const userFilteredHistory = selectedUserId
     ? searchFilteredHistory.filter((item) => item.user_id === selectedUserId)
     : searchFilteredHistory
+
+  // Apply favorites filter
+  const finalFilteredHistory = showFavoritesOnly
+    ? userFilteredHistory.filter((item) => item.isFavorite)
+    : userFilteredHistory
 
   // Load more recipes function
   const loadMoreRecipes = async () => {
@@ -1178,10 +1316,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 <ArrowLeft className="h-4 w-4" />
               </Button>
 
+
               <div className="flex items-center gap-3">
-             
                 <div>
-       
                   <p className="text-sm text-gray-500">Recipe Archive</p>
                 </div>
               </div>
@@ -1236,27 +1373,6 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 </span>
               </button>
 
-              {/* Favorites */}
-              {favoriteRecipes.length > 0 && (
-                <button
-                  onClick={() => {
-                    setSelectedFolder("favorites");
-                    // Load all favorite recipes
-                    loadCategoryOrSearchRecipes("favorites");
-                  }}
-                  className={`w-full text-left p-3 rounded-lg mb-2 transition-all duration-200 flex items-center gap-3 ${
-                    selectedFolder === "favorites"
-                      ? "bg-amber-50 text-amber-700 border border-amber-200"
-                      : "hover:bg-gray-50 text-gray-700 border border-transparent"
-                  }`}
-                >
-                  <Star className="h-4 w-4" />
-                  <span className="font-medium">Favoriten</span>
-                  <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
-                    {recipeCounts['favorites'] || 0}
-                  </span>
-                </button>
-              )}
 
               {/* Folders */}
               <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
@@ -1661,6 +1777,26 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                   </div>
                 </div>
 
+                {/* Favorites Filter Button */}
+                {currentUserId && (
+                  <Button
+                    onClick={handleToggleFavoritesFilter}
+                    variant="outline"
+                    size="sm"
+                    className={`px-3 py-2 border transition-all duration-200 flex items-center gap-2 ${
+                      showFavoritesOnly
+                        ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
+                        : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-600'
+                    }`}
+                    title={showFavoritesOnly ? "Alle Rezepte anzeigen" : "Nur Favoriten anzeigen"}
+                  >
+                    <Star className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+                    <span className="hidden sm:inline">
+                      {showFavoritesOnly ? 'Alle' : 'Favoriten'}
+                    </span>
+                  </Button>
+                )}
+
                 {/* View Toggle */}
                 <div className="flex border border-gray-300 rounded-lg overflow-hidden shadow-sm">
                   <button
@@ -1719,6 +1855,21 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                         />
                         {viewMode === 'cards' && (
                           <div className="absolute top-3 right-3 flex gap-1">
+                            {/* Favorite Button - Always visible for logged users */}
+                            {currentUserId && (
+                              <button
+                                onClick={(e) => handleToggleFavorite(item, e)}
+                                className={`p-2 rounded-full shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 ${
+                                  item.isFavorite
+                                    ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                }`}
+                                title={item.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+                              >
+                                <Star className={`h-3 w-3 ${item.isFavorite ? 'fill-current' : ''}`} />
+                              </button>
+                            )}
+                            {/* Delete Button - Only for users who can edit */}
                             {canUserEditRecipe(item.user_id) && (
                               <button
                                 onClick={(e) => {
@@ -1739,17 +1890,36 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           <h4 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 flex-1 pr-2">
                             {item.title || extractRecipeTitle(item.analysis)}
                           </h4>
-                          {viewMode === 'list' && canUserEditRecipe(item.user_id) && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDeleteRecipe(item)
-                              }}
-                              className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-sm transition-all duration-200 flex-shrink-0"
-                              title="Rezept löschen"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </button>
+                          {viewMode === 'list' && (
+                            <div className="flex gap-1 items-center">
+                              {/* Favorite Button - Always visible for logged users */}
+                              {currentUserId && (
+                                <button
+                                  onClick={(e) => handleToggleFavorite(item, e)}
+                                  className={`p-1.5 rounded-full shadow-sm transition-all mr-2 duration-200 flex-shrink-0 ${
+                                    item.isFavorite
+                                      ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                                      : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                                  }`}
+                                  title={item.isFavorite ? "Aus Favoriten entfernen" : "Zu Favoriten hinzufügen"}
+                                >
+                                  <Star className={`h-3 w-3 ${item.isFavorite ? 'fill-current' : ''}`} />
+                                </button>
+                              )}
+                              {/* Delete Button - Only for users who can edit */}
+                              {canUserEditRecipe(item.user_id) && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteRecipe(item)
+                                  }}
+                                  className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded-full shadow-sm transition-all duration-200 flex-shrink-0"
+                                  title="Rezept löschen"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
