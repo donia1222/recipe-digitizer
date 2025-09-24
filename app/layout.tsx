@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Digitalizador de Recetas',
-  description: 'Digitaliza y organiza tus recetas con IA',
+  title: 'Digitale Rezeptsammlung',
+  description: 'Pflege- und Betreuungszentrum Büelriet',
   generator: 'v0.dev',
   viewport: 'width=device-width, initial-scale=1',
   manifest: '/manifest.json',
