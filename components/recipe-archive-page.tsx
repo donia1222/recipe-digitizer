@@ -58,6 +58,9 @@ interface RecipeArchivePageProps {
 
 const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, onBack, initialSearchFilter, userRole, currentUserId }) => {
   const [history, setHistory] = useState<HistoryItem[]>([])
+  const [allRecipes, setAllRecipes] = useState<HistoryItem[]>([])
+  const [recipeCounts, setRecipeCounts] = useState<{[key: string]: number}>({})
+  const [totalRecipesFromAPI, setTotalRecipesFromAPI] = useState<number>(0)
   const [folders, setFolders] = useState<RecipeFolder[]>([])
   const [selectedFolder, setSelectedFolder] = useState<string | undefined>(undefined)
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
@@ -67,48 +70,141 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [editingFolder, setEditingFolder] = useState<string | null>(null)
   const [editFolderName, setEditFolderName] = useState("")
   const [searchQuery, setSearchQuery] = useState(initialSearchFilter || "")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMoreRecipes, setHasMoreRecipes] = useState(true)
+  const [isLoadingCategoryRecipes, setIsLoadingCategoryRecipes] = useState(false)
+  const RECIPES_PER_PAGE = 6
 
   const folderColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"]
 
-  // Load history and folders from database and localStorage
-  const loadData = async () => {
-      try {
-        // Cargar recetas desde la BD
-        console.log('📚 Cargando recetas desde la BD...');
-        const recipesFromDB = await RecipeService.getAll();
-        console.log('📚 Recetas desde BD:', recipesFromDB);
-        console.log('📚 Número de recetas desde BD:', recipesFromDB.length);
+  // Load first page of recipes from database with pagination
+  const loadData = async (reset = false) => {
+    try {
+      const pageToLoad = reset ? 1 : currentPage;
 
-        // IMPORTANTE: Sincronizar category_id de BD con folderId de frontend
-        const syncedRecipes = recipesFromDB.map((recipe: any) => {
-          // Determinar imagen principal: usar imagen principal, o primera imagen adicional si no hay principal
+      console.log(`📚 Cargando recetas (página ${pageToLoad})...`);
+
+      // Make request with pagination parameters
+      const url = `https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=${pageToLoad}&limit=${RECIPES_PER_PAGE}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        console.log(`📚 Recetas cargadas página ${pageToLoad}:`, data.data.length);
+        console.log('📝 Metadata:', data.pagination);
+
+        // Sync data format
+        const syncedRecipes = data.data.map((recipe: any) => {
           let mainImage = recipe.image_base64 || recipe.image_url || recipe.image;
 
-          // Si no hay imagen principal pero sí hay imágenes adicionales, usar la primera
           if (!mainImage && recipe.additional_images && recipe.additional_images.length > 0) {
             const firstAdditionalImage = recipe.additional_images[0];
             mainImage = firstAdditionalImage.image_base64 || firstAdditionalImage.image_url;
-            console.log('🖼️ Using first additional image as main for recipe:', recipe.id, 'has additional images:', recipe.additional_images.length);
           }
 
           return {
             ...recipe,
-            folderId: recipe.category_id || recipe.folderId, // Usar category_id de BD si existe
-            image: mainImage, // Imagen principal o primera adicional
-            // Mantener compatibilidad con el formato del historial
+            folderId: recipe.category_id || recipe.folderId,
+            image: mainImage,
             title: recipe.title || recipe.name,
             date: recipe.created_at || recipe.date,
             recipeId: recipe.recipe_id || recipe.recipeId
           };
         });
 
-        console.log('🔄 Recipes synced with categories:', syncedRecipes);
-        setHistory(syncedRecipes);
+        if (reset || pageToLoad === 1) {
+          setHistory(syncedRecipes);
+        } else {
+          setHistory(prev => [...prev, ...syncedRecipes]);
+        }
 
-      } catch (error) {
-        console.error('Error cargando recetas:', error);
-        setHistory([]); // Si hay error, mostrar lista vacía
+        // Update pagination state
+        setHasMoreRecipes(data.pagination?.hasMore || false);
+        if (reset) {
+          setCurrentPage(1);
+        }
+
+        // IMPORTANTE: Usar el total del API inmediatamente
+        if (data.pagination?.total) {
+          console.log(`📊 Total recetas desde API pagination: ${data.pagination.total}`);
+          setTotalRecipesFromAPI(data.pagination.total);
+          setRecipeCounts(prev => ({
+            ...prev,
+            'all': data.pagination.total
+          }));
+        }
+
+      } else {
+        console.error('Error en respuesta de recetas:', data);
+        if (reset || currentPage === 1) {
+          setHistory([]);
+        }
       }
+
+    } catch (error) {
+      console.error('Error cargando recetas:', error);
+      if (reset || currentPage === 1) {
+        setHistory([]);
+      }
+    }
+  };
+
+  // Load all recipes and calculate category counts immediately
+  const loadRecipeCounts = async () => {
+    try {
+      console.log('📊 Cargando conteos de recetas...');
+
+      // Get ALL recipes from API (without pagination) for counts
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=1&limit=1000');
+      const data = await response.json();
+
+      console.log('📊 API response for counts:', data);
+
+      if (data.success && data.data) {
+        const allRecipesData = data.data;
+        console.log(`📊 Total recipes from API: ${allRecipesData.length}`);
+
+        // Calculate counts immediately
+        const counts: {[key: string]: number} = {
+          'all': allRecipesData.length,
+          'favorites': allRecipesData.filter((r: any) => r.is_favorite || r.isFavorite).length
+        };
+
+        // Calculate category counts
+        folders.forEach(folder => {
+          const subfolderIds = getAllSubfolderIds(folder.id);
+          const count = subfolderIds.reduce((total, categoryId) => {
+            return total + allRecipesData.filter((r: any) =>
+              (r.category_id === categoryId) || (r.folderId === categoryId)
+            ).length;
+          }, 0);
+          counts[folder.id] = count;
+          console.log(`📊 Category "${folder.name}" (${folder.id}) has ${count} recipes`);
+        });
+
+        console.log('📊 Final counts:', counts);
+        setRecipeCounts(counts);
+
+        // Also save allRecipes for search
+        const syncedAllRecipes = allRecipesData.map((recipe: any) => ({
+          ...recipe,
+          folderId: recipe.category_id || recipe.folderId,
+          image: recipe.image_base64 || recipe.image_url || recipe.image,
+          title: recipe.title || recipe.name,
+          date: recipe.created_at || recipe.date,
+          recipeId: recipe.recipe_id || recipe.recipeId,
+          isFavorite: recipe.is_favorite || recipe.isFavorite
+        }));
+        setAllRecipes(syncedAllRecipes);
+
+      } else {
+        console.error('❌ Error en respuesta de recetas:', data);
+      }
+
+    } catch (error) {
+      console.error('❌ Error cargando conteos:', error);
+    }
   };
 
   // Load categories from database and sync with localStorage
@@ -153,6 +249,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         console.log('📁 Current folders state before update:', folders);
 
         setFolders(dbCategories);
+
+        // INMEDIATAMENTE después de cargar categorías, calcular conteos
+        console.log('🚀 Categorías cargadas, calculando conteos inmediatamente...');
+        setTimeout(() => loadRecipeCounts(), 100);
 
         // Solo guardar en localStorage si hay espacio (opcional)
         try {
@@ -235,25 +335,46 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   };
 
   useEffect(() => {
-    loadData();
+    loadData(true); // Reset to first page
     loadCategories();
   }, [])
 
-  // Debug: Monitor folders state changes
+  // Load counts after folders are loaded AND immediately after first recipe load
+  useEffect(() => {
+    if (folders.length > 0 && totalRecipesFromAPI > 0) {
+      console.log('🚀 Loading recipe counts with folders loaded and total known');
+      loadRecipeCounts();
+    }
+  }, [folders, totalRecipesFromAPI])
+
+  // Debug: Monitor folders and recipes state changes
   useEffect(() => {
     console.log('📁 FOLDERS STATE CHANGED:', folders.length, folders.map(f => f.name));
   }, [folders])
+
+  useEffect(() => {
+    console.log('📊 ALL RECIPES STATE CHANGED:', allRecipes.length);
+    if (allRecipes.length > 0) {
+      console.log('📊 Sample recipes with folderIds:', allRecipes.slice(0, 3).map(r => ({
+        id: r.id,
+        title: r.title,
+        folderId: r.folderId
+      })));
+    }
+  }, [allRecipes])
 
   // Escuchar eventos de actualización y eliminación de recetas
   useEffect(() => {
     const handleRecipeUpdate = () => {
       console.log('📚 Recipe updated event received in archive, reloading data from database...');
-      loadData(); // Esto ya recarga todo desde la base de datos
+      loadData(true); // Reset and reload from first page
+      loadRecipeCounts();
     };
 
     const handleRecipeDelete = () => {
       console.log('📚 Recipe deleted event received in archive, reloading data...');
-      loadData();
+      loadData(true); // Reset and reload from first page
+      loadRecipeCounts();
     };
 
     window.addEventListener('recipeUpdated', handleRecipeUpdate);
@@ -388,7 +509,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         await loadCategories();
         // Small delay to ensure state updates
         await new Promise(resolve => setTimeout(resolve, 100));
-        await loadData();
+        await loadData(true);
+        await loadRecipeCounts();
       } else {
         const errorText = await response.text();
         console.error('❌ Failed to update category in database:', errorText);
@@ -452,7 +574,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         await loadCategories();
         // Small delay to ensure state updates
         await new Promise(resolve => setTimeout(resolve, 100));
-        await loadData();
+        await loadData(true);
+        await loadRecipeCounts();
       } else {
         const errorText = await response.text();
         console.error('❌ Failed to delete category from database:', errorText);
@@ -552,7 +675,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           console.log('✅ Categoría actualizada en BD');
 
           // Recargar datos desde BD para sincronizar
-          await loadData();
+          await loadData(true);
+          await loadRecipeCounts();
         } else {
           console.error('❌ Error updating category in DB');
         }
@@ -760,7 +884,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
   // Apply search filter - Si hay búsqueda, buscar en TODAS las recetas sin importar carpeta
   const searchFilteredHistory = searchQuery
-    ? history.filter((item) => {
+    ? allRecipes.filter((item) => {
         const searchLower = searchQuery.toLowerCase()
         const title = item.title?.toLowerCase() || ""
         const analysis = item.analysis?.toLowerCase() || ""
@@ -768,7 +892,130 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       })
     : filteredHistory
 
-  const favoriteRecipes = history.filter((item) => item.isFavorite)
+  // Load more recipes function
+  const loadMoreRecipes = async () => {
+    if (isLoadingMore || !hasMoreRecipes) return;
+
+    setIsLoadingMore(true);
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+
+    try {
+      console.log(`📚 Cargando más recetas (página ${nextPage})...`);
+
+      const url = `https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=${nextPage}&limit=${RECIPES_PER_PAGE}`;
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const syncedRecipes = data.data.map((recipe: any) => {
+          let mainImage = recipe.image_base64 || recipe.image_url || recipe.image;
+
+          if (!mainImage && recipe.additional_images && recipe.additional_images.length > 0) {
+            const firstAdditionalImage = recipe.additional_images[0];
+            mainImage = firstAdditionalImage.image_base64 || firstAdditionalImage.image_url;
+          }
+
+          return {
+            ...recipe,
+            folderId: recipe.category_id || recipe.folderId,
+            image: mainImage,
+            title: recipe.title || recipe.name,
+            date: recipe.created_at || recipe.date,
+            recipeId: recipe.recipe_id || recipe.recipeId
+          };
+        });
+
+        setHistory(prev => [...prev, ...syncedRecipes]);
+        setHasMoreRecipes(data.pagination?.hasMore || false);
+
+        console.log(`✅ Cargadas ${syncedRecipes.length} recetas más`);
+      } else {
+        setHasMoreRecipes(false);
+      }
+
+    } catch (error) {
+      console.error('Error cargando más recetas:', error);
+      setHasMoreRecipes(false);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Load recipes for specific category or search
+  const loadCategoryOrSearchRecipes = async (categoryId?: string, searchTerm?: string) => {
+    if (isLoadingCategoryRecipes) return;
+
+    setIsLoadingCategoryRecipes(true);
+
+    try {
+      console.log(`🔍 Cargando recetas para categoría: ${categoryId} o búsqueda: ${searchTerm}`);
+
+      // Get ALL recipes and filter by category or search
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=1&limit=1000');
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const allRecipesData = data.data.map((recipe: any) => {
+          let mainImage = recipe.image_base64 || recipe.image_url || recipe.image;
+
+          if (!mainImage && recipe.additional_images && recipe.additional_images.length > 0) {
+            const firstAdditionalImage = recipe.additional_images[0];
+            mainImage = firstAdditionalImage.image_base64 || firstAdditionalImage.image_url;
+          }
+
+          return {
+            ...recipe,
+            folderId: recipe.category_id || recipe.folderId,
+            image: mainImage,
+            title: recipe.title || recipe.name,
+            date: recipe.created_at || recipe.date,
+            recipeId: recipe.recipe_id || recipe.recipeId,
+            isFavorite: recipe.is_favorite || recipe.isFavorite
+          };
+        });
+
+        let filteredRecipes = allRecipesData;
+
+        if (categoryId === "favorites") {
+          // Filter by favorites
+          filteredRecipes = allRecipesData.filter((recipe: any) => recipe.isFavorite);
+          console.log(`🔍 Filtered ${filteredRecipes.length} favorite recipes`);
+        } else if (categoryId) {
+          // Filter by category
+          const allowedIds = getAllSubfolderIds(categoryId);
+          filteredRecipes = allRecipesData.filter((recipe: any) =>
+            allowedIds.includes(recipe.folderId || "")
+          );
+          console.log(`🔍 Filtered ${filteredRecipes.length} recipes for category ${categoryId}`);
+        } else if (searchTerm) {
+          // Filter by search term
+          const searchLower = searchTerm.toLowerCase();
+          filteredRecipes = allRecipesData.filter((recipe: any) => {
+            const title = recipe.title?.toLowerCase() || "";
+            const analysis = recipe.analysis?.toLowerCase() || "";
+            return title.includes(searchLower) || analysis.includes(searchLower);
+          });
+          console.log(`🔍 Filtered ${filteredRecipes.length} recipes for search "${searchTerm}"`);
+        }
+
+        // Replace current history with filtered results
+        setHistory(filteredRecipes);
+        setHasMoreRecipes(false); // No pagination for category/search results
+        setCurrentPage(1);
+
+      } else {
+        console.error('Error loading category/search recipes:', data);
+      }
+
+    } catch (error) {
+      console.error('Error loading category/search recipes:', error);
+    } finally {
+      setIsLoadingCategoryRecipes(false);
+    }
+  };
+
+  const favoriteRecipes = allRecipes.filter((item) => item.isFavorite)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -811,7 +1058,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
               {/* All Recipes */}
               <button
-                onClick={() => setSelectedFolder(undefined)}
+                onClick={() => {
+                  setSelectedFolder(undefined);
+                  loadData(true); // Reset to paginated view
+                }}
                 className={`w-full text-left p-3 rounded-lg mb-2 transition-all duration-200 flex items-center gap-3 ${
                   selectedFolder === undefined
                     ? "bg-blue-50 text-blue-700 border border-blue-200"
@@ -819,16 +1069,20 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 }`}
               >
                 <ChefHat className="h-4 w-4" />
-                <span className="font-medium">All Recipes</span>
+                <span className="font-medium">Alle Rezepte</span>
                 <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
-                  {history.length}
+                  {totalRecipesFromAPI || recipeCounts['all'] || allRecipes.length}
                 </span>
               </button>
 
               {/* Favorites */}
               {favoriteRecipes.length > 0 && (
                 <button
-                  onClick={() => setSelectedFolder("favorites")}
+                  onClick={() => {
+                    setSelectedFolder("favorites");
+                    // Load all favorite recipes
+                    loadCategoryOrSearchRecipes("favorites");
+                  }}
                   className={`w-full text-left p-3 rounded-lg mb-2 transition-all duration-200 flex items-center gap-3 ${
                     selectedFolder === "favorites"
                       ? "bg-amber-50 text-amber-700 border border-amber-200"
@@ -836,9 +1090,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                   }`}
                 >
                   <Star className="h-4 w-4" />
-                  <span className="font-medium">Favorites</span>
+                  <span className="font-medium">Favoriten</span>
                   <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
-                    {favoriteRecipes.length}
+                    {recipeCounts['favorites'] || 0}
                   </span>
                 </button>
               )}
@@ -894,7 +1148,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                           </div>
                         ) : (
                           <div
-                            onClick={() => setSelectedFolder(folder.id)}
+                            onClick={() => {
+                              setSelectedFolder(folder.id);
+                              loadCategoryOrSearchRecipes(folder.id);
+                            }}
                             className={`flex-1 text-left p-3 rounded-lg transition-all duration-200 flex items-center gap-3 group cursor-pointer border ${
                               selectedFolder === folder.id
                                 ? "bg-blue-50 text-blue-700 border-blue-200"
@@ -935,10 +1192,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: folder.color }} />
                             <span className="flex-1 truncate font-medium">{folder.name}</span>
                             <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full font-medium">
-                              {getAllSubfolderIds(folder.id).reduce(
-                                (count, id) => count + history.filter((item) => item.folderId === id).length,
-                                0,
-                              )}
+                              {recipeCounts[folder.id] || 0}
                             </span>
 
                             {/* Edit and Delete buttons for main categories */}
@@ -1028,7 +1282,10 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                       ? "bg-blue-50 text-blue-700 border-blue-200"
                                       : "hover:bg-gray-50 text-gray-700 border-transparent hover:border-gray-200"
                                   }`}
-                                  onClick={() => setSelectedFolder(subcategory.id)}
+                                  onClick={() => {
+                                    setSelectedFolder(subcategory.id);
+                                    loadCategoryOrSearchRecipes(subcategory.id);
+                                  }}
                                 >
                                   <div
                                     className="w-2 h-2 rounded-full"
@@ -1036,7 +1293,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                                   />
                                   <span className="flex-1 truncate text-sm font-medium">{subcategory.name}</span>
                                   <span className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full font-medium">
-                                    {history.filter((item) => item.folderId === subcategory.id).length}
+                                    {recipeCounts[subcategory.id] || 0}
                                   </span>
 
                                   {/* Edit and Delete buttons for subcategories */}
@@ -1134,15 +1391,33 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
                   {selectedFolder === "favorites"
-                    ? "Favorites"
+                    ? "Favoriten"
                     : selectedFolder
                       ? folders.find((f) => f.id === selectedFolder)?.name
-                      : "All Recipes"}
+                      : "Alle Rezepte"}
                 </h3>
                 <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
-                  {searchQuery && searchFilteredHistory.length !== filteredHistory.length
-                    ? `${searchFilteredHistory.length} von ${selectedFolder === "favorites" ? favoriteRecipes.length : filteredHistory.length}`
-                    : selectedFolder === "favorites" ? favoriteRecipes.length : filteredHistory.length} recipes
+                  {(() => {
+                    if (searchQuery) {
+                      // If searching, show search results count
+                      return `${history.length} Rezepte`;
+                    } else if (selectedFolder === "favorites") {
+                      // If favorites selected, show favorites count
+                      return `${recipeCounts['favorites'] || 0} Rezepte`;
+                    } else if (selectedFolder) {
+                      // If category selected, show category count
+                      return `${recipeCounts[selectedFolder] || 0} Rezepte`;
+                    } else {
+                      // If "All Recipes" selected, show total or paginated info
+                      const total = totalRecipesFromAPI || recipeCounts['all'] || 0;
+                      const showing = history.length;
+                      if (hasMoreRecipes && !searchQuery) {
+                        return `${showing} von ${total} Rezepte`;
+                      } else {
+                        return `${total} Rezepte`;
+                      }
+                    }
+                  })()}
                 </span>
               </div>
 
@@ -1153,12 +1428,28 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                   type="text"
                   placeholder="Suche nach Rezepttitel oder Inhalt..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const newSearchQuery = e.target.value;
+                    setSearchQuery(newSearchQuery);
+
+                    if (newSearchQuery.trim()) {
+                      // If searching, load all matching recipes
+                      setSelectedFolder(undefined); // Clear category selection
+                      loadCategoryOrSearchRecipes(undefined, newSearchQuery.trim());
+                    } else {
+                      // If search cleared, reload paginated view
+                      loadData(true);
+                    }
+                  }}
                   className="w-full pl-10 pr-4 py-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                 />
                 {searchQuery && (
                   <button
-                    onClick={() => setSearchQuery("")}
+                    onClick={() => {
+                      setSearchQuery("");
+                      setSelectedFolder(undefined);
+                      loadData(true); // Reset to paginated view
+                    }}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     <X className="h-4 w-4" />
@@ -1237,6 +1528,26 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                 ))}
               </AnimatePresence>
             </div>
+
+            {/* Ver más button - Only show if not searching and has more recipes */}
+            {!searchQuery && hasMoreRecipes && searchFilteredHistory.length > 0 && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  onClick={loadMoreRecipes}
+                  disabled={isLoadingMore}
+                  className="bg-blue-600 hover:bg-blue-700 px-6 py-2 font-medium"
+                >
+                  {isLoadingMore ? (
+                    <>
+                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                      Lädt...
+                    </>
+                  ) : (
+                    'Mehr anzeigen'
+                  )}
+                </Button>
+              </div>
+            )}
 
             {searchFilteredHistory.length === 0 && (
               <div className="text-center py-16">

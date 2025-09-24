@@ -106,10 +106,14 @@ switch ($method) {
         try {
             $id = $_GET['id'] ?? null;
             $user_id = $_GET['user_id'] ?? null;
+            $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+            $limit = isset($_GET['limit']) ? max(1, min(50, (int)$_GET['limit'])) : 6; // Default 6, max 50
+            $offset = ($page - 1) * $limit;
 
             // Debug: Log what we received
             error_log("DEBUG: Received id parameter: " . ($id ?? "NULL"));
             error_log("DEBUG: Received user_id parameter: " . ($user_id ?? "NULL"));
+            error_log("DEBUG: Pagination - page: {$page}, limit: {$limit}, offset: {$offset}");
             error_log("DEBUG: All GET parameters: " . json_encode($_GET));
 
             // Si se proporciona ID, obtener receta específica
@@ -155,12 +159,21 @@ switch ($method) {
                 exit;
             }
 
+            // Obtener el conteo total ANTES de aplicar LIMIT
+            if ($user_id) {
+                $countStmt = $pdo->prepare("SELECT COUNT(*) FROM recipes WHERE user_id = ?");
+                $countStmt->execute([$user_id]);
+            } else {
+                $countStmt = $pdo->query("SELECT COUNT(*) FROM recipes");
+            }
+            $totalRecipes = (int)$countStmt->fetchColumn();
+
             if ($user_id) {
                 // Debug: Ver todos los user_ids disponibles
                 $debug_stmt = $pdo->query("SELECT DISTINCT user_id FROM recipes");
                 $all_user_ids = $debug_stmt->fetchAll(PDO::FETCH_COLUMN);
 
-                // Filtrar por usuario específico
+                // Filtrar por usuario específico CON PAGINACIÓN
                 error_log("DEBUG: Filtering by user_id: " . $user_id);
                 error_log("DEBUG: Available user_ids: " . json_encode($all_user_ids));
 
@@ -170,17 +183,20 @@ switch ($method) {
                     LEFT JOIN recipe_categories c ON r.category_id = c.id
                     WHERE r.user_id = ?
                     ORDER BY r.created_at DESC
+                    LIMIT ? OFFSET ?
                 ");
-                $stmt->execute([$user_id]);
+                $stmt->execute([$user_id, $limit, $offset]);
             } else {
-                // Devolver todas las recetas
-                error_log("DEBUG: No user_id provided, returning all recipes");
-                $stmt = $pdo->query("
+                // Devolver recetas paginadas
+                error_log("DEBUG: No user_id provided, returning paginated recipes");
+                $stmt = $pdo->prepare("
                     SELECT r.*, c.name as category_name, c.color as category_color
                     FROM recipes r
                     LEFT JOIN recipe_categories c ON r.category_id = c.id
                     ORDER BY r.created_at DESC
+                    LIMIT ? OFFSET ?
                 ");
+                $stmt->execute([$limit, $offset]);
             }
 
             $recipes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -211,6 +227,10 @@ switch ($method) {
                 }
             }
 
+            // Calcular información de paginación
+            $totalPages = ceil($totalRecipes / $limit);
+            $hasMore = $page < $totalPages;
+
             echo json_encode([
                 'success' => true,
                 'data' => $recipes,
@@ -221,10 +241,12 @@ switch ($method) {
                     'all_user_ids_in_db' => $user_id ? $all_user_ids : 'not_requested'
                 ],
                 'pagination' => [
-                    'page' => 1,
-                    'limit' => 12,
-                    'total' => count($recipes),
-                    'pages' => 1
+                    'page' => $page,
+                    'limit' => $limit,
+                    'total' => $totalRecipes,
+                    'pages' => $totalPages,
+                    'hasMore' => $hasMore,
+                    'returned' => count($recipes)
                 ]
             ]);
         } catch (Exception $e) {
