@@ -944,7 +944,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             <Button
               onClick={handlePrint}
               size="sm"
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200 whitespace-nowrap"
             >
               <Printer className="h-4 w-4" />
               <span>Drucken</span>
