@@ -68,7 +68,7 @@ export default function HomeDashboard({
                 </div>
                 <div>
       
-                  <p className="text-sm text-gray-600">Digitale Rezeptsammlung</p>
+                  <p className="text-sm text-gray-600">Rezeptsammlung</p>
                 </div>
               </div>
             </div>
