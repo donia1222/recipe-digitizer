@@ -876,7 +876,14 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           {canEditRecipe && (
             <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
               <DialogTrigger asChild>
-   
+                  <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Bild hinzufügen
+                </Button>
               </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-white border border-gray-200">
               <DialogHeader>
@@ -907,14 +914,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
         <div className="overflow-x-auto mt-2 sm:mt-0">
           <div className="flex gap-2 min-w-max pb-2">
-                         <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300"
-                >
-                  <ImagePlus className="h-4 w-4" />
-                  Bild hinzufügen
-                </Button>
+          
             {onServingsClick && (
               <Button
                 onClick={onServingsClick}
