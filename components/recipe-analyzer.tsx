@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Download, Printer, Share, ImagePlus, X, ChevronLeft, ChevronRight, Eye, Users, Edit, Trash2 } from "lucide-react"
+import { Download, Printer, Share, ImagePlus, X, ChevronLeft, ChevronRight, Eye, Users, Edit, Trash2, ChefHat, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -39,7 +39,82 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   createdAt,
   approvalMessage,
 }) => {
-  const sections = recipe.split("\n\n")
+  // Function to detect and format manual recipes
+  const parseRecipe = (recipeText: string) => {
+    // Check if this is a manual recipe (created by formatRecipeForArchive)
+    const isManualRecipe = recipeText.includes("Zutaten:") && recipeText.includes("Zubereitung:")
+
+    if (isManualRecipe) {
+      console.log('🔍 Manual recipe detected, formatting specially...')
+      console.log('🔍 Original recipe text:', recipeText)
+
+      // Split by the main sections
+      const parts = recipeText.split(/(?=Zutaten:|Zubereitung:)/)
+      console.log('🔍 Split parts:', parts)
+      const sections: string[] = []
+
+      // Extract title and description (everything before "Zutaten:")
+      const titleAndDesc = parts[0].trim()
+      if (titleAndDesc) {
+        const lines = titleAndDesc.split('\n').filter(line => line.trim())
+        if (lines.length > 0) {
+          sections.push(lines[0]) // Title as first section
+          if (lines.length > 1) {
+            sections.push(lines.slice(1).join('\n').trim()) // Description if exists
+          }
+        }
+      }
+
+      // Extract Zutaten section and process ingredients
+      const zutatenSection = parts.find(part => part.trim().startsWith('Zutaten:'))
+      if (zutatenSection) {
+        let processedZutaten = zutatenSection.trim()
+
+        // Remove bullet points from ingredients
+        // From: "Zutaten:\n• ingredient1\n• ingredient2"
+        // To: "Zutaten:\ningredient1\ningredient2"
+        if (processedZutaten.includes('•')) {
+          processedZutaten = processedZutaten.replace(/^\s*•\s*/gm, '')
+        }
+
+        console.log('🔍 Processed Zutaten section:', processedZutaten)
+        sections.push(processedZutaten)
+      }
+
+      // Extract Zubereitung section and clean it
+      const zubereitungSection = parts.find(part => part.trim().startsWith('Zubereitung:'))
+      if (zubereitungSection) {
+        let cleanedZubereitung = zubereitungSection.trim()
+
+        // Remove only creator info, keep cooking time and portions
+        cleanedZubereitung = cleanedZubereitung
+          .replace(/\nErstellt von:[\s\S]*$/, '')
+          .replace(/\nErstellt am:[\s\S]*$/, '')
+
+        console.log('🔍 Cleaned Zubereitung:', cleanedZubereitung)
+        sections.push(cleanedZubereitung)
+      }
+
+      // Clean up sections - remove meaningless sections but keep real content
+      const cleanedSections = sections.filter(section => {
+        const trimmed = section.trim()
+        // Filter out very short meaningless sections
+        return trimmed.length > 0 &&
+               !(/^\d+$/.test(trimmed)) && // Remove pure numbers like "1", "2"
+               !(trimmed.length <= 3 && /^[a-zA-Z]+$/.test(trimmed)) // Remove short letter-only like "q", "qqq"
+      })
+
+      console.log('🔍 All sections before cleaning:', sections)
+      console.log('🔍 Cleaned sections:', cleanedSections)
+
+      return { sections: cleanedSections, isManual: true }
+    } else {
+      // Regular digitized recipe - use original splitting
+      return { sections: recipeText.split("\n\n"), isManual: false }
+    }
+  }
+
+  const { sections, isManual } = parseRecipe(recipe)
   const [recipeImages, setRecipeImages] = useState<string[]>([])
   const [showImageModal, setShowImageModal] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -801,14 +876,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           {canEditRecipe && (
             <Dialog open={showImageModal} onOpenChange={setShowImageModal}>
               <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 bg-white border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors duration-200"
-                >
-                  <ImagePlus className="h-4 w-4" />
-                  <span>Bild hinzufügen</span>
-                </Button>
+   
               </DialogTrigger>
             <DialogContent className="sm:max-w-md bg-white border border-gray-200">
               <DialogHeader>
@@ -839,6 +907,14 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
         <div className="overflow-x-auto mt-2 sm:mt-0">
           <div className="flex gap-2 min-w-max pb-2">
+                         <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-green-50 hover:border-green-300"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                  Bild hinzufügen
+                </Button>
             {onServingsClick && (
               <Button
                 onClick={onServingsClick}
@@ -860,7 +936,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             <Button
               onClick={handleSaveAsImage}
               size="sm"
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 whitespace-nowrap"
             >
               <Download className="h-4 w-4" />
               <span>Herunterladen</span>
@@ -868,7 +944,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             <Button
               onClick={handlePrint}
               size="sm"
-              className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white transition-colors duration-200 whitespace-nowrap"
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200 whitespace-nowrap"
             >
               <Printer className="h-4 w-4" />
               <span>Drucken</span>
@@ -940,15 +1016,23 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
       )}
 
       {/* Recipe Title */}
-      <div className="text-center py-6">
-        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance">{getRecipeTitle()}</h2>
+      <div className="text-center py-8">
+        <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-balance mb-4">{getRecipeTitle()}</h2>
         {(userId || createdAt) && (
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mt-3">
-            <span>Von {userName}</span>
+          <div className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-50 to-green-50 border border-gray-200 rounded-full px-6 py-3 shadow-sm">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                <ChefHat className="h-4 w-4 text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-800">Von {userName}</span>
+            </div>
             {createdAt && (
               <>
-                <span>•</span>
-                <span>{formatDate(createdAt)}</span>
+                <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">{formatDate(createdAt)}</span>
+                </div>
               </>
             )}
           </div>
@@ -968,18 +1052,20 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
             section.toLowerCase().includes("instruction") ||
             section.toLowerCase().includes("direction") ||
             section.toLowerCase().includes("step") ||
-            section.toLowerCase().includes("preparation") ||
-            section.toLowerCase().includes("zutaten") ||
-            section.toLowerCase().includes("zubereitung"))
+            section.toLowerCase().includes("preparation")) &&
+          !(isManual && (section.trim().startsWith("Zutaten:") || section.trim().startsWith("Zubereitung:")))
 
         const isIngredientList =
           section.toLowerCase().includes("zutaten") ||
           section.toLowerCase().includes("ingredients") ||
+          (isManual && section.trim().startsWith("Zutaten:")) ||
           section
             .split("\n")
             .some((line) =>
               /^\s*[-•*]?\s*\d+(\.\d+)?\s*(cup|tbsp|tsp|g|oz|lb|ml|l|teaspoon|tablespoon|pound|ounce|gram)/i.test(line),
             )
+
+        console.log(`🔍 Section "${section.substring(0, 30)}..." - isHeader: ${isHeader}, isIngredientList: ${isIngredientList}, isManual: ${isManual}`)
 
         if (isHeader) {
           return (
@@ -1008,6 +1094,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
 
                 const currentNumber = ingredientCounter++
 
+                // For ingredients: WITH NUMBERS (1, 2, 3...)
                 return (
                   <div
                     key={lineIndex}
@@ -1024,12 +1111,42 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
           )
         } else {
           const lines = section.split("\n").filter((line) => line.trim() !== "")
-          const isNumberedList = lines.some((line) => /^\s*\d+\./.test(line))
 
-          // NO automatic numbering for any other sections - only show as plain text
+          // Special formatting for manual recipe Zubereitung section
+          if (isManual && section.trim().startsWith("Zubereitung:")) {
+            return (
+              <div key={index} className="bg-white p-6 rounded-lg border-2 border-gray-200 shadow-sm">
+                {lines.map((line, lineIndex) => {
+                  // Skip title line like "Zubereitung:"
+                  if (line.toLowerCase().includes("zubereitung:")) {
+                    return (
+                      <div key={lineIndex} className="mb-4">
+                        <h4 className="text-xl font-semibold text-gray-900">{line}</h4>
+                      </div>
+                    )
+                  }
+
+                  // Skip empty lines
+                  if (line.trim() === "") return null
+
+                  // For preparation: NO NUMBERS, just plain text
+                  return (
+                    <div
+                      key={lineIndex}
+                      className="py-2 text-gray-800 leading-relaxed text-lg"
+                    >
+                      {line}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          }
+
+          // Regular text sections (description, etc.)
           return (
             <div key={index} className="bg-white p-6 rounded-lg border-2 border-gray-200 shadow-sm">
-              <p className="whitespace-pre-line text-gray-800 leading-relaxed">{section}</p>
+              <p className="whitespace-pre-line text-gray-800 leading-relaxed text-lg">{section}</p>
             </div>
           )
         }
