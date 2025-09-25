@@ -43,10 +43,12 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [reviewAction, setReviewAction] = useState<'approve' | 'reject' | null>(null)
   const [loading, setLoading] = useState(false)
+  const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0 })
 
   // Cargar recetas pendientes al montar el componente
   useEffect(() => {
     loadPendingRecipes()
+    loadStats()
   }, [])
 
   const loadPendingRecipes = async () => {
@@ -106,6 +108,28 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
     }
   }
 
+  const loadStats = async () => {
+    try {
+      const response = await fetch('https://web.lweb.ch/recipedigitalizer/apis/pending-recipes.php?stats=true', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-cache'
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.stats) {
+          setStats(result.stats)
+          console.log('📊 Loaded stats:', result.stats)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error)
+    }
+  }
+
   const handleReviewRecipe = (recipe: PendingRecipe, action: 'approve' | 'reject') => {
     setSelectedRecipe(recipe)
     setReviewAction(action)
@@ -135,8 +159,9 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
-          // Recargar las recetas después de la acción
+          // Recargar las recetas y estadísticas después de la acción
           await loadPendingRecipes()
+          await loadStats()
 
           // Disparar evento para notificar a otras páginas
           if (reviewAction === 'approve') {
@@ -197,9 +222,10 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
     }
   }
 
-  const pendingCount = pendingRecipes.filter(r => r.status === 'pending').length
-  const approvedCount = pendingRecipes.filter(r => r.status === 'approved').length
-  const rejectedCount = pendingRecipes.filter(r => r.status === 'rejected').length
+  // Usar estadísticas del API en lugar de contadores locales
+  const pendingCount = stats.pending
+  const approvedCount = stats.approved
+  const rejectedCount = stats.rejected
 
   // Funciones helpers para parsear ingredientes e instrucciones
   const parseIngredients = (ingredients: string | string[] | undefined): string[] => {
@@ -373,10 +399,10 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
                         onClick={() => handleViewRecipe(recipe)}
                         variant="outline"
                         size="sm"
-                        className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                        className="bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 ml-4"
                       >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Details anzeigen
+                        <Eye className="h-4 w-4 " />
+               
                       </Button>
 
                       {recipe.status === 'pending' && (

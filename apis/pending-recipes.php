@@ -28,6 +28,40 @@ $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
     case 'GET':
+        // Check if requesting statistics
+        if (isset($_GET['stats']) && $_GET['stats'] === 'true') {
+            try {
+                // Get pending count
+                $pendingStmt = $pdo->query("SELECT COUNT(*) as count FROM recetas_pendientes");
+                $pendingCount = $pendingStmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+                // Get approved count (from main recipes table with approved status)
+                $approvedStmt = $pdo->query("SELECT COUNT(*) as count FROM recipes WHERE status = 'approved'");
+                $approvedCount = $approvedStmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+                // Get rejected count from audit log
+                $rejectedStmt = $pdo->query("
+                    SELECT COUNT(*) as count
+                    FROM audit_log
+                    WHERE action = 'reject_recipe' AND DATE(created_at) >= DATE(NOW() - INTERVAL 30 DAY)
+                ");
+                $rejectedCount = $rejectedStmt->fetch(PDO::FETCH_ASSOC)['count'];
+
+                echo json_encode([
+                    'success' => true,
+                    'stats' => [
+                        'pending' => (int)$pendingCount,
+                        'approved' => (int)$approvedCount,
+                        'rejected' => (int)$rejectedCount
+                    ]
+                ]);
+
+            } catch (Exception $e) {
+                echo json_encode(['error' => 'Error getting statistics: ' . $e->getMessage()]);
+            }
+            break;
+        }
+
         // Obtener todas las recetas pendientes
         try {
             $stmt = $pdo->query("

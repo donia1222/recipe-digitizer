@@ -28,7 +28,6 @@ import {
   Download,
   Sparkles,
   Edit,
-  Bell,
 
 
 } from "lucide-react"
@@ -176,9 +175,9 @@ export default function HomeDashboard({
                     size="sm"
                     className="relative border-gray-300 hover:bg-gray-50"
                   >
-                    <Bell className="h-4 w-4" />
+                    <Shield className="h-4 w-4" />
                     {pendingNotifications > 0 && (
-                      <Badge className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs">
+                      <Badge className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs min-w-[16px] h-4 flex items-center justify-center rounded-full px-1">
                         {pendingNotifications}
                       </Badge>
                     )}
@@ -189,7 +188,7 @@ export default function HomeDashboard({
                     <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-200 z-50">
                       <div className="p-4 border-b border-gray-200">
                         <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                          <Bell className="h-4 w-4" />
+                          <Shield className="h-4 w-4" />
                          Ausstehende Rezepte
                         </h3>
                       </div>
@@ -260,90 +259,72 @@ export default function HomeDashboard({
         </div>
 
         {(userRole === "admin" || userRole === "worker") && (
-          <div className="max-w-4xl mx-auto mb-8">
-            <Card
-              className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
-              onClick={onStartDigitalization}
-            >
-              <CardContent className="p-8 sm:p-12">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:bg-blue-700 transition-colors duration-200">
-                      <Scan className="h-8 w-8 text-white" />
+          <div className="max-w-6xl mx-auto mb-12">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+              <Card
+                className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+                onClick={onStartDigitalization}
+              >
+                <CardHeader className="pb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-blue-200 transition-colors duration-200 mb-4">
+                    <Scan className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-xl font-semibold text-gray-900">Rezepte Digitalisieren</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Scannen oder fotografieren Sie Ihre Rezepte, um sie zu digitalisieren
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Camera className="h-4 w-4" />
+                      <span>Foto machen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Upload className="h-4 w-4" />
+                      <span>Bild hochladen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Scan className="h-4 w-4" />
+                      <span>Scannen</span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
 
-                  <div className="flex-1 text-center sm:text-left">
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Rezepte Digitalisieren</h3>
-                    <p className="text-lg text-gray-600 mb-6">
-                      Scannen oder fotografieren Sie Ihre Rezepte, um sie zu digitalisieren
-                    </p>
-                    <div className="flex items-center justify-center sm:justify-start gap-6 text-sm text-gray-500">
-                      <div className="flex items-center gap-2">
-                        <Camera className="h-4 w-4" />
-                        <span>Foto machen</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Upload className="h-4 w-4" />
-                        <span>Bild hochladen</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Scan className="h-4 w-4" />
-                        <span>Scannen</span>
-                      </div>
+              {onOpenManualRecipes && (
+                <Card
+                  className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
+                  onClick={onOpenManualRecipes}
+                >
+                  <CardHeader className="pb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center shadow-sm group-hover:bg-green-200 transition-colors duration-200 mb-4">
+                      <Edit className="h-6 w-6 text-green-600" />
                     </div>
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    <ArrowRight className="h-6 w-6 text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all duration-200" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {(userRole === "admin" || userRole === "worker") && onOpenManualRecipes && (
-          <div className="max-w-4xl mx-auto mb-12">
-            <Card
-              className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group"
-              onClick={onOpenManualRecipes}
-            >
-              <CardContent className="p-8 sm:p-12">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="flex-shrink-0">
-                    <div className="w-16 h-16 bg-green-600 rounded-xl flex items-center justify-center shadow-sm group-hover:bg-green-700 transition-colors duration-200">
-                      <Edit className="h-8 w-8 text-white" />
-                    </div>
-                  </div>
-
-                  <div className="flex-1 text-center sm:text-left">
-                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Manuelle Rezepte</h3>
-                    <p className="text-lg text-gray-600 mb-6">
+                    <CardTitle className="text-xl font-semibold text-gray-900">Manuelle Rezepte</CardTitle>
+                    <CardDescription className="text-gray-600">
                       Erstellen Sie Rezepte von Hand mit unserem benutzerfreundlichen Formular
-                    </p>
-                    <div className="flex items-center justify-center sm:justify-start gap-6 text-sm text-gray-500">
-                      <div className="flex items-center gap-2">
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Edit className="h-4 w-4" />
                         <span>Rezept schreiben</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Plus className="h-4 w-4" />
                         <span>Zutaten hinzufügen</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
                         <Send className="h-4 w-4" />
                         <span>An Admin senden</span>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="flex-shrink-0">
-                    <ArrowRight className="h-6 w-6 text-gray-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all duration-200" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </div>
         )}
 
