@@ -386,11 +386,9 @@ export default function LoginPage({ onLogin, onBackToLanding }: LoginPageProps) 
                 </Button>
 
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-blue-600" />
-                  </div>
+              
                   <div>
-                    <h1 className="text-2xl font-semibold text-gray-900">Anmeldung</h1>
+                
                     <p className="text-sm text-gray-600">Wählen Sie Ihre Rolle, um fortzufahren</p>
                   </div>
                 </div>

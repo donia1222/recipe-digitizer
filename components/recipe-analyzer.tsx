@@ -873,7 +873,7 @@ const RecipeAnalyzer: React.FC<RecipeAnalyzerProps> = ({
   return (
     <div className="space-y-6 mb-20">
       {/* Action buttons */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between border-b border-gray-200 pb-4">
+      <div className="flex flex-col sm:flex-row gap-3 sm:justify-between border-b border-gray-200 pb-4 mt-20">
         <div className="flex flex-wrap gap-2">
           {canEditRecipe && (
             <Dialog open={showImageModal} onOpenChange={setShowImageModal}>

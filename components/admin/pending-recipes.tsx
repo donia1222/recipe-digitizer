@@ -64,25 +64,36 @@ export default function PendingRecipes({ pendingRecipes, setPendingRecipes, setN
         const result = await response.json()
         if (result.success && result.data) {
           // Mapear los datos de la API al formato del componente
-          const mappedRecipes = result.data.map((recipe: any) => ({
-            id: recipe.id.toString(),
-            recipe_id: recipe.recipe_id,
-            title: recipe.title || 'Sin título',
-            user: recipe.user_name || 'Usuario desconocido',
-            user_name: recipe.user_name,
-            date: recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('de-DE') : 'Sin fecha',
-            created_at: recipe.created_at,
-            status: 'pending' as const,
-            image: recipe.image_url || recipe.image_base64 || '',
-            image_url: recipe.image_url,
-            image_base64: recipe.image_base64,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            analysis: recipe.analysis,
-            servings: recipe.servings,
-            category: recipe.category,
-            additional_images: recipe.additional_images || []
-          }))
+          const mappedRecipes = result.data.map((recipe: any) => {
+            // SIEMPRE convertir Usuario # a Admin
+            let displayUserName = recipe.user_name || 'Usuario desconocido'
+
+            // Si contiene "Usuario #" cambiar directamente a Admin
+            if (displayUserName.includes('Usuario #') || displayUserName.startsWith('Usuario #')) {
+              displayUserName = 'Admin'
+              console.log('🔧 Convirtiendo', recipe.user_name, 'a Admin')
+            }
+
+            return {
+              id: recipe.id.toString(),
+              recipe_id: recipe.recipe_id,
+              title: recipe.title || 'Sin título',
+              user: displayUserName,
+              user_name: displayUserName,
+              date: recipe.created_at ? new Date(recipe.created_at).toLocaleDateString('de-DE') : 'Sin fecha',
+              created_at: recipe.created_at,
+              status: 'pending' as const,
+              image: recipe.image_url || recipe.image_base64 || '',
+              image_url: recipe.image_url,
+              image_base64: recipe.image_base64,
+              ingredients: recipe.ingredients,
+              instructions: recipe.instructions,
+              analysis: recipe.analysis,
+              servings: recipe.servings,
+              category: recipe.category,
+              additional_images: recipe.additional_images || []
+            }
+          })
 
           setPendingRecipes(mappedRecipes)
           setNotifications(mappedRecipes.length)

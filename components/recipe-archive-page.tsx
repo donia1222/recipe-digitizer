@@ -27,6 +27,8 @@ import {
   Users,
   Grid3x3,
   List,
+  BookOpen,
+  Loader2,
 } from "lucide-react"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
@@ -82,6 +84,7 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMoreRecipes, setHasMoreRecipes] = useState(true)
   const [isLoadingCategoryRecipes, setIsLoadingCategoryRecipes] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [recipeToDelete, setRecipeToDelete] = useState<HistoryItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -96,6 +99,9 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
     return true // Default to collapsed on SSR
   })
+  const [animateFavoritesButton, setAnimateFavoritesButton] = useState(false)
+  const [favoritesCount, setFavoritesCount] = useState(0)
+  const [badgeKey, setBadgeKey] = useState(0) // Force re-render of badge
   const RECIPES_PER_PAGE = 6
 
   const folderColors = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899"]
@@ -173,6 +179,11 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
       console.log(`📚 Cargando recetas (página ${pageToLoad})...`);
 
+      // Set initial loading only for first page
+      if (pageToLoad === 1) {
+        setIsInitialLoading(true);
+      }
+
       // Make request with pagination parameters
       const url = `https://web.lweb.ch/recipedigitalizer/apis/recipes-simple.php?page=${pageToLoad}&limit=${RECIPES_PER_PAGE}`;
       const response = await fetch(url);
@@ -215,7 +226,12 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         }
 
         // Load actual favorites status for current user
-        loadUserFavorites();
+        loadUserFavorites()
+
+        // Initialize favorites count
+        const initialFavCount = syncedRecipes.filter((item: HistoryItem) => item.isFavorite).length
+        setFavoritesCount(initialFavCount)
+        console.log('🔄 Initial favorites count:', initialFavCount);
 
         // IMPORTANTE: Usar el total del API inmediatamente
         if (data.pagination?.total) {
@@ -238,6 +254,11 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
       console.error('Error cargando recetas:', error);
       if (reset || currentPage === 1) {
         setHistory([]);
+      }
+    } finally {
+      // Always turn off initial loading after first page request
+      if (reset || currentPage === 1) {
+        setIsInitialLoading(false);
       }
     }
   };
@@ -663,10 +684,17 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         console.log('🌟 User favorites loaded:', favoriteRecipeIds)
 
         // Update both history and allRecipes with favorite status
-        setHistory(prev => prev.map(recipe => ({
-          ...recipe,
-          isFavorite: favoriteRecipeIds.includes(recipe.id)
-        })))
+        setHistory(prev => {
+          const updated = prev.map(recipe => ({
+            ...recipe,
+            isFavorite: favoriteRecipeIds.includes(recipe.id)
+          }))
+          // Update favorites count from history
+          const favCount = updated.filter((item: HistoryItem) => item.isFavorite).length
+          setFavoritesCount(favCount)
+          console.log('🔄 Updated favorites count from loadUserFavorites:', favCount)
+          return updated
+        })
 
         setAllRecipes(prev => prev.map(recipe => ({
           ...recipe,
@@ -679,6 +707,14 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
   }
 
   // Toggle favorite
+  // Update favorites count
+  const updateFavoritesCount = () => {
+    const allRecipesForFavorites = allRecipes.length > 0 ? allRecipes : history
+    const count = allRecipesForFavorites.filter((item) => item.isFavorite).length
+    console.log('🔄 Updating favorites count:', count, 'from recipes:', allRecipesForFavorites.length)
+    setFavoritesCount(count)
+  }
+
   // Toggle favorites filter
   const handleToggleFavoritesFilter = () => {
     setShowFavoritesOnly(!showFavoritesOnly)
@@ -735,11 +771,48 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               : item
           )
           console.log('📚 Updated allRecipes for recipe', recipe.id, ':', updated.find(i => i.id === recipe.id)?.isFavorite)
+
+          // Update favorites count immediately
+          const newFavCount = updated.filter((item: HistoryItem) => item.isFavorite).length
+          console.log('🔄 New favorites count:', newFavCount)
+          setFavoritesCount(newFavCount)
+
           return updated
         })
 
+        // Force re-render of badge by changing key FIRST
+        setBadgeKey(prev => prev + 1)
+
+        // Recalculate favorites count from ACTUAL user favorites after a short delay
+        setTimeout(() => {
+          const currentUserStr = localStorage.getItem('current-user')
+          if (currentUserStr) {
+            const currentUser = JSON.parse(currentUserStr)
+            // Get user-specific favorites count
+            fetch(`https://web.lweb.ch/recipedigitalizer/apis/favorites.php?user_id=${currentUser.id}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.success && data.data) {
+                  const realFavCount = data.data.length
+                  console.log('🔄 REAL user favorites count from server:', realFavCount)
+                  setFavoritesCount(realFavCount)
+                  setBadgeKey(prev => prev + 1) // Force another re-render with real count
+                }
+              })
+              .catch(err => console.error('Error fetching user favorites count:', err))
+          }
+        }, 100)
+
+        // Force re-render of the favorites button by toggling animation
+        setAnimateFavoritesButton(true)
+        setTimeout(() => setAnimateFavoritesButton(false), 100)
+
         // Refresh recipe counts
         loadRecipeCounts()
+
+        // Animate favorites filter button
+        setAnimateFavoritesButton(true)
+        setTimeout(() => setAnimateFavoritesButton(false), 1000)
 
         console.log('✅ Favorite toggled:', result.message)
       } else {
@@ -832,37 +905,6 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   }
 
-  const toggleFavorite = async (id: number, e: React.MouseEvent) => {
-    e.stopPropagation()
-
-    try {
-      // Update in database
-      const recipe = history.find(item => item.id === id)
-      if (recipe) {
-        await RecipeService.update(id, { isFavorite: !recipe.isFavorite })
-        console.log('✅ Favorite status updated in database')
-      }
-
-      // Update local state
-      const updatedHistory = history.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
-      setHistory(updatedHistory)
-
-      // Update localStorage as backup only
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem("recipeHistory", JSON.stringify(updatedHistory))
-        } catch (quotaError) {
-          console.warn('⚠️ localStorage quota exceeded, skipping favorite backup')
-        }
-      }
-
-    } catch (error) {
-      console.error('❌ Error updating favorite:', error)
-      // Fallback to local only if database fails
-      const updatedHistory = history.map((item) => (item.id === id ? { ...item, isFavorite: !item.isFavorite } : item))
-      setHistory(updatedHistory)
-    }
-  }
 
   const moveToFolder = async (recipeId: number, categoryId: string | undefined) => {
     try {
@@ -1298,7 +1340,18 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
     }
   };
 
-  const favoriteRecipes = allRecipes.filter((item) => item.isFavorite)
+  // Combine both history and allRecipes to get accurate favorite count
+  const allRecipesForFavorites = allRecipes.length > 0 ? allRecipes : history
+  const favoriteRecipes = allRecipesForFavorites.filter((item) => item.isFavorite)
+
+  // Debug favorites count
+  console.log('🌟 DEBUG Favorites count:', {
+    allRecipesLength: allRecipes.length,
+    historyLength: history.length,
+    favoriteRecipesLength: favoriteRecipes.length,
+    recipeCounts: recipeCounts,
+    favoriteRecipes: favoriteRecipes.map(r => ({ id: r.id, title: r.title, isFavorite: r.isFavorite }))
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1318,8 +1371,12 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
 
               <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center">
+                  <BookOpen className="h-6 w-6 text-emerald-600" />
+                </div>
                 <div>
-                  <p className="text-sm text-gray-500">Recipe Archive</p>
+                  <h1 className="text-lg font-semibold text-gray-900">Rezept Archiv</h1>
+                  <p className="text-sm text-gray-600">Rezeptsammlung verwalten</p>
                 </div>
               </div>
             </div>
@@ -1369,7 +1426,8 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
       {/* Main Content */}
       <div className="pb-0">
-        <div className="flex flex-col xl:flex-row min-h-screen xl:min-h-[calc(100vh-6rem)]">
+        <div className="container mx-auto">
+          <div className="flex flex-col xl:flex-row min-h-screen xl:min-h-[calc(100vh-6rem)]">
           {/* Sidebar - Categories */}
           <div className="w-full xl:w-[28rem] xl:max-w-md bg-white border-r border-gray-200">
             <div className="p-6">
@@ -1753,22 +1811,72 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
 
                 {/* Favorites Filter Button */}
                 {currentUserId && (
-                  <Button
-                    onClick={handleToggleFavoritesFilter}
-                    variant="outline"
-                    size="sm"
-                    className={`px-3 py-2 border transition-all duration-200 flex items-center gap-2 ${
-                      showFavoritesOnly
-                        ? 'bg-yellow-50 border-yellow-300 text-yellow-700 hover:bg-yellow-100'
-                        : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-600'
-                    }`}
-                    title={showFavoritesOnly ? "Alle Rezepte anzeigen" : "Nur Favoriten anzeigen"}
+                  <motion.div
+                    animate={animateFavoritesButton ? {
+                      scale: 1.1,
+                      rotate: 5
+                    } : {
+                      scale: 1,
+                      rotate: 0
+                    }}
+                    transition={{ duration: 0.3, type: "spring", stiffness: 400 }}
                   >
-                    <Star className={`h-4 w-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
-                    <span className="hidden sm:inline">
-                      {showFavoritesOnly ? 'Alle' : 'Favoriten'}
-                    </span>
-                  </Button>
+                    <Button
+                      onClick={handleToggleFavoritesFilter}
+                      variant="outline"
+                      size="sm"
+                      className={`px-3 py-2 border transition-all duration-200 flex items-center gap-2 relative ${
+                        showFavoritesOnly
+                          ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-300 text-yellow-700 hover:bg-gradient-to-r hover:from-yellow-100 hover:to-orange-100 shadow-md'
+                          : 'border-gray-300 hover:bg-gray-50 bg-white text-gray-600 hover:shadow-sm'
+                      }`}
+                      title={showFavoritesOnly ? "Alle Rezepte anzeigen" : "Nur Favoriten anzeigen"}
+                    >
+                      <motion.div
+                        animate={animateFavoritesButton ? {
+                          rotate: 15,
+                          scale: 1.2
+                        } : {
+                          rotate: 0,
+                          scale: 1
+                        }}
+                        transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
+                      >
+                        <Star className={`h-4 w-4 transition-all duration-200 ${
+                          showFavoritesOnly
+                            ? 'fill-current text-yellow-500 drop-shadow-sm'
+                            : animateFavoritesButton
+                            ? 'text-yellow-400'
+                            : 'text-gray-500'
+                        }`} />
+                      </motion.div>
+                      <span className="hidden sm:inline font-medium">
+                        {showFavoritesOnly ? 'Alle' : 'Favoriten'}
+                      </span>
+
+                      {/* Badge with favorites count - always show count */}
+                      <motion.div
+                        key={`badge-${favoritesCount}-${badgeKey}`} // Key forces re-animation on count change
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 500,
+                          damping: 20,
+                          delay: animateFavoritesButton ? 0.2 : 0
+                        }}
+                        className={`absolute -top-2 -right-2 min-w-[1.25rem] h-5 flex items-center justify-center text-xs font-bold rounded-full px-1.5 shadow-lg transition-all duration-300 ${
+                          showFavoritesOnly
+                            ? 'bg-yellow-500 text-white ring-2 ring-yellow-200'
+                            : animateFavoritesButton
+                            ? 'bg-green-500 text-white ring-2 ring-green-200 animate-pulse'
+                            : 'bg-blue-500 text-white ring-2 ring-blue-200'
+                        }`}
+                      >
+                        {favoritesCount}
+                      </motion.div>
+                    </Button>
+                  </motion.div>
                 )}
 
                 {/* View Toggle */}
@@ -1993,24 +2101,31 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
               </div>
             )}
 
-            {finalFilteredHistory.length === 0 && (
+            {isInitialLoading ? (
+              <div className="text-center py-16">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                  <Loader2 className="h-8 w-8 text-gray-400 animate-spin" />
+                </div>
+              </div>
+            ) : finalFilteredHistory.length === 0 && (
               <div className="text-center py-16">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   {searchQuery ? <Search className="h-8 w-8 text-gray-400" /> : <ChefHat className="h-8 w-8 text-gray-400" />}
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {searchQuery ? "Keine Rezepte gefunden" : "No recipes found"}
+                  {searchQuery ? "Keine Rezepte gefunden" : "Keine Rezepte gefunden"}
                 </h3>
                 <p className="text-gray-500 max-w-sm mx-auto">
                   {searchQuery
                     ? `Keine Rezepte für "${searchQuery}" gefunden. Versuchen Sie einen anderen Suchbegriff.`
                     : selectedFolder === "favorites"
-                    ? "You haven't marked any recipes as favorites yet"
-                    : "No recipes in this category yet"}
+                    ? "Sie haben noch keine Rezepte als Favoriten markiert"
+                    : "Noch keine Rezepte in dieser Kategorie"}
                 </p>
               </div>
             )}
             </div>
+          </div>
           </div>
         </div>
       </div>

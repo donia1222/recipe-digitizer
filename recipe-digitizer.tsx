@@ -17,6 +17,7 @@ import RecipeLibrary from "@/components/recipe-library"
 import HomeDashboard from "@/components/home-dashboard"
 import RecipeArchivePage from "@/components/recipe-archive-page"
 import UserPage from "@/components/user-page"
+import ManualRecipeCreator from "@/components/manual-recipe-creator"
 import { analyzeRecipeImage, recalculateServings } from "@/lib/actions"
 import ServingsModal from "@/components/servings-modal"
 import { RecipeService } from "@/lib/services/recipeService"
@@ -62,9 +63,9 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
   const [showCameraModal, setShowCameraModal] = useState<boolean>(false)
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null)
   const [currentRecipeId, setCurrentRecipeId] = useState<string | null>(null)
-  const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
+  const [currentView, setCurrentView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users' | 'manual-recipes'>('home')
   const [showServingsModal, setShowServingsModal] = useState<boolean>(false)
-  const [previousView, setPreviousView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users'>('home')
+  const [previousView, setPreviousView] = useState<'home' | 'library' | 'analyze' | 'archive' | 'users' | 'manual-recipes'>('home')
   const [userSearchFilter, setUserSearchFilter] = useState<string | undefined>(undefined)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -132,7 +133,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
   }
 
   // Function to change view and save previous view
-  const changeView = (newView: 'home' | 'library' | 'analyze' | 'archive' | 'users') => {
+  const changeView = (newView: 'home' | 'library' | 'analyze' | 'archive' | 'users' | 'manual-recipes') => {
     // Only update previous view if it's different from the new view
     if (currentView !== newView) {
       setPreviousView(currentView)
@@ -148,8 +149,8 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
       setApprovalMessage(null)
     }
 
-    // Ensure we always go back to home screen when coming from archive or users page
-    if (currentView === 'archive' || currentView === 'users') {
+    // Ensure we always go back to home screen when coming from archive, users or manual-recipes page
+    if (currentView === 'archive' || currentView === 'users' || currentView === 'manual-recipes') {
       setCurrentView('home')
       setPreviousView('home')
     } else if (currentView === 'analyze') {
@@ -541,6 +542,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
           handleLogout={handleLogout}
           onOpenArchive={() => changeView('archive')}
           onOpenUsers={() => changeView('users')}
+          onOpenManualRecipes={() => changeView('manual-recipes')}
           userRole={userRole}
           onBackToLanding={onBackToLanding}
         />
@@ -586,6 +588,44 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
             changeView('archive')
           }}
         />
+      ) : currentView === 'manual-recipes' ? (
+        <div className="min-h-screen bg-gray-50">
+          <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+            <div className="container mx-auto px-4 sm:px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={goBack}
+                    variant="outline"
+                    size="sm"
+                    className="border-gray-300 hover:bg-gray-50 bg-transparent"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                      <ChefHat className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-semibold text-gray-900">Manuelle Rezepte</h1>
+                      <p className="text-sm text-gray-600">Rezept erstellen</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="pt-24 pb-12">
+            <div className="container mx-auto px-4 sm:px-6">
+              <ManualRecipeCreator
+                onRecipeCreated={() => {
+                  // Optional: navigate back to home or show success message
+                  changeView('home')
+                }}
+              />
+            </div>
+          </div>
+        </div>
       ) : currentView === 'library' ? (
         <RecipeLibrary
           onSelectItem={(item) => {
@@ -669,25 +709,35 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
         // Vista de receta guardada - solo análisis con imágenes
         <div>
           {/* Header principal */}
-
-            <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-              <div className="flex items-center gap-2 lg:justify-center lg:relative">
-                 <Button
-                     onClick={goBack}
+          <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+            <div className="container mx-auto px-4 sm:px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Button
+                    onClick={goBack}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent lg:absolute lg:left-20 "
+                    className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
-    
-
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <ChefHat className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <h1 className="text-lg font-semibold text-gray-900">Rezepte Digitalisieren</h1>
+                      <p className="text-sm text-gray-600">Rezept analysieren und bearbeiten</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </div>
       
 
           {/* Recipe Analysis */}
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 ">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 pt-24">
             {analysis && (
               <RecipeAnalyzer
                 recipe={analysis}

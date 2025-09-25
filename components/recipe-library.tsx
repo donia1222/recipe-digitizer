@@ -422,14 +422,14 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-gray-900">
-      {/* Header fijo - Solo título, subtítulo e icono logout */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-800/20  p-2">
-        <div className="container mx-auto px-4 sm:px-6 py-2 sm:py-3">
+      {/* Header fijo - Con icono, título y subtítulo */}
+      <div className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-4">
               {onBackToHome && (
-                    <Button
-                onClick={onBackToHome}
+                <Button
+                  onClick={onBackToHome}
                   variant="outline"
                   size="sm"
                   className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent"
@@ -437,15 +437,16 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
-         
-              <div>
-     
-          
-              
-            <p className="text-sm text-gray-600">Rezepte Digitalisieren</p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                  <Camera className="h-6 w-6 text-blue-600" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900">Rezepte Digitalisieren</h1>
+                  <p className="text-sm text-gray-600">Foto aufnehmen oder hochladen</p>
+                </div>
               </div>
             </div>
-
           </div>
         </div>
       </div>

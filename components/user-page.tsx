@@ -747,14 +747,21 @@ Erstellt am: ${formatDate(recipe.createdAt)}`
                 <ArrowLeft className="h-4 w-4" />
               </Button>
 
-              {/* User name next to back button with simple style */}
-              <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
-                <Users className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  {((currentUser?.name || "Usuario").length > 20
-                    ? (currentUser?.name || "Usuario").substring(0, 20) + "..."
-                    : (currentUser?.name || "Usuario"))}
-                </span>
+              {/* Modern header with icon, title and subtitle */}
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30">
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {((currentUser?.name || "Usuario").length > 20
+                      ? (currentUser?.name || "Usuario").substring(0, 20) + "..."
+                      : (currentUser?.name || "Usuario"))}
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Profil & Einstellungen
+                  </p>
+                </div>
               </div>
             </div>
 

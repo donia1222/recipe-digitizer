@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, UserPlus, Edit, Trash2, Users, Mail, Calendar, MoreHorizontal, Eye, Ban, CheckCircle } from "lucide-react"
+import { Search, UserPlus, Edit, Trash2, Users, Mail, Calendar, MoreHorizontal, Eye, Ban, CheckCircle, Shield } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { UserService } from "@/lib/services/userService"
 import { useToast } from "@/components/ui/use-toast"
@@ -443,44 +443,55 @@ export default function UserManagement({ users, setUsers }: UserManagementProps)
                       {/* <div>Rezepte: {recipeCounts[user.id] ?? 0}</div> */}
                     </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            setSelectedUser(user)
-                            setIsEditUserOpen(true)
-                          }}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Bearbeiten
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
-                          {user.status === 'active' ? (
-                            <>
-                              <Ban className="h-4 w-4 mr-2" />
-                              Deaktivieren
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Aktivieren
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Löschen
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {/* Solo mostrar menú de opciones si no es el admin principal */}
+                    {user.email !== 'admin@lweb.ch' && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedUser(user)
+                              setIsEditUserOpen(true)
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Bearbeiten
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleStatus(user.id)}>
+                            {user.status === 'active' ? (
+                              <>
+                                <Ban className="h-4 w-4 mr-2" />
+                                Deaktivieren
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Aktivieren
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Löschen
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+
+                    {/* Mostrar indicador para admin principal */}
+                    {user.email === 'admin@lweb.ch' && (
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+                        <Shield className="h-3 w-3" />
+                        Super Admin
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
