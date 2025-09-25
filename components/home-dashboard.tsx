@@ -23,7 +23,9 @@ import {
   Utensils,
   MessageCircle,
   Bot,
-  Brain ,
+  Brain,
+  Search,
+  Download,
   Sparkles,
   Edit,
   Bell,
@@ -158,8 +160,8 @@ export default function HomeDashboard({
                   <ChefHat className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-      
-                  <p className="text-sm text-gray-600">Rezeptsammlung</p>
+                <h1 className="text-lg font-semibold text-gray-900">Rezept Archiv</h1>
+                  <p className="text-sm text-gray-600">Pflege- und Betreuungszentrum Büelriet</p>
                 </div>
               </div>
             </div>
@@ -366,23 +368,49 @@ export default function HomeDashboard({
               </div>
               <CardTitle className="text-xl font-semibold text-gray-900">Rezept Archiv</CardTitle>
               <CardDescription className="text-gray-600">
-                Ihre digitalisierten Rezepte nach Kategorien organisieren und bearbeiten
+                {userRole === 'guest'
+                  ? 'Rezepte ansehen und durchsuchen'
+                  : 'Ihre digitalisierten Rezepte nach Kategorien organisieren und bearbeiten'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <BookOpen className="h-4 w-4" />
-                  <span>Rezepte verwalten</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <ChefHat className="h-4 w-4" />
-                  <span>Kategorien erstellen</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Heart className="h-4 w-4" />
-                  <span>Favoriten markieren</span>
-                </div>
+                {userRole === 'guest' ? (
+                  <>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Rezepte ansehen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Search className="h-4 w-4" />
+                      <span>Bibliothek durchsuchen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Kommentare lesen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Download className="h-4 w-4" />
+                      <span>Rezepte herunterladen</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Rezepte verwalten</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <ChefHat className="h-4 w-4" />
+                      <span>Kategorien erstellen</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Heart className="h-4 w-4" />
+                      <span>Favoriten markieren</span>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

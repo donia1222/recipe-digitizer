@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { RecipeService } from "@/lib/services/recipeService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Trash2, Star, Calendar, ChefHat, Search, Grid3x3, List, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, BookOpen, Home, LogOut, ArrowLeft, Shield } from "lucide-react"
+import { Trash2, Star, Calendar, ChefHat, Search, Grid3x3, List, ChevronLeft, ChevronRight, Camera, Upload, RefreshCw, Scan, BookOpen, Home, LogOut, ArrowLeft, Shield, Users } from "lucide-react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Progress } from "@/components/ui/progress"
@@ -25,7 +25,7 @@ interface HistoryItem {
 interface RecipeLibraryProps {
   onSelectItem: (item: HistoryItem) => void
   onCreateNew: () => void
-  onUploadImage: (file: File, onProgress?: (progress: number) => void, onComplete?: () => void) => void
+  onUploadImage: (file: File, onProgress?: (progress: number) => void, onComplete?: () => void, servings?: number) => void
   onTakePhoto: (onPhotoTaken: (imageData: string) => void) => void
   onStartAnalysis: () => void
   onBackToHome?: () => void
@@ -42,6 +42,7 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
   const [selectedImageData, setSelectedImageData] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
+  const [initialServings, setInitialServings] = useState(2)
 
   useEffect(() => {
     loadData()
@@ -352,7 +353,8 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
         .then(res => res.blob())
         .then(blob => {
           const file = new File([blob], "uploaded_image.jpg", { type: "image/jpeg" })
-          onUploadImage(file, updateProgress, handleComplete)
+          // Pass initial servings to the upload function
+          onUploadImage(file, updateProgress, handleComplete, initialServings)
         })
     }
   }
@@ -630,6 +632,30 @@ const RecipeLibrary: React.FC<RecipeLibraryProps> = ({ onSelectItem, onCreateNew
               </div>
             ) : (
               <>
+                {/* Input de porciones */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex items-center justify-center gap-3">
+                    <Users className="h-5 w-5 text-blue-600" />
+                    <label className="text-sm font-medium text-gray-700">
+                      Für wie viele Personen?
+                    </label>
+                    <Input
+                      type="number"
+                      value={initialServings}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value >= 1 && value <= 100) {
+                          setInitialServings(value);
+                        }
+                      }}
+                      min="1"
+                      max="100"
+                      className="w-16 h-8 text-center border-gray-300 focus:border-blue-500"
+                    />
+                    <span className="text-sm text-gray-600">Personen</span>
+                  </div>
+                </div>
+
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
                   Möchten Sie dieses Bild analysieren und das Rezept digitalisieren?
                 </p>

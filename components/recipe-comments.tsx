@@ -449,22 +449,30 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId, isAnalysisMod
 
                     {/* Like Button and Counter */}
                     <div className="flex items-center gap-2 pt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleLike(comment.id)}
-                        disabled={!currentUser}
-                        className={`h-6 px-2 text-xs transition-colors ${
-                          hasUserLiked(comment)
-                            ? 'text-red-500 hover:text-red-600'
-                            : 'text-gray-400 hover:text-red-500'
-                        }`}
-                      >
-                        <Heart
-                          className={`h-3 w-3 mr-1 ${hasUserLiked(comment) ? 'fill-current' : ''}`}
-                        />
-                        {comment.likes}
-                      </Button>
+                      {currentUser?.role !== 'guest' ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleLike(comment.id)}
+                          disabled={!currentUser}
+                          className={`h-6 px-2 text-xs transition-colors ${
+                            hasUserLiked(comment)
+                              ? 'text-red-500 hover:text-red-600'
+                              : 'text-gray-400 hover:text-red-500'
+                          }`}
+                        >
+                          <Heart
+                            className={`h-3 w-3 mr-1 ${hasUserLiked(comment) ? 'fill-current' : ''}`}
+                          />
+                          {comment.likes}
+                        </Button>
+                      ) : (
+                        // Solo mostrar el contador para guests
+                        <div className="flex items-center h-6 px-2 text-xs text-gray-400">
+                          <Heart className="h-3 w-3 mr-1" />
+                          {comment.likes}
+                        </div>
+                      )}
 
                       {/* Show likes users button */}
                       {comment.likes > 0 && (
@@ -492,7 +500,7 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId, isAnalysisMod
         </div>
 
         {/* Add New Comment */}
-        {currentUser ? (
+        {currentUser && currentUser.role !== 'guest' ? (
           <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm p-4 rounded-xl border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
             <div className="space-y-4">
               <div className="flex items-center gap-2 mb-3">
@@ -524,6 +532,12 @@ const RecipeComments: React.FC<RecipeCommentsProps> = ({ recipeId, isAnalysisMod
                 </Button>
               </div>
             </div>
+          </div>
+        ) : currentUser?.role === 'guest' ? (
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl text-center border border-amber-200 dark:border-amber-800">
+            <p className="text-amber-700 dark:text-amber-300">
+              Als Gast können Sie nur Kommentare lesen, aber keine eigenen schreiben
+            </p>
           </div>
         ) : (
           <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-xl text-center">

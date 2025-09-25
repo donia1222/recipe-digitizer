@@ -6,7 +6,7 @@
  */
 "use server"
 
-export async function analyzeRecipeImage(imageBase64: string) {
+export async function analyzeRecipeImage(imageBase64: string, servings: number = 2) {
   try {
     const response = await fetch("https://foodscan-ai.com/responseImageAnalysis.php", {
       method: "POST",
@@ -19,7 +19,7 @@ export async function analyzeRecipeImage(imageBase64: string) {
           {
             role: "system",
             content:
-              "Extrahiere das Rezept exakt aus dem Bild. Verwende den EXAKTEN Titel/Namen wie er im Bild steht - übersetze oder ändere ihn NICHT. Format: Titel als erste Zeile, dann direkt die Zutatenliste (ohne 'Zutaten:' Überschrift), dann die Zubereitungsschritte. Keine zusätzlichen Überschriften, Tipps oder Kommentare.",
+              `Extrahiere das Rezept exakt aus dem Bild. Verwende den EXAKTEN Titel/Namen wie er im Bild steht - übersetze oder ändere ihn NICHT. WICHTIG: Berechne alle Mengenangaben für exakt ${servings} ${servings === 1 ? 'Person' : 'Personen'} - falls das Originalrezept für eine andere Anzahl von Personen ist, passe die Mengen entsprechend an. Format: Titel als erste Zeile, dann direkt die Zutatenliste (ohne 'Zutaten:' Überschrift), dann die Zubereitungsschritte. Keine zusätzlichen Überschriften, Tipps oder Kommentare.`,
           },
           {
             role: "user",

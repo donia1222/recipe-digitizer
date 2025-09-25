@@ -287,7 +287,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
     setShowCameraModal(false)
   }
 
-  const analyzeImage = async (imageData: string) => {
+  const analyzeImage = async (imageData: string, servings: number = 2) => {
     setLoading(true)
     setProgress(0.2)
 
@@ -304,7 +304,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
       setProgress(0.5)
       
       // Server Action verwenden um das Bild zu analysieren
-      const result = await analyzeRecipeImage(base64Data)
+      const result = await analyzeRecipeImage(base64Data, servings)
       
       setProgress(0.8)
 
@@ -322,34 +322,14 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
       //   changeView('analyze')
       // }
 
-      // Versuchen die ursprünglichen Portionen aus dem Rezept zu extrahieren
-      const servingsMatch =
-        result.analysis.match(/serves?\s+(\d+)/i) ||
-        result.analysis.match(/for\s+(\d+)\s+person/i) ||
-        result.analysis.match(/(\d+)\s+person/i) ||
-        result.analysis.match(/(\d+)\s+serving/i) ||
-        result.analysis.match(/für\s+(\d+)\s+person/i) || // Deutsch
-        result.analysis.match(/(\d+)\s+portion/i) // Deutsch
+      // Usar las porciones que se enviaron a la IA para generar la receta
+      setOriginalServings(servings)
+      setServings(servings)
+      setServingsInput(servings.toString())
 
-      if (servingsMatch && servingsMatch[1]) {
-        const extractedServings = Number.parseInt(servingsMatch[1], 10)
-        setOriginalServings(extractedServings)
-        // Solo actualizar servings si es la primera vez o si no hay servings ajustados manualmente
-        if (servings === originalServings) {
-          setServings(extractedServings)
-          setServingsInput(extractedServings.toString())
-        }
-      } else {
-        // Solo establecer por defecto si es la primera vez
-        if (originalServings === 2 && servings === 2) {
-          setOriginalServings(2)
-          setServings(2)
-          setServingsInput("2")
-        } else {
-          // Mantener las porciones ajustadas por el usuario
-          setOriginalServings(2)
-        }
-      }
+      // Guardar las porciones en localStorage
+      localStorage.setItem('recipe-servings', servings.toString())
+      localStorage.setItem('recipe-original-servings', servings.toString())
 
       setProgress(1)
 
@@ -653,7 +633,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
             }
           }}
           onCreateNew={() => changeView('analyze')}
-          onUploadImage={(file: File, onProgress, onComplete) => {
+          onUploadImage={(file: File, onProgress, onComplete, servings = 2) => {
             resetState()
 
             const reader = new FileReader()
@@ -684,7 +664,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
                 }
 
                 // Call analyzeImage and handle completion
-                analyzeImage(event.target.result as string).finally(() => {
+                analyzeImage(event.target.result as string, servings).finally(() => {
                   // Clear the progress interval when analysis is done
                   if (localProgressInterval) {
                     clearInterval(localProgressInterval)
