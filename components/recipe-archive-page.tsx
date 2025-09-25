@@ -1327,11 +1327,51 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
         </div>
       </div>
 
+      {/* Search Bar - Above everything */}
+      <div className="pt-20 bg-white border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Suche nach Rezepttitel oder Inhalt..."
+              value={searchQuery}
+              onChange={(e) => {
+                const newSearchQuery = e.target.value;
+                setSearchQuery(newSearchQuery);
+
+                if (newSearchQuery.trim()) {
+                  // If searching, load all matching recipes
+                  setSelectedFolder(undefined); // Clear category selection
+                  loadCategoryOrSearchRecipes(undefined, newSearchQuery.trim());
+                } else {
+                  // If search cleared, reload paginated view
+                  loadData(true);
+                }
+              }}
+              className="w-full pl-10 pr-4 py-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setSelectedFolder(undefined);
+                  loadData(true); // Reset to paginated view
+                }}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
       {/* Main Content */}
-      <div className="pt-24 pb-0">
+      <div className="pb-0">
         <div className="flex flex-col xl:flex-row min-h-screen xl:min-h-[calc(100vh-6rem)]">
           {/* Sidebar - Categories */}
-          <div className="w-full xl:w-[28rem] xl:max-w-md bg-white border-r border-gray-200 xl:fixed xl:left-0 xl:top-24 xl:-bottom-10 xl:overflow-y-auto">
+          <div className="w-full xl:w-[28rem] xl:max-w-md bg-white border-r border-gray-200">
             <div className="p-6">
               <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
@@ -1672,79 +1712,13 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
           </div>
 
           {/* Main Content - Recipes Grid */}
-          <div className="flex-1 xl:ml-[28rem] xl:min-h-screen">
-            <div className="container mx-auto px-4 sm:px-6 xl:px-8 pb-0">
+          <div className="flex-1 xl:min-h-screen">
+            <div className="container mx-auto px-4 sm:px-6 xl:px-8 pb-0 mt-4">
+
+            {/* Filters and Section Header */}
             <div className="mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {selectedFolder === "favorites"
-                    ? "Favoriten"
-                    : selectedFolder
-                      ? folders.find((f) => f.id === selectedFolder)?.name
-                      : "Alle Rezepte"}
-                </h3>
-                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
-                  {(() => {
-                    if (searchQuery) {
-                      // If searching, show search results count
-                      return `${history.length} Rezepte`;
-                    } else if (selectedFolder === "favorites") {
-                      // If favorites selected, show favorites count
-                      return `${recipeCounts['favorites'] || 0} Rezepte`;
-                    } else if (selectedFolder) {
-                      // If category selected, show category count
-                      return `${recipeCounts[selectedFolder] || 0} Rezepte`;
-                    } else {
-                      // If "All Recipes" selected, show total or paginated info
-                      const total = totalRecipesFromAPI || recipeCounts['all'] || 0;
-                      const showing = history.length;
-                      if (hasMoreRecipes && !searchQuery) {
-                        return `${showing} von ${total} Rezepte`;
-                      } else {
-                        return `${total} Rezepte`;
-                      }
-                    }
-                  })()}
-                </span>
-              </div>
-
-              {/* Search Bar and Filters */}
-              <div className="flex gap-3">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="Suche nach Rezepttitel oder Inhalt..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      const newSearchQuery = e.target.value;
-                      setSearchQuery(newSearchQuery);
-
-                      if (newSearchQuery.trim()) {
-                        // If searching, load all matching recipes
-                        setSelectedFolder(undefined); // Clear category selection
-                        loadCategoryOrSearchRecipes(undefined, newSearchQuery.trim());
-                      } else {
-                        // If search cleared, reload paginated view
-                        loadData(true);
-                      }
-                    }}
-                    className="w-full pl-10 pr-4 py-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => {
-                        setSearchQuery("");
-                        setSelectedFolder(undefined);
-                        loadData(true); // Reset to paginated view
-                      }}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-
+              {/* Filters Row */}
+              <div className="flex gap-3 mb-6">
                 {/* User Filter Dropdown */}
                 <div className="relative min-w-[200px]">
                   <div className="relative">
@@ -1824,6 +1798,40 @@ const RecipeArchivePage: React.FC<RecipeArchivePageProps> = ({ onSelectRecipe, o
                     <span className="hidden sm:inline">Liste</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Section Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedFolder === "favorites"
+                    ? "Favoriten"
+                    : selectedFolder
+                      ? folders.find((f) => f.id === selectedFolder)?.name
+                      : "Alle Rezepte"}
+                </h3>
+                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full font-medium">
+                  {(() => {
+                    if (searchQuery) {
+                      // If searching, show search results count
+                      return `${history.length} Rezepte`;
+                    } else if (selectedFolder === "favorites") {
+                      // If favorites selected, show favorites count
+                      return `${recipeCounts['favorites'] || 0} Rezepte`;
+                    } else if (selectedFolder) {
+                      // If category selected, show category count
+                      return `${recipeCounts[selectedFolder] || 0} Rezepte`;
+                    } else {
+                      // If "All Recipes" selected, show total or paginated info
+                      const total = totalRecipesFromAPI || recipeCounts['all'] || 0;
+                      const showing = history.length;
+                      if (hasMoreRecipes && !searchQuery) {
+                        return `${showing} von ${total} Rezepte`;
+                      } else {
+                        return `${total} Rezepte`;
+                      }
+                    }
+                  })()}
+                </span>
               </div>
             </div>
 

@@ -669,14 +669,14 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
         // Vista de receta guardada - solo análisis con imágenes
         <div>
           {/* Header principal */}
-          <div className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-slate-50 via-gray-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 border-b-4 border-blue-500 shadow-lg">
+
             <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
               <div className="flex items-center gap-2 lg:justify-center lg:relative">
                  <Button
                      onClick={goBack}
                     variant="outline"
                     size="sm"
-                    className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent lg:absolute lg:left-0"
+                    className="h-9 w-9 p-0 border-gray-300 hover:bg-gray-50 bg-transparent lg:absolute lg:left-20 "
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
@@ -684,10 +684,10 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
 
               </div>
             </div>
-          </div>
+      
 
           {/* Recipe Analysis */}
-          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 lg:py-8 max-w-4xl pt-32 sm:pt-36 lg:pt-40">
+          <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 ">
             {analysis && (
               <RecipeAnalyzer
                 recipe={analysis}
