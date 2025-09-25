@@ -190,7 +190,7 @@ export default function HomeDashboard({
                       <div className="p-4 border-b border-gray-200">
                         <h3 className="font-semibold text-gray-800 flex items-center gap-2">
                           <Bell className="h-4 w-4" />
-                          Recetas Pendientes
+                         Ausstehende Rezepte
                         </h3>
                       </div>
                       <div className="max-h-64 overflow-y-auto">
