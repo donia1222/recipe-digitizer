@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, } from "@/components/ui/card"
 import {
   Camera,
   Upload,
@@ -17,6 +17,15 @@ import {
   Shield,
   Plus,
   Send,
+  ArrowDown,
+  ArrowUp,
+  Utensils,
+  MessageCircle,
+  Bot,
+  Brain ,
+  Sparkles,
+
+
 } from "lucide-react"
 
 interface HomeDashboardProps {
@@ -211,6 +220,9 @@ export default function HomeDashboard({
             </Card>
           )}
 
+
+
+
           {userRole === "admin" && (
             <Card
               className="bg-white border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer"
@@ -233,7 +245,83 @@ export default function HomeDashboard({
               </CardContent>
             </Card>
           )}
+          
         </div>
+           <Card className="bg-white border border-gray-200 shadow-sm">        <CardHeader>
+          <CardTitle className="text-gray-900">KI-Funktionen</CardTitle>
+           <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Shield className="h-4 w-4" />
+                    <span>Admin</span>
+                  </div>
+
+
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="bg-purple-50 border-purple-200 shadow-sm hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-semibold text-gray-900">Rezepte mit KI erstellen</CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-purple-600 mt-1">
+                      <Sparkles className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600">
+                  Lassen Sie unsere KI neue, kreative Rezepte für Sie entwickeln
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-green-50 border-green-200 shadow-sm hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                    <Utensils className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-semibold text-gray-900">Gericht Analysieren</CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-green-600 mt-1">
+                      <Utensils className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600">
+                  Fotografieren Sie ein Gericht und erhalten Sie das passende Rezept
+                </CardDescription>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-orange-50 border-orange-200 shadow-sm hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <MessageCircle className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-lg font-semibold text-gray-900">Koch-Experte Chat</CardTitle>
+                    <div className="flex items-center gap-2 text-xs text-orange-600 mt-1">
+                      <Bot className="h-3 w-3" />
+                      <span>Bald verfügbar</span>
+                    </div>
+                  </div>
+                </div>
+                <CardDescription className="text-sm text-gray-600">
+                  Stellen Sie Fragen an unseren KI-Koch-Experten
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+
       </div>
     </div>
   )
