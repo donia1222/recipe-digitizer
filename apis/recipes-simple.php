@@ -25,6 +25,30 @@ try {
 }
 
 /**
+ * Obtiene el rol de un usuario
+ * @param PDO $pdo - Conexión a base de datos
+ * @param string $userId - ID del usuario
+ * @return string - Rol del usuario ('admin', 'worker', 'guest')
+ */
+function getUserRole($pdo, $userId) {
+    try {
+        $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+        $stmt->execute([$userId]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($result) {
+            return $result['role'];
+        }
+
+        // Si no se encuentra el usuario, asumir que es guest
+        return 'guest';
+    } catch (Exception $e) {
+        error_log('Error getting user role: ' . $e->getMessage());
+        return 'guest';
+    }
+}
+
+/**
  * Optimiza una imagen base64: comprime y redimensiona
  * @param string $base64Data - Imagen en formato base64
  * @param string $filename - Nombre del archivo de salida
@@ -264,6 +288,11 @@ switch ($method) {
 
             // Generar IDs
             $recipeId = 'recipe_' . time() . '_' . rand(1000, 9999);
+            $userId = $data['user_id'] ?? 'admin-001';
+
+            // Verificar rol del usuario para decidir el flujo
+            $userRole = getUserRole($pdo, $userId);
+            error_log("🔐 User role for {$userId}: {$userRole}");
 
             // Procesar imagen si existe
             $imageUrl = '';
@@ -306,27 +335,59 @@ switch ($method) {
                 }
             }
 
-            // Insertar receta en RECETAS_PENDIENTES (requiere aprobación)
-            $sql = "INSERT INTO recetas_pendientes (
-                        recipe_id, title, analysis, image_base64, image_url,
-                        user_id, category_id, created_at
-                    ) VALUES (
-                        :recipe_id, :title, :analysis, :image, :image_url,
-                        :user_id, :category_id, NOW()
-                    )";
+            // Decidir destino según rol del usuario
+            if ($userRole === 'admin') {
+                // ADMIN: Insertar directamente en RECIPES (aprobada automáticamente)
+                error_log("📥 Admin recipe - inserting directly to recipes table");
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':recipe_id' => $recipeId,
-                ':title' => $data['title'] ?? 'Sin título',
-                ':analysis' => $data['analysis'] ?? '',
-                ':image' => $data['image'] ?? '',
-                ':image_url' => $imageUrl,
-                ':user_id' => $data['user_id'] ?? 'admin-001',
-                ':category_id' => $data['category_id'] ?? null
-            ]);
+                $sql = "INSERT INTO recipes (
+                            recipe_id, title, analysis, image_base64, image_url,
+                            user_id, category_id, status, created_at
+                        ) VALUES (
+                            :recipe_id, :title, :analysis, :image, :image_url,
+                            :user_id, :category_id, 'approved', NOW()
+                        )";
 
-            $newId = $pdo->lastInsertId();
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':recipe_id' => $recipeId,
+                    ':title' => $data['title'] ?? 'Sin título',
+                    ':analysis' => $data['analysis'] ?? '',
+                    ':image' => $data['image'] ?? '',
+                    ':image_url' => $imageUrl,
+                    ':user_id' => $userId,
+                    ':category_id' => $data['category_id'] ?? null
+                ]);
+
+                $newId = $pdo->lastInsertId();
+                $isPending = false;
+
+            } else {
+                // WORKER/GUEST: Insertar en RECETAS_PENDIENTES (requiere aprobación)
+                error_log("⏳ Worker/Guest recipe - inserting to pending recipes table");
+
+                $sql = "INSERT INTO recetas_pendientes (
+                            recipe_id, title, analysis, image_base64, image_url,
+                            user_id, category_id, created_at
+                        ) VALUES (
+                            :recipe_id, :title, :analysis, :image, :image_url,
+                            :user_id, :category_id, NOW()
+                        )";
+
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':recipe_id' => $recipeId,
+                    ':title' => $data['title'] ?? 'Sin título',
+                    ':analysis' => $data['analysis'] ?? '',
+                    ':image' => $data['image'] ?? '',
+                    ':image_url' => $imageUrl,
+                    ':user_id' => $userId,
+                    ':category_id' => $data['category_id'] ?? null
+                ]);
+
+                $newId = $pdo->lastInsertId();
+                $isPending = true;
+            }
 
             // Procesar imágenes adicionales si existen
             if (!empty($data['additional_images']) && is_array($data['additional_images'])) {
@@ -363,20 +424,32 @@ switch ($method) {
                         }
                     }
 
-                    // Insertar imagen adicional en recipe_images
+                    // Insertar imagen adicional en la tabla correcta según el rol
                     if (!empty($additionalImageUrl)) {
                         try {
-                            $additionalImageStmt = $pdo->prepare("
-                                INSERT INTO recetas_pendientes_images (recipe_id, image_url, image_base64, display_order)
-                                VALUES (?, ?, ?, ?)
-                            ");
+                            if ($isPending) {
+                                // Para recetas pendientes
+                                $additionalImageStmt = $pdo->prepare("
+                                    INSERT INTO recetas_pendientes_images (recipe_id, image_url, image_base64, display_order)
+                                    VALUES (?, ?, ?, ?)
+                                ");
+                                error_log('Additional image record created for PENDING recipe ID: ' . $newId);
+                            } else {
+                                // Para recetas aprobadas (admins)
+                                $additionalImageStmt = $pdo->prepare("
+                                    INSERT INTO recipe_images (recipe_id, image_url, image_base64, display_order)
+                                    VALUES (?, ?, ?, ?)
+                                ");
+                                error_log('Additional image record created for APPROVED recipe ID: ' . $newId);
+                            }
+
                             $additionalImageStmt->execute([
                                 $newId,
                                 $additionalImageUrl,
                                 $additionalImage,
                                 $displayOrder
                             ]);
-                            error_log('Additional image record created for PENDING recipe ID: ' . $newId);
+
                         } catch (Exception $e) {
                             error_log('Error inserting additional image record: ' . $e->getMessage());
                         }
@@ -386,13 +459,25 @@ switch ($method) {
                 }
             }
 
+            // Mensaje personalizado según el rol
+            if ($isPending) {
+                $message = 'Receta enviada para aprobación del administrador';
+                $status = 'pending';
+            } else {
+                $message = 'Receta creada y aprobada automáticamente';
+                $status = 'approved';
+            }
+
             echo json_encode([
                 'success' => true,
-                'message' => 'Receta creada exitosamente',
+                'message' => $message,
                 'data' => [
                     'id' => intval($newId),
                     'recipeId' => $recipeId,
-                    'imageUrl' => $imageUrl
+                    'imageUrl' => $imageUrl,
+                    'status' => $status,
+                    'userRole' => $userRole,
+                    'requiresApproval' => $isPending
                 ]
             ]);
 

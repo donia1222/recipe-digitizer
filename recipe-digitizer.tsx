@@ -345,7 +345,7 @@ export default function RecipeDigitizer({ handleLogout, userRole, onBackToLandin
       setTimeout(() => {
         console.log('📝 Mostrando mensaje permanente para rol:', userRole);
         if (userRole === 'admin') {
-          setApprovalMessage("✅ Rezept erstellt. Sie müssen es in Ihrem Administrationspanel genehmigen.")
+          setApprovalMessage("✅ Rezept erstellt und ist bereits im Archiv sichtbar.")
         } else {
           setApprovalMessage("✅ Rezept an Administrator gesendet. Nach Genehmigung erscheint es im Archiv.")
         }
