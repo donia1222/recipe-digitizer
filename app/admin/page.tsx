@@ -8,6 +8,7 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  
 
   useEffect(() => {
     // Check authentication and role
